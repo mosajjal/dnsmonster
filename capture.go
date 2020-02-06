@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
 	mkdns "github.com/miekg/dns"
 	"net"
 	"os"

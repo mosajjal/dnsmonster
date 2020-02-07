@@ -1,0 +1,130 @@
+<dictionaries>
+    <dictionary>
+        <!-- Dictionary name. The dictionary will be accessed for use by this name. -->
+        <name>dns_responce</name>
+
+        <!-- Data source. -->
+        <source>
+            <!-- Source is a file in the local file system. -->
+            <file>
+                <!-- Path on the local file system. -->
+                <path>/opt/dictionaries/dns_responce.tsv</path>
+                <!-- Which format to use for reading the file. -->
+                <format>TabSeparated</format>
+            </file>
+        </source>
+        <lifetime>0</lifetime>
+        <layout> <!-- Method for storing in memory. -->
+            <flat />
+        </layout>
+        <structure>
+            <id>
+                <!-- Column name with ID. -->
+                <name>Id</name>
+            </id>
+
+            <attribute>
+                <!-- Column name. -->
+                <name>Name</name>
+                 <type>String</type>
+                <null_value>Invalid</null_value>
+            </attribute>
+      </structure>
+    </dictionary>
+    <dictionary>
+        <!-- Dictionary name. The dictionary will be accessed for use by this name. -->
+        <name>dns_type</name>
+
+        <!-- Data source. -->
+        <source>
+            <!-- Source is a file in the local file system. -->
+            <file>
+                <!-- Path on the local file system. -->
+                <path>/opt/dictionaries/dns_type.tsv</path>
+                <!-- Which format to use for reading the file. -->
+                <format>TabSeparated</format>
+            </file>
+        </source>
+        <lifetime>0</lifetime>
+        <layout> <!-- Method for storing in memory. -->
+            <flat />
+        </layout>
+        <structure>
+            <id>
+                <!-- Column name with ID. -->
+                <name>Id</name>
+            </id>
+
+            <attribute>
+                <!-- Column name. -->
+                <name>Name</name>
+                 <type>String</type>
+                <null_value>Invalid</null_value>
+            </attribute>
+      </structure>
+    </dictionary>
+    <dictionary>
+        <!-- Dictionary name. The dictionary will be accessed for use by this name. -->
+        <name>dns_class</name>
+
+        <!-- Data source. -->
+        <source>
+            <!-- Source is a file in the local file system. -->
+            <file>
+                <!-- Path on the local file system. -->
+                <path>/opt/dictionaries/dns_class.tsv</path>
+                <!-- Which format to use for reading the file. -->
+                <format>TabSeparated</format>
+            </file>
+        </source>
+        <lifetime>0</lifetime>
+        <layout> <!-- Method for storing in memory. -->
+            <flat />
+        </layout>
+        <structure>
+            <id>
+                <!-- Column name with ID. -->
+                <name>Id</name>
+            </id>
+
+            <attribute>
+                <!-- Column name. -->
+                <name>Name</name>
+                 <type>String</type>
+                <null_value>Invalid</null_value>
+            </attribute>
+      </structure>
+    </dictionary>
+    <dictionary>
+        <!-- Dictionary name. The dictionary will be accessed for use by this name. -->
+        <name>dns_opcode</name>
+
+        <!-- Data source. -->
+        <source>
+            <!-- Source is a file in the local file system. -->
+            <file>
+                <!-- Path on the local file system. -->
+                <path>/opt/dictionaries/dns_opcode.tsv</path>
+                <!-- Which format to use for reading the file. -->
+                <format>TabSeparated</format>
+            </file>
+        </source>
+        <lifetime>0</lifetime>
+        <layout> <!-- Method for storing in memory. -->
+            <flat />
+        </layout>
+        <structure>
+            <id>
+                <!-- Column name with ID. -->
+                <name>Id</name>
+            </id>
+
+            <attribute>
+                <!-- Column name. -->
+                <name>Name</name>
+                 <type>String</type>
+                <null_value>Invalid</null_value>
+            </attribute>
+      </structure>
+    </dictionary>
+</dictionaries>

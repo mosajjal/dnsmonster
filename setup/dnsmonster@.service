@@ -1,0 +1,10 @@
+[Unit]
+Description=DNS Zeppelin
+After=network.target
+
+[Service]
+User=root
+ExecStart=/opt/dnsmonster/dnsmonster -serverName %H-%i -clickhouseAddress 127.0.0.1:9000 -devName %i -batchSize 1000000
+
+[Install]
+WantedBy=multi-user.target

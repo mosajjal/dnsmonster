@@ -1,8 +1,12 @@
 # DNS Monster
 
-Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana
+Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana: [Blogpost](https://blog.n0p.me/dnsmonster/)
 
-[Blogpost](https://blog.n0p.me/dnsmonster/)
+# Build Manually
+
+Make sure you have `libpcap-devel` package installed
+
+`go get gitlab.com/mosajjal/dnsmonster`
 
 # Installation Steps
 

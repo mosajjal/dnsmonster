@@ -127,7 +127,7 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 
 					ip := batch[k].DstIP
 					if batch[k].IPVersion == 4 {
-						ip = ip.Mask(net.IPv4Mask(0xff, 0, 0, 0))
+						ip = ip.Mask(net.IPv4Mask(0xff, 0xff, 0xff, 0xff))
 					}
 					b.WriteUInt32(4, binary.BigEndian.Uint32(ip[:4]))
 					b.WriteFixedString(5, []byte(batch[k].Protocol))

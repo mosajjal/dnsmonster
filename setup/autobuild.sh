@@ -22,6 +22,7 @@ podman cp dictionaries/dns_class.tsv dns-clickhouse-server:/opt/dictionaries/
 podman cp dictionaries/dns_opcode.tsv dns-clickhouse-server:/opt/dictionaries/
 podman cp dictionaries/dns_responce.tsv dns-clickhouse-server:/opt/dictionaries/
 podman cp dictionaries/dns_type.tsv dns-clickhouse-server:/opt/dictionaries/
+podman cp config.xml dns-clickhouse-server:/etc/clickhouse-server/config.xml
 
 # clickhouse server service
 cp clickhouse.service /etc/systemd/system/clickhouse.service

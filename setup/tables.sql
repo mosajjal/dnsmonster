@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS DNS_LOG (
   ResponceCode UInt8,
   Question String,
   Size UInt16
-) engine=MergeTree(DnsDate, (timestamp, Server), 8192);
+) engine=MergeTree partition by toYYYYMM(DnsDate)
+  order by (timestamp, Server)
+  TTL DnsDate + INTERVAL 1 MONTH
 
 -- View for top queried domains
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_COUNT

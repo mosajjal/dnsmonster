@@ -6,7 +6,6 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go"
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
-	// cdns "github.com/mosajjal/dnsmonster"
 	"log"
 	"net"
 	"sync"

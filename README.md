@@ -6,7 +6,7 @@ Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana:
 
 Make sure you have `libpcap-devel` package installed
 
-`go get gitlab.com/mosajjal/dnsmonster`
+`go get gitlab.com/mosajjal/dnsmonster/src`
 
 ## Static Build (WIP)
 

@@ -12,7 +12,7 @@ Make sure you have `libpcap-devel` package installed
 
 ```
  $ git clone https://gitlab.com/mosajjal/dnsmonster
- $ cd dnsmonster
+ $ cd dnsmonster/src/
  $ go get
  $ go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
 ```
@@ -31,7 +31,7 @@ Make sure you have `libpcap-devel` package installed
 * Clone the repo
 ```
 git clone https://gitlab.com/mosajjal/dnsmonster.git
-cd dnsmonster/setup/
+cd dnsmonster/
 ```
 
 * open `autobuild.sh` and edit `IFACE` variable with your TAP interface 

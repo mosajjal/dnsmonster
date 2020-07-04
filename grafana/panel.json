@@ -1537,8 +1537,8 @@
         {
           "current": {
             "tags": [],
-            "text": "pcplsoc01",
-            "value": "pcplsoc01"
+            "text": "",
+            "value": ""
           },
           "hide": 0,
           "includeAll": false,
@@ -1584,7 +1584,8 @@
       ]
     },
     "timezone": "browser",
-    "title": "rDNS Monitoring",
+    "title": "DNS Monitoring",
+    "name": "dnsmonster",
     "uid": "lyxfOy-Wz",
     "version": 19
   }

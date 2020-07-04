@@ -1,0 +1,55 @@
+version: "3.3"
+
+services:
+  dnsmonster:
+    image: mosajjal/dnsmonster:0.1
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    depends_on:
+      - ch
+    environment:
+      - PUID=1000
+      - PGID=1000
+    command:
+      - "-serverName=hostname" # Chang this to your servername
+      - "-devName=wlp1s0" # Chang this to the interface you'd like to monitor
+      - "-clickhouseAddress=127.0.0.1:9000"
+      - "-batchSize=10000"
+  ch:
+    image: yandex/clickhouse-server:20.5
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9009:9009"
+    networks:
+      - monitoring
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144 
+    volumes:
+      - ./clickhouse/tables.sql:/tmp/tables.sql
+      - ./clickhouse/dictionaries/:/opt/dictionaries/
+      - ./clickhouse/dns_dictionary.xml:/etc/clickhouse-server/dns_dictionary.xml
+      - ./clickhouse/config.xml:/etc/clickhouse-server/config.xml
+      - /mnt/flash/ch-data/logs/:/var/log/clickhouse-server/
+      - /mnt/flash/ch-data/data/:/var/lib/clickhouse/
+    healthcheck:
+        test: ["CMD", "wget", "-O-", "-q", "http://localhost:8123/?query=SELECT name FROM system.tables WHERE name = 'DNS_LOG'"]
+        interval: 1m
+        timeout: 10s
+        retries: 3
+  grafana:
+    image: grafana/grafana:7.1.0-beta2
+    ports:
+      - "3000:3000"
+    networks:
+       - monitoring
+    depends_on:
+      - ch
+    volumes:
+      - ./grafana/plugins:/var/lib/grafana/plugins/
+      - ./bin/curl:/sbin/curl
+networks:
+  monitoring:

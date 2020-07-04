@@ -10,11 +10,12 @@ Make sure you have `libpcap-devel` package installed
 
 ## Static Build (WIP)
 
-`$ git clone https://gitlab.com/mosajjal/dnsmonster`
-`$ cd dnsmonster`
-`$ go get`
-`$ go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster`
-
+```
+ $ git clone https://gitlab.com/mosajjal/dnsmonster
+ $ cd dnsmonster
+ $ go get
+ $ go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
+```
 # Installation Steps
 
 * Identify the interface(s) you're trying to monitor

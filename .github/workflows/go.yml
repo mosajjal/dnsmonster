@@ -30,7 +30,9 @@ jobs:
         fi
 
     - name: Build
-      run: go build -v src
+      path: 'src'
+      run: go build -v .
 
     - name: Test
-      run: go test -v src
+      path: 'src'
+      run: go test -v .

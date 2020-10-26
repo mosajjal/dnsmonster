@@ -20,4 +20,5 @@ jobs:
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         project_path: src
+        pre_command: 'apt install -y libpcap-dev'
         

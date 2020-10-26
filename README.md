@@ -5,9 +5,13 @@ Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana:
 
 # Quick start
 
-# AIO Installation using Docker
+## AIO Installation using Docker
 
-running `./autobuild.sh` now creates 3 containers:
+![Basic AIO Diagram](static/dnsmonster-basic.svg)
+
+In the example diagram, the egress/ingress of the DNS server traffic is captured, after that, an optional layer of packet aggregation is added before hitting the DNSMonster Server. The outbound data going out of DNS Servers is quite useful to perform cache and performance analysis on the DNS fleet. If an aggregator is not available for you, you can have both TAPs connected directly to DNSMonster and have two DNSMonster Agents looking at the traffic. 
+
+running `./autobuild.sh` creates 3 containers:
 
 * an instance of `dnsmonster` to look at the traffic on `lo` interface (you can change the interface from the `docker-compose.yml`)
 * an instance of `clickhouse` to collect `dnsmonster`'s output and saves all the logs/data to `/opt/ch-data/` (Can be changed from `docker-compose.yml`)
@@ -17,9 +21,21 @@ running `./autobuild.sh` now creates 3 containers:
 
 The default retention policy for the DNS data is set to 30 days. You can change the number *BEFORE* running `./autobuild.sh` by editing `clickhouse/tables.sql`, in the line `TTL DnsDate + INTERVAL 30 DAY;`
 
+NOTE: to change a TTL at any point in time, you need to directly connect to the Clickhouse server using a `clickhouse` client and run the following SQL statement (this example changes it from 30 to 90 days):
+
+`ALTER TABLE DNS_LOG MODIFY TTL DnsDate + INTERVAL 90 DAY;` 
+
 ## Scalable deployment Howto
 
-Coming soon!
+### Clickhouse Cluster
+
+![Basic AIO Diagram](static/dnsmonster-enterprise.svg)
+
+### Set up a ClickHouse Cluster
+
+Clickhouse website provides an excellent tutorial on how to create a cluster with a "virtual" table [link](https://clickhouse.tech/docs/en/getting-started/tutorial/#cluster-deployment). Note that `DNS_LOG` has to be created virtually in this cluster in order to provide HA and load balancing across the nodes. 
+
+Configuration of Agent as well as Grafana is Coming soon!
 
 # Build Manually
 
@@ -38,4 +54,4 @@ Make sure you have `libpcap-devel` package installed
 
 ## pre-built Binary
 
-The latest version will be available here:`n0p.me/bin/dnsmonster`
+There are two binary flavours released for each release. A statically-linked self-contained binary built against `musl` on Alpine Linux, which will be maintained [here](`n0p.me/bin/dnsmonster`), and dynamically linked binaries for Windows and Linux, which will depend on `libpcap`. These releases are built against `glibc` so they will have a slight performance advantage over `musl`. These builds will be available in the [release](https://github.com/mosajjal/dnsmonster/releases) section of Github repository. 

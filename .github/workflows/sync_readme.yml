@@ -1,0 +1,8 @@
+steps:
+- uses: actions/checkout@main
+
+- uses: meeDamian/sync-readme@v1.0.6
+  with:
+    pass: ${{ secrets.DOCKER_PASS }}
+    description: true
+  

@@ -133,6 +133,13 @@ $dnsmonsteragenttext
 $dockercomposetemplate
 EOT
 
+read -p "What is the DNS retention policy (days) on this host? default is 30: " ttl_days
+ttl_days=${ttl_days:-30}
+new_ttl_line="TTL DnsDate + INTERVAL $ttl_days DAY; -- DNS_TTL_VARIABLE"
+old_ttl_line="TTL DnsDate + INTERVAL 30 DAY; -- DNS_TTL_VARIABLE"
+
+sed -i "s/$old_ttl_line/$new_ttl_line/" ./clickhouse/tables.sql
+
 echo "Starting the containers..."
 docker-compose up -d
 

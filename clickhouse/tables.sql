@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS DNS_LOG (
   Size UInt16
 ) engine=MergeTree partition by toYYYYMM(DnsDate)
   order by (timestamp, Server)
-  TTL DnsDate + INTERVAL 30 DAY;
+  TTL DnsDate + INTERVAL 30 DAY; -- DNS_TTL_VARIABLE
 
 -- View for top queried domains
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_COUNT

@@ -27,7 +27,7 @@ NOTE: to change a TTL at any point in time, you need to directly connect to the 
 
 ## AIO Demo
 
-[![asciicast](https://asciinema.org/a/369269)](https://asciinema.org/a/369269)
+[![AIO Demo](static/aio_demo.svg)](static/aio_demo.svg)
 
 
 ## Scalable deployment Howto

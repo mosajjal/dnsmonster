@@ -25,6 +25,11 @@ NOTE: to change a TTL at any point in time, you need to directly connect to the 
 
 `ALTER TABLE DNS_LOG MODIFY TTL DnsDate + INTERVAL 90 DAY;` 
 
+## AIO Demo
+
+[![asciicast](https://asciinema.org/a/369269)](https://asciinema.org/a/369269)
+
+
 ## Scalable deployment Howto
 
 ### Clickhouse Cluster

@@ -11,15 +11,15 @@ Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana:
 
 In the example diagram, the egress/ingress of the DNS server traffic is captured, after that, an optional layer of packet aggregation is added before hitting the DNSMonster Server. The outbound data going out of DNS Servers is quite useful to perform cache and performance analysis on the DNS fleet. If an aggregator is not available for you, you can have both TAPs connected directly to DNSMonster and have two DNSMonster Agents looking at the traffic. 
 
-running `./autobuild.sh` creates 3 containers:
+running `./autobuild.sh` creates multiple containers:
 
-* an instance of `dnsmonster` to look at the traffic on `lo` interface (you can change the interface from the `docker-compose.yml`)
-* an instance of `clickhouse` to collect `dnsmonster`'s output and saves all the logs/data to `/opt/ch-data/` (Can be changed from `docker-compose.yml`)
+* multiple instances of `dnsmonster` to look at the traffic on any interface. Interface list will be prompted as part of `autobuild.sh`
+* an instance of `clickhouse` to collect `dnsmonster`'s output and saves all the logs/data to a data and logs directory. Both will be prompted as part of `autobuild.sh`
 * an instance of `grafana` looking at the `clickhouse` data with pre-built dashboard.
 
 ## What's the retention policy
 
-The default retention policy for the DNS data is set to 30 days. You can change the number *BEFORE* running `./autobuild.sh` by editing `clickhouse/tables.sql`, in the line `TTL DnsDate + INTERVAL 30 DAY;`
+The default retention policy for the DNS data is set to 30 days. You can change the number by building the containers using `./autobuild.sh`.
 
 NOTE: to change a TTL at any point in time, you need to directly connect to the Clickhouse server using a `clickhouse` client and run the following SQL statement (this example changes it from 30 to 90 days):
 
@@ -33,7 +33,7 @@ NOTE: to change a TTL at any point in time, you need to directly connect to the 
 
 ### Set up a ClickHouse Cluster
 
-Clickhouse website provides an excellent tutorial on how to create a cluster with a "virtual" table [link](https://clickhouse.tech/docs/en/getting-started/tutorial/#cluster-deployment). Note that `DNS_LOG` has to be created virtually in this cluster in order to provide HA and load balancing across the nodes. 
+Clickhouse website provides an excellent tutorial on how to create a cluster with a "virtual" table, [reference](https://clickhouse.tech/docs/en/getting-started/tutorial/#cluster-deployment). Note that `DNS_LOG` has to be created virtually in this cluster in order to provide HA and load balancing across the nodes. 
 
 Configuration of Agent as well as Grafana is Coming soon!
 

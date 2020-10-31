@@ -3,12 +3,11 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
+	"runtime"
 	"runtime/pprof"
 	"sync"
 	"time"
-	"os"
-	"runtime"
-	
 )
 
 var devName = flag.String("devName", "", "Device used to capture")
@@ -21,6 +20,7 @@ var port = flag.Uint("port", 53, "Port selected to filter packets")
 var gcTime = flag.Uint("gcTime", 10, "Time in seconds to garbage collect the tcp assembly and ip defragmentation")
 var clickhouseAddress = flag.String("clickhouseAddress", "localhost:9000", "Address of the clickhouse database to save the results")
 var clickhouseDelay = flag.Uint("clickhouseDelay", 1, "Number of seconds to batch the packets")
+var maskSize = flag.Int("maskSize", 32, "Mask source IPs by bits. 32 means all the bits of IP is saved in DB")
 var serverName = flag.String("serverName", "default", "Name of the server used to index the metrics.")
 var batchSize = flag.Uint("batchSize", 100000, "Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations")
 var packetHandlerCount = flag.Uint("packetHandlers", 1, "Number of routines used to handle received packets")
@@ -46,7 +46,9 @@ func checkFlags() {
 	if *port > 65535 {
 		log.Fatal("-port must be between 1 and 65535")
 	}
-
+	if *maskSize > 32 || *maskSize < 0 {
+		log.Fatal("-maskSize must be between 0 and 32")
+	}
 	if *devName == "" && *pcapFile == "" {
 		log.Fatal("-devName or -pcapFile is required")
 	}

@@ -4,12 +4,13 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/ClickHouse/clickhouse-go"
-	data "github.com/ClickHouse/clickhouse-go/lib/data"
 	"log"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/ClickHouse/clickhouse-go"
+	data "github.com/ClickHouse/clickhouse-go/lib/data"
 )
 
 func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse.Clickhouse {
@@ -126,7 +127,7 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 
 					ip := batch[k].DstIP
 					if batch[k].IPVersion == 4 {
-						ip = ip.Mask(net.IPv4Mask(0xff, 0xff, 0xff, 0xff))
+						ip = ip.Mask(net.CIDRMask(*maskSize, 32))
 					}
 					b.WriteUInt32(4, binary.BigEndian.Uint32(ip[:4]))
 					b.WriteFixedString(5, []byte(batch[k].Protocol))

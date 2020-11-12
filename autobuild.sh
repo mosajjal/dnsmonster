@@ -53,7 +53,7 @@ EOF
 dnsmonsteragent=$(cat <<EOF
 
   dnsmonster_DEVNAME:
-    image: mosajjal/dnsmonster:0.1
+    image: mosajjal/dnsmonster:latest
     cap_add:
       - NET_ADMIN
     network_mode: host

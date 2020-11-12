@@ -1,14 +1,14 @@
 <dictionaries>
     <dictionary>
         <!-- Dictionary name. The dictionary will be accessed for use by this name. -->
-        <name>dns_responce</name>
+        <name>dns_response</name>
 
         <!-- Data source. -->
         <source>
             <!-- Source is a file in the local file system. -->
             <file>
                 <!-- Path on the local file system. -->
-                <path>/opt/dictionaries/dns_responce.tsv</path>
+                <path>/opt/dictionaries/dns_response.tsv</path>
                 <!-- Which format to use for reading the file. -->
                 <format>TabSeparated</format>
             </file>

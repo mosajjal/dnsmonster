@@ -65,6 +65,7 @@ func checkFlags() {
 func main() {
 	checkFlags()
 	if *cpuprofile != "" {
+		log.Println("Writing CPU profile")
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
@@ -90,7 +91,8 @@ func main() {
 				log.Fatal("could not create memory profile: ", err)
 			}
 			runtime.GC() // get up-to-date statistics
-			if err := pprof.WriteHeapProfile(f); err != nil {
+
+			if err := pprof.Lookup("heap").WriteTo(f, 0); err != nil {
 				log.Fatal("could not write memory profile: ", err)
 			}
 			f.Close()

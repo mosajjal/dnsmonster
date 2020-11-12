@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS DNS_LOG (
   Type UInt16,
   Edns0Present UInt8,
   DoBit UInt8,
-  ResponceCode UInt8,
+  ResponseCode UInt8,
   Question String,
   Size UInt16
 ) engine=MergeTree partition by toYYYYMM(DnsDate)
@@ -59,9 +59,9 @@ ENGINE=SummingMergeTree(DnsDate, (timestamp, Server, Class), 8192, c) AS
   SELECT DnsDate, timestamp, Server, Class, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp, Class;
 
 -- View with query responses
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_RESPONCECODE
-ENGINE=SummingMergeTree(DnsDate, (timestamp, Server, ResponceCode), 8192, c) AS
-  SELECT DnsDate, timestamp, Server, ResponceCode, count(*) as c FROM DNS_LOG WHERE QR=1 GROUP BY Server, DnsDate, timestamp, ResponceCode;
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_RESPONSECODE
+ENGINE=SummingMergeTree(DnsDate, (timestamp, Server, ResponseCode), 8192, c) AS
+  SELECT DnsDate, timestamp, Server, ResponseCode, count(*) as c FROM DNS_LOG WHERE QR=1 GROUP BY Server, DnsDate, timestamp, ResponseCode;
 
 -- View with IP Prefix
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_IP_MASK

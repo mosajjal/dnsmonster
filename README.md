@@ -121,3 +121,4 @@ There are two binary flavours released for each release. A statically-linked sel
 - [ ] More DB engine support (Influx, Elasticsearch etc)
 - [ ] Getting the data ready to be used for Anomaly Detection
 - [ ] Grafana dashboard performance improvements
+- [ ] remove libpcap dependency and move to `pcapgo`

@@ -8,6 +8,8 @@ on:
 
 jobs:
   sync:
+    name: Sync
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@main
 

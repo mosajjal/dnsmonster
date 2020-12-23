@@ -111,3 +111,13 @@ Make sure you have `libpcap-devel` package installed
 ## pre-built Binary
 
 There are two binary flavours released for each release. A statically-linked self-contained binary built against `musl` on Alpine Linux, which will be maintained [here](`n0p.me/bin/dnsmonster`), and dynamically linked binaries for Windows and Linux, which will depend on `libpcap`. These releases are built against `glibc` so they will have a slight performance advantage over `musl`. These builds will be available in the [release](https://github.com/mosajjal/dnsmonster/releases) section of Github repository. 
+
+## TODO
+- [x] Down-sampling capability for SELECT queries
+- [ ] Splunk Dashboard
+- [ ] Exclude FQDNs from being indexed
+- [ ] Configuration file option
+- [ ] Adding an optional Kafka middleware
+- [ ] More DB engine support (Influx, Elasticsearch etc)
+- [ ] Getting the data ready to be used for Anomaly Detection
+- [ ] Grafana dashboard performance improvements

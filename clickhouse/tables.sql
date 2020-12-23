@@ -13,10 +13,16 @@ CREATE TABLE IF NOT EXISTS DNS_LOG (
   DoBit UInt8,
   ResponseCode UInt8,
   Question String,
-  Size UInt16
-) engine=MergeTree partition by toYYYYMM(DnsDate)
-  order by (timestamp, Server)
-  TTL DnsDate + INTERVAL 30 DAY; -- DNS_TTL_VARIABLE
+  Size UInt16,
+  ID UUID
+) 
+  ENGINE = MergeTree()
+  PARTITION BY toYYYYMMDD(DnsDate)
+  PRIMARY KEY (timestamp , Server, cityHash64(ID))
+  ORDER BY (timestamp, Server, cityHash64(ID))
+  SAMPLE BY cityHash64(ID)
+  TTL DnsDate + INTERVAL 7 DAY -- DNS_TTL_VARIABLE
+  SETTINGS index_granularity = 8192;
 
 -- View for top queried domains
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_COUNT

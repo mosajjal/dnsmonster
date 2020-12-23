@@ -11,6 +11,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go"
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
+	uuid "github.com/satori/go.uuid"
 )
 
 func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse.Clickhouse {
@@ -34,6 +35,7 @@ func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse
 }
 
 func connectClickhouse(exiting chan bool, clickhouseHost string) (clickhouse.Clickhouse, error) {
+	// TODO: THIS debug should be a parameter
 	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=false", clickhouseHost))
 	if err != nil {
 		log.Println(err)
@@ -94,7 +96,7 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 		return err
 	}
 
-	_, err = connect.Prepare("INSERT INTO DNS_LOG (DnsDate, timestamp, Server, IPVersion, IPPrefix, Protocol, QR, OpCode, Class, Type, ResponseCode, Question, Size, Edns0Present, DoBit) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	_, err = connect.Prepare("INSERT INTO DNS_LOG (DnsDate, timestamp, Server, IPVersion, IPPrefix, Protocol, QR, OpCode, Class, Type, ResponseCode, Question, Size, Edns0Present, DoBit, ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
@@ -119,30 +121,15 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 			b.Reserve()
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
-					b.NumRows++
-					b.WriteDate(0, batch[k].Timestamp)
-					b.WriteDateTime(1, batch[k].Timestamp)
-					b.WriteBytes(2, server)
-					b.WriteUInt8(3, batch[k].IPVersion)
-
+					// getting variables ready
 					ip := batch[k].DstIP
 					if batch[k].IPVersion == 4 {
 						ip = ip.Mask(net.CIDRMask(*maskSize, 32))
 					}
-					b.WriteUInt32(4, binary.BigEndian.Uint32(ip[:4]))
-					b.WriteFixedString(5, []byte(batch[k].Protocol))
 					QR := uint8(0)
 					if batch[k].DNS.Response {
 						QR = 1
 					}
-
-					b.WriteUInt8(6, QR)
-					b.WriteUInt8(7, uint8(batch[k].DNS.Opcode))
-					b.WriteUInt16(8, uint16(dnsQuery.Qclass))
-					b.WriteUInt16(9, uint16(dnsQuery.Qtype))
-					b.WriteUInt8(10, uint8(batch[k].DNS.Rcode))
-					b.WriteString(11, string(dnsQuery.Name))
-					b.WriteUInt16(12, batch[k].PacketLength)
 					edns, doBit := uint8(0), uint8(0)
 					if edns0 := batch[k].DNS.IsEdns0(); edns0 != nil {
 						edns = 1
@@ -150,8 +137,25 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 							doBit = 1
 						}
 					}
+
+					b.NumRows++
+					//writing the vars into a SQL statement
+					b.WriteDate(0, batch[k].Timestamp)
+					b.WriteDateTime(1, batch[k].Timestamp)
+					b.WriteBytes(2, server)
+					b.WriteUInt8(3, batch[k].IPVersion)
+					b.WriteUInt32(4, binary.BigEndian.Uint32(ip[:4]))
+					b.WriteFixedString(5, []byte(batch[k].Protocol))
+					b.WriteUInt8(6, QR)
+					b.WriteUInt8(7, uint8(batch[k].DNS.Opcode))
+					b.WriteUInt16(8, uint16(dnsQuery.Qclass))
+					b.WriteUInt16(9, uint16(dnsQuery.Qtype))
+					b.WriteUInt8(10, uint8(batch[k].DNS.Rcode))
+					b.WriteString(11, string(dnsQuery.Name))
+					b.WriteUInt16(12, batch[k].PacketLength)
 					b.WriteUInt8(13, edns)
 					b.WriteUInt8(14, doBit)
+					b.WriteFixedString(15, uuid.NewV4().Bytes())
 				}
 			}
 			if err := connect.WriteBlock(b); err != nil {

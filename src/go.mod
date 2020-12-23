@@ -2,13 +2,13 @@ module github.com/mosajjal/dnsmonster
 
 go 1.15
 
-require github.com/sirupsen/logrus v1.7.0
-
 require github.com/google/gopacket v1.1.19
 
 require (
 	github.com/ClickHouse/clickhouse-go v1.4.3
-	github.com/google/pprof v0.0.0-20201023163331-3e6fc7fc9c4c // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/miekg/dns v1.1.35
+	github.com/satori/go.uuid v1.2.0
 	golang.org/x/sys v0.0.0-20201106081118-db71ae66460a // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )

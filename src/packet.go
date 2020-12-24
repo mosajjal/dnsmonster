@@ -3,10 +3,11 @@ package main
 import (
 	"time"
 
+	"net"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	mkdns "github.com/miekg/dns"
-	"net"
 )
 
 type packetEncoder struct {

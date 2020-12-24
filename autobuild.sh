@@ -12,6 +12,7 @@ EOF
 dockercomposetemplate=$(cat <<EOF
   ch:
     image: yandex/clickhouse-server:20.5
+    restart: always
     ports:
       - "8123:8123"
       - "9000:9000"
@@ -21,7 +22,7 @@ dockercomposetemplate=$(cat <<EOF
     ulimits:
       nofile:
         soft: 262144
-        hard: 262144 
+        hard: 262144
     volumes:
       - ./clickhouse/tables.sql:/tmp/tables.sql
       - ./clickhouse/dictionaries/:/opt/dictionaries/
@@ -36,6 +37,7 @@ dockercomposetemplate=$(cat <<EOF
         retries: 3
   grafana:
     image: grafana/grafana:7.1.0-beta2
+    restart: always
     ports:
       - "3000:3000"
     networks:
@@ -54,6 +56,7 @@ dnsmonsteragent=$(cat <<EOF
 
   dnsmonster_DEVNAME:
     image: mosajjal/dnsmonster:latest
+    restart: always
     cap_add:
       - NET_ADMIN
     network_mode: host
@@ -63,7 +66,7 @@ dnsmonsteragent=$(cat <<EOF
       - PUID=1000
       - PGID=1000
     command:
-      - "-serverName=HOSTNAME" 
+      - "-serverName=HOSTNAME"
       - "-devName=DEVNAME"
       - "-clickhouseAddress=127.0.0.1:9000"
       - "-batchSize=BATCHSIZE"
@@ -74,7 +77,7 @@ EOF
 echo "Starting the DNSMonster AIO Builder using docker-compose."
 echo "IMPORTANT: this script should be run when you are inside dnsmonster directory (./autobuild.sh). Do NOT run this from another directory"
 echo -n "before we begin, make sure to have TCP ports 3000, 8123 and 9000 available in your host machine and press Enter to continue..."
-read 
+read
 echo -n "Checking if docker-compose binary exists.."
 which docker-compose
 echo -n "Checking to see if Docker binary exists..."

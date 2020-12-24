@@ -25,6 +25,7 @@ var serverName = flag.String("serverName", "default", "Name of the server used t
 var batchSize = flag.Uint("batchSize", 100000, "Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations")
 var packetHandlerCount = flag.Uint("packetHandlers", 1, "Number of routines used to handle received packets")
 var tcpHandlerCount = flag.Uint("tcpHandlers", 1, "Number of routines used to handle tcp assembly")
+var useAfpacket = flag.Bool("useAfpacket", false, "Use AFPacket for live captures")
 var packetChannelSize = flag.Uint("packetHandlerChannelSize", 100000, "Size of the packet handler channel")
 var tcpAssemblyChannelSize = flag.Uint("tcpAssemblyChannelSize", 1000, "Size of the tcp assembler")
 var tcpResultChannelSize = flag.Uint("tcpResultChannelSize", 1000, "Size of the tcp result channel")
@@ -102,6 +103,7 @@ func main() {
 	// Start listening
 	capturer := NewDNSCapturer(CaptureOptions{
 		*devName,
+		*useAfpacket,
 		*pcapFile,
 		*filter,
 		uint16(*port),

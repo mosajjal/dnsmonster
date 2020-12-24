@@ -9,12 +9,16 @@ import (
 	"os/signal"
 
 	"github.com/google/gopacket"
+	"github.com/google/gopacket/afpacket"
+	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	mkdns "github.com/miekg/dns"
+	"golang.org/x/net/bpf"
 )
 
 type CaptureOptions struct {
 	DevName                      string
+	useAfpacket                  bool
 	PcapFile                     string
 	Filter                       string
 	Port                         uint16
@@ -59,6 +63,101 @@ func initializeLivePcap(devName, filter string) *pcap.Handle {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	return handle
+}
+
+type afpacketHandle struct {
+	TPacket *afpacket.TPacket
+}
+
+func (h *afpacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
+	return h.TPacket.ReadPacketData()
+}
+
+func (h *afpacketHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
+	return h.TPacket.ZeroCopyReadPacketData()
+}
+func (h *afpacketHandle) LinkType() layers.LinkType {
+	return layers.LinkTypeEthernet
+}
+func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
+	pcapBPF, err := pcap.CompileBPFFilter(layers.LinkTypeEthernet, snaplen, filter)
+	if err != nil {
+		return err
+	}
+	bpfIns := []bpf.RawInstruction{}
+	for _, ins := range pcapBPF {
+		bpfIns2 := bpf.RawInstruction{
+			Op: ins.Code,
+			Jt: ins.Jt,
+			Jf: ins.Jf,
+			K:  ins.K,
+		}
+		bpfIns = append(bpfIns, bpfIns2)
+	}
+	if h.TPacket.SetBPF(bpfIns); err != nil {
+		return err
+	}
+	return h.TPacket.SetBPF(bpfIns)
+}
+
+func (h *afpacketHandle) Close() {
+	h.TPacket.Close()
+	// previous state detected only if auto mode was on
+	// if h.promiscPreviousStateDetected {
+	// 	if err := setPromiscMode(h.device, h.promiscPreviousState); err != nil {
+	// 		logp.Warn("Failed to reset promiscuous mode for device '%s'. Your device might be in promiscuous mode.: %v", h.device, err)
+	// 	}
+	// }
+}
+func afpacketComputeSize(targetSizeMb int, snaplen int, pageSize int) (
+	frameSize int, blockSize int, numBlocks int, err error) {
+
+	if snaplen < pageSize {
+		frameSize = pageSize / (pageSize / snaplen)
+	} else {
+		frameSize = (snaplen/pageSize + 1) * pageSize
+	}
+
+	// 128 is the default from the gopacket library so just use that
+	blockSize = frameSize * 128
+	numBlocks = (targetSizeMb * 1024 * 1024) / blockSize
+
+	if numBlocks == 0 {
+		log.Println("Interface buffersize is too small")
+		return 0, 0, 0, err
+	}
+
+	return frameSize, blockSize, numBlocks, nil
+}
+func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
+	// Open device
+	// var tPacket *afpacket.TPacket
+	var err error
+	handle := &afpacketHandle{}
+
+	frame_size, block_size, num_blocks, err := afpacketComputeSize(
+		64,
+		65536,
+		os.Getpagesize())
+	if err != nil {
+		log.Fatalf("Error calculating afpacket size: %s", err)
+	}
+
+	handle.TPacket, err = afpacket.NewTPacket(
+		afpacket.OptInterface(devName),
+		afpacket.OptFrameSize(frame_size),
+		afpacket.OptBlockSize(block_size),
+		afpacket.OptNumBlocks(num_blocks),
+		afpacket.OptPollTimeout(pcap.BlockForever),
+		afpacket.SocketRaw,
+		afpacket.TPacketVersion3)
+	if err != nil {
+		log.Fatalf("Error opening afpacket interface: %s", err)
+	}
+
+	handle.SetBPFFilter(filter, 1024)
 
 	return handle
 }
@@ -132,32 +231,51 @@ func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 }
 
 func (capturer *DNSCapturer) Start() {
-	var handle *pcap.Handle
+	// var handle *pcap.Handle
+	var packetChan chan gopacket.Packet
 	options := capturer.options
-	if options.DevName != "" {
-		handle = initializeLivePcap(options.DevName, options.Filter)
+	if options.DevName != "" && !options.useAfpacket {
+		liveHandle := initializeLivePcap(options.DevName, options.Filter)
+		defer liveHandle.Close()
+		packetSource := gopacket.NewPacketSource(liveHandle, liveHandle.LinkType())
+		packetSource.DecodeOptions.Lazy = true
+		packetSource.NoCopy = true
+		packetChan = packetSource.Packets()
+		log.Println("Waiting for packets")
+	} else if options.DevName != "" && options.useAfpacket {
+		liveAFHandle := initializeLiveAFpacket(options.DevName, options.Filter)
+		defer liveAFHandle.Close()
+		packetSource := gopacket.NewPacketSource(liveAFHandle, liveAFHandle.LinkType())
+		packetSource.DecodeOptions.Lazy = true
+		packetSource.NoCopy = true
+		packetChan = packetSource.Packets()
+		log.Println("Waiting for packets using AFpacket")
 	} else {
-		handle = initializeOfflinePcap(options.PcapFile, options.Filter)
+		pcapHandle := initializeOfflinePcap(options.PcapFile, options.Filter)
+		defer pcapHandle.Close()
+		packetSource := gopacket.NewPacketSource(pcapHandle, pcapHandle.LinkType())
+		packetSource.DecodeOptions.Lazy = true
+		packetSource.NoCopy = true
+		packetChan = packetSource.Packets()
+		log.Println("Reading off Pcap file")
 	}
-	defer handle.Close()
 
 	// Setup SIGINT handling
 	handleInterrupt(options.Done)
-
-	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-	packetSource.DecodeOptions.Lazy = true
-	packetSource.NoCopy = true
-	log.Println("Waiting for packets")
-
+	// var i uint64
 	for {
 		select {
-		case packet := <-packetSource.Packets():
+		case packet := <-packetChan:
 			if packet == nil {
 				log.Println("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 10 seconds waiting for processing to finish")
 				time.Sleep(time.Second * 10)
 				close(options.Done)
 				return
 			}
+			// i++
+			// if i%10000 == 0 {
+			// 	log.Printf("%dth packer", i)
+			// }
 			select {
 			case capturer.processing <- packet:
 			case <-options.Done:

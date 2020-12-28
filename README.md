@@ -114,6 +114,7 @@ There are two binary flavours released for each release. A statically-linked sel
 
 ## TODO
 - [x] Down-sampling capability for SELECT queries
+- [x] Adding `afpacket` support
 - [ ] Splunk Dashboard
 - [ ] Exclude FQDNs from being indexed
 - [ ] Configuration file option

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"net"
@@ -15,6 +16,14 @@ import (
 	mkdns "github.com/miekg/dns"
 	"golang.org/x/net/bpf"
 )
+
+type Stats struct {
+	PacketsGot  int
+	PacketsLost int
+	sentToDB    int
+}
+
+var myStats Stats
 
 type CaptureOptions struct {
 	DevName                      string
@@ -138,7 +147,7 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	handle := &afpacketHandle{}
 
 	frame_size, block_size, num_blocks, err := afpacketComputeSize(
-		64,
+		4096,
 		65536,
 		os.Getpagesize())
 	if err != nil {
@@ -223,59 +232,53 @@ func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 		options.ResultChannel,
 		options.Done,
 	}
-
+	var wg sync.WaitGroup
 	for i := uint(0); i < options.PacketHandlerCount; i++ {
+		wg.Add(1)
 		go encoder.run()
 	}
 	return DNSCapturer{options, processingChannel}
 }
 
 func (capturer *DNSCapturer) Start() {
-	// var handle *pcap.Handle
-	var packetChan chan gopacket.Packet
+	var handle *pcap.Handle
+	var afhandle *afpacketHandle
+	var packetSource *gopacket.PacketSource
 	options := capturer.options
 	if options.DevName != "" && !options.useAfpacket {
-		liveHandle := initializeLivePcap(options.DevName, options.Filter)
-		defer liveHandle.Close()
-		packetSource := gopacket.NewPacketSource(liveHandle, liveHandle.LinkType())
-		packetSource.DecodeOptions.Lazy = true
-		packetSource.NoCopy = true
-		packetChan = packetSource.Packets()
+		handle = initializeLivePcap(options.DevName, options.Filter)
+		defer handle.Close()
+		packetSource = gopacket.NewPacketSource(handle, handle.LinkType())
 		log.Println("Waiting for packets")
 	} else if options.DevName != "" && options.useAfpacket {
-		liveAFHandle := initializeLiveAFpacket(options.DevName, options.Filter)
-		defer liveAFHandle.Close()
-		packetSource := gopacket.NewPacketSource(liveAFHandle, liveAFHandle.LinkType())
-		packetSource.DecodeOptions.Lazy = true
-		packetSource.NoCopy = true
-		packetChan = packetSource.Packets()
+		afhandle = initializeLiveAFpacket(options.DevName, options.Filter)
+		defer afhandle.Close()
+		packetSource = gopacket.NewPacketSource(afhandle, afhandle.LinkType())
 		log.Println("Waiting for packets using AFpacket")
 	} else {
-		pcapHandle := initializeOfflinePcap(options.PcapFile, options.Filter)
-		defer pcapHandle.Close()
-		packetSource := gopacket.NewPacketSource(pcapHandle, pcapHandle.LinkType())
-		packetSource.DecodeOptions.Lazy = true
-		packetSource.NoCopy = true
-		packetChan = packetSource.Packets()
+		handle = initializeOfflinePcap(options.PcapFile, options.Filter)
+		defer handle.Close()
+		packetSource = gopacket.NewPacketSource(handle, handle.LinkType())
 		log.Println("Reading off Pcap file")
 	}
+	packetSource.DecodeOptions.Lazy = true
+	packetSource.NoCopy = true
 
 	// Setup SIGINT handling
 	handleInterrupt(options.Done)
-	// var i uint64
+
+	captureStatsTicker := time.Tick(time.Second * 1)
+	printStatsTicker := time.Tick(time.Second * 10)
 	for {
+
 		select {
-		case packet := <-packetChan:
+		case packet := <-packetSource.Packets():
 			if packet == nil {
 				log.Println("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 10 seconds waiting for processing to finish")
 				time.Sleep(time.Second * 10)
 				close(options.Done)
 				return
 			}
-			// i++
-			// if i%10000 == 0 {
-			// 	log.Printf("%dth packer", i)
-			// }
 			select {
 			case capturer.processing <- packet:
 			case <-options.Done:
@@ -283,6 +286,20 @@ func (capturer *DNSCapturer) Start() {
 			}
 		case <-options.Done:
 			return
+		case <-captureStatsTicker:
+			if handle != nil {
+				mystats, _ := handle.Stats()
+				myStats.PacketsGot = mystats.PacketsReceived
+				myStats.PacketsLost = mystats.PacketsDropped
+			} else {
+				mystats, statsv3, _ := afhandle.TPacket.SocketStats()
+				myStats.PacketsGot = int(mystats.Packets() + statsv3.Packets())
+				myStats.PacketsLost = int(mystats.Drops() + statsv3.Drops())
+			}
+		case <-printStatsTicker:
+			log.Printf("%+v\n", myStats)
+
 		}
+
 	}
 }

@@ -11,7 +11,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go"
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
-	uuid "github.com/satori/go.uuid"
+	"github.com/rogpeppe/fastuuid"
 )
 
 func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse.Clickhouse {
@@ -81,6 +81,7 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 }
 
 func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) error {
+	uuidGen := fastuuid.MustNewGenerator()
 	if len(batch) == 0 {
 		return nil
 	}
@@ -89,8 +90,8 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 	if connect == nil {
 		return nil
 	}
-	log.Println("Sending ", len(batch))
-
+	// log.Println("Sending ", len(batch))
+	myStats.sentToDB += len(batch)
 	_, err := connect.Begin()
 	if err != nil {
 		return err
@@ -155,7 +156,10 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 					b.WriteUInt16(12, batch[k].PacketLength)
 					b.WriteUInt8(13, edns)
 					b.WriteUInt8(14, doBit)
-					b.WriteFixedString(15, uuid.NewV4().Bytes())
+					// b.WriteFixedString(15, uuid.NewV4().Bytes())
+					myUUID := uuidGen.Next()
+					b.WriteFixedString(15, myUUID[:16])
+					// b.WriteArray(15, uuidGen.Next())
 				}
 			}
 			if err := connect.WriteBlock(b); err != nil {

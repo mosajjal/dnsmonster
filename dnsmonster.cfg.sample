@@ -1,0 +1,25 @@
+AfpacketBuffersizeMb=64
+batchSize=100000
+captureStatsDelay=1s
+clickhouseAddress=localhost:9000
+clickhouseDelay=1
+cpuprofile=""
+defraggerChannelReturnSize=500
+defraggerChannelSize=500
+devName=lo
+filter=((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))
+gcTime=10
+loggerFilename=false
+maskSize=32
+memprofile=""
+packetHandlerChannelSize=100000
+packetHandlers=1
+packetLimit=0
+port=53
+printStatsDelay=10s
+resultChannelSize=100000
+serverName="default"
+tcpAssemblyChannelSize=1000
+tcpHandlers=1
+tcpResultChannelSize=1000
+useAfpacket=false

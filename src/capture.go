@@ -120,8 +120,8 @@ func (h *afpacketHandle) Close() {
 	// 	}
 	// }
 }
-func afpacketComputeSize(targetSizeMb int, snaplen int, pageSize int) (
-	frameSize int, blockSize int, numBlocks int, err error) {
+func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
+	frameSize uint, blockSize uint, numBlocks uint, err error) {
 
 	if snaplen < pageSize {
 		frameSize = pageSize / (pageSize / snaplen)
@@ -147,9 +147,9 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	handle := &afpacketHandle{}
 
 	frame_size, block_size, num_blocks, err := afpacketComputeSize(
-		4096,
+		*afPacketBuffersizeMb,
 		65536,
-		os.Getpagesize())
+		uint(os.Getpagesize()))
 	if err != nil {
 		log.Fatalf("Error calculating afpacket size: %s", err)
 	}
@@ -267,8 +267,8 @@ func (capturer *DNSCapturer) Start() {
 	// Setup SIGINT handling
 	handleInterrupt(options.Done)
 
-	captureStatsTicker := time.Tick(time.Second * 1)
-	printStatsTicker := time.Tick(time.Second * 10)
+	captureStatsTicker := time.Tick(*captureStatsDelay)
+	printStatsTicker := time.Tick(*printStatsDelay)
 	for {
 
 		select {

@@ -270,8 +270,9 @@ func (capturer *DNSCapturer) Start() {
 
 	captureStatsTicker := time.Tick(*captureStatsDelay)
 	printStatsTicker := time.Tick(*printStatsDelay)
+	var cnt = 0
 	for {
-
+		cnt++
 		select {
 		case packet := <-packetSource.Packets():
 			if packet == nil {
@@ -280,10 +281,16 @@ func (capturer *DNSCapturer) Start() {
 				close(options.Done)
 				return
 			}
-			select {
-			case capturer.processing <- packet:
-			case <-options.Done:
-				return
+
+			if cnt%ratioB < ratioA {
+				if cnt > ratioB*ratioA {
+					cnt = 0
+				}
+				select {
+				case capturer.processing <- packet:
+				case <-options.Done:
+					return
+				}
 			}
 		case <-options.Done:
 			return

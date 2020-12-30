@@ -12,7 +12,7 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 - Default values
 
 ## Command line options
-```shell
+```
 Usage of dnsmonster:
   -AfpacketBuffersizeMb=64: Afpacket Buffersize in MB
   -batchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations

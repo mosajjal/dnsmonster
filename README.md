@@ -38,6 +38,7 @@ Usage of dnsmonster:
   -port=53: Port selected to filter packets
   -printStatsDelay=10s: Number of seconds to print capture and database stats
   -resultChannelSize=100000: Size of the result processor channel size
+  -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
   -serverName="default": Name of the server used to index the metrics.
   -tcpAssemblyChannelSize=1000: Size of the tcp assembler
   -tcpHandlers=1: Number of routines used to handle tcp assembly

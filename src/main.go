@@ -5,6 +5,8 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,6 +32,7 @@ var printStatsDelay = fs.Duration("printStatsDelay", time.Second*10, "Number of 
 var maskSize = fs.Int("maskSize", 32, "Mask source IPs by bits. 32 means all the bits of IP is saved in DB")
 var serverName = fs.String("serverName", "default", "Name of the server used to index the metrics.")
 var batchSize = fs.Uint("batchSize", 100000, "Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations")
+var sampleRatio = fs.String("sampleRatio", "1:1", "Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets")
 var packetHandlerCount = fs.Uint("packetHandlers", 1, "Number of routines used to handle received packets")
 var tcpHandlerCount = fs.Uint("tcpHandlers", 1, "Number of routines used to handle tcp assembly")
 var useAfpacket = fs.Bool("useAfpacket", false, "Use AFPacket for live captures")
@@ -44,6 +47,10 @@ var cpuprofile = fs.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = fs.String("memprofile", "", "write memory profile to file")
 var loggerFilename = fs.Bool("loggerFilename", false, "Show the file name and number of the logged string")
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
+
+// Ratio numbers
+var ratioA int
+var ratioB int
 
 func checkFlags() {
 
@@ -69,6 +76,18 @@ func checkFlags() {
 
 	if *packetLimit < 0 {
 		log.Fatal("-packetLimit must be equal or greather than 0")
+	}
+
+	ratioNumbers := strings.Split(*sampleRatio, ":")
+	if len(ratioNumbers) != 2 {
+		log.Fatal("wrong -sampleRatio syntax")
+	}
+	var errA error
+	var errB error
+	ratioA, errA = strconv.Atoi(ratioNumbers[0])
+	ratioB, errB = strconv.Atoi(ratioNumbers[1])
+	if errA != nil || errB != nil || ratioA > ratioB {
+		log.Fatal("wrong -sampleRatio syntax")
 	}
 }
 

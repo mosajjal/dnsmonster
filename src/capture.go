@@ -18,9 +18,10 @@ import (
 )
 
 type Stats struct {
-	PacketsGot  int
-	PacketsLost int
-	sentToDB    int
+	PacketsGot        int
+	PacketsLost       int
+	PacketLossPercent float32
+	sentToDB          int
 }
 
 var myStats Stats
@@ -296,6 +297,8 @@ func (capturer *DNSCapturer) Start() {
 				myStats.PacketsGot = int(mystats.Packets() + statsv3.Packets())
 				myStats.PacketsLost = int(mystats.Drops() + statsv3.Drops())
 			}
+			myStats.PacketLossPercent = (float32(myStats.PacketsLost) * 100.0 / float32(myStats.PacketsGot))
+
 		case <-printStatsTicker:
 			log.Printf("%+v\n", myStats)
 

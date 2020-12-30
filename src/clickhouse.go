@@ -14,6 +14,8 @@ import (
 	"github.com/rogpeppe/fastuuid"
 )
 
+var uuidGen = fastuuid.MustNewGenerator()
+
 func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse.Clickhouse {
 	tick := time.NewTicker(5 * time.Second)
 	defer tick.Stop()
@@ -35,8 +37,7 @@ func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse
 }
 
 func connectClickhouse(exiting chan bool, clickhouseHost string) (clickhouse.Clickhouse, error) {
-	// TODO: THIS debug should be a parameter
-	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=false", clickhouseHost))
+	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v", clickhouseHost, *clickhouseDebug))
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -81,7 +82,6 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 }
 
 func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) error {
-	uuidGen := fastuuid.MustNewGenerator()
 	if len(batch) == 0 {
 		return nil
 	}

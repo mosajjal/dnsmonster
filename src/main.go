@@ -23,6 +23,8 @@ var port = fs.Uint("port", 53, "Port selected to filter packets")
 var gcTime = fs.Uint("gcTime", 10, "Time in seconds to garbage collect the tcp assembly and ip defragmentation")
 var clickhouseAddress = fs.String("clickhouseAddress", "localhost:9000", "Address of the clickhouse database to save the results")
 var clickhouseDelay = fs.Uint("clickhouseDelay", 1, "Number of seconds to batch the packets")
+var clickhouseDebug = fs.Bool("clickhouseDebug", false, "Debug Clickhouse connection")
+var clickhouseDryRun = fs.Bool("clickhouseDryRun", false, "process the packets but don't write them to clickhouse. This option will still try to connect to db. For testing only")
 var captureStatsDelay = fs.Duration("captureStatsDelay", time.Second, "Number of seconds to calculate interface stats")
 var printStatsDelay = fs.Duration("printStatsDelay", time.Second*10, "Number of seconds to print capture and database stats")
 var maskSize = fs.Int("maskSize", 32, "Mask source IPs by bits. 32 means all the bits of IP is saved in DB")
@@ -126,7 +128,6 @@ func main() {
 		exiting,
 	})
 	capturer.Start()
-
 	// Wait for the output to finish
 	log.Println("Exiting")
 	wg.Wait()

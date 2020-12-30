@@ -18,7 +18,9 @@ Usage of dnsmonster:
   -batchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
   -captureStatsDelay=1s: Number of seconds to calculate interface stats
   -clickhouseAddress="localhost:9000": Address of the clickhouse database to save the results
+  -clickhouseDebug=false: Debug Clickhouse connection
   -clickhouseDelay=1: Number of seconds to batch the packets
+  -clickhouseDryRun=false: process the packets but don't write them to clickhouse. This option will still try to connect to db. For testing only
   -config="": path to config file
   -cpuprofile="": write cpu profile to file
   -defraggerChannelReturnSize=500: Size of the channel where the defragged packets are returned

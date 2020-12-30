@@ -31,7 +31,7 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 				msg := mkdns.Msg{}
 				err := msg.Unpack(udp.Payload)
 				// Process if no error or truncated, as it will have most of the information it have available
-				if err == nil {
+				if err == nil && !*clickhouseDryRun {
 					encoder.resultChannel <- DNSResult{timestamp, msg, IPVersion, SrcIP, DstIP, "udp", uint16(len(udp.Payload))}
 				}
 			}
@@ -78,7 +78,7 @@ func (encoder *packetEncoder) run() {
 		select {
 		case data := <-encoder.tcpReturnChannel:
 			msg := mkdns.Msg{}
-			if err := msg.Unpack(data.data); err == nil {
+			if err := msg.Unpack(data.data); err == nil && !*clickhouseDryRun {
 				encoder.resultChannel <- DNSResult{data.timestamp, msg, data.IPVersion, data.SrcIP, data.DstIP, "tcp", uint16(len(data.data))}
 			}
 		case packet := <-encoder.ip4DefrggerReturn:

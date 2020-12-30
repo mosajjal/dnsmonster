@@ -137,3 +137,10 @@ There are two binary flavours released for each release. A statically-linked sel
 - [ ] Getting the data ready to be used for Anomaly Detection
 - [ ] Grafana dashboard performance improvements
 - [ ] remove libpcap dependency and move to `pcapgo`
+
+## Special Thanks to
+
+- [dnszeppelin](https://github.com/niclabs/dnszeppelin)
+- [passivedns](https://github.com/gamelinux/passivedns)
+- [gopassivedns](https://github.com/Phillipmartin/gopassivedns)
+- [packetbeat](https://github.com/elastic/beats/blob/master/packetbeat/)

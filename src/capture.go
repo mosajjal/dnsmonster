@@ -113,13 +113,7 @@ func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 }
 
 func (h *afpacketHandle) Close() {
-	h.TPacket.Close()
-	// previous state detected only if auto mode was on
-	// if h.promiscPreviousStateDetected {
-	// 	if err := setPromiscMode(h.device, h.promiscPreviousState); err != nil {
-	// 		logp.Warn("Failed to reset promiscuous mode for device '%s'. Your device might be in promiscuous mode.: %v", h.device, err)
-	// 	}
-	// }
+
 }
 func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	frameSize uint, blockSize uint, numBlocks uint, err error) {

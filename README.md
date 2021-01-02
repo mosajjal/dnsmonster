@@ -137,6 +137,7 @@ There are two binary flavours released for each release. A statically-linked sel
 - [ ] Getting the data ready to be used for Anomaly Detection
 - [ ] Grafana dashboard performance improvements
 - [ ] remove libpcap dependency and move to `pcapgo`
+- [ ] [dnstrap](https://github.com/dnstap/golang-dnstap) support
 
 ## Special Thanks to
 

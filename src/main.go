@@ -54,7 +54,10 @@ var ratioB int
 
 func checkFlags() {
 
-	fs.Parse(os.Args[1:])
+	err := fs.Parse(os.Args[1:])
+	if err != nil {
+		log.Fatal("Errors in parsing args")
+	}
 	if *loggerFilename {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	} else {

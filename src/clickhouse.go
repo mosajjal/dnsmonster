@@ -61,7 +61,7 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 	connect := connectClickhouseRetry(exiting, clickhouseHost)
 	batch := make([]DNSResult, 0, batchSize)
 
-	ticker := time.Tick(time.Duration(batchDelay) * time.Second)
+	ticker := time.Tick(time.Duration(batchDelay) * time.Millisecond)
 	for {
 		select {
 		case data := <-resultChannel:

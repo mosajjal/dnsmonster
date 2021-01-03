@@ -14,12 +14,12 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ## Command line options
 ```
 Usage of dnsmonster:
-  -AfpacketBuffersizeMb=64: Afpacket Buffersize in MB
+ -AfpacketBuffersizeMb=64: Afpacket Buffersize in MB
   -batchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
   -captureStatsDelay=1s: Number of seconds to calculate interface stats
   -clickhouseAddress="localhost:9000": Address of the clickhouse database to save the results
   -clickhouseDebug=false: Debug Clickhouse connection
-  -clickhouseDelay=1: Number of seconds to batch the packets
+  -clickhouseDelay=1000: Number of milliseconds to batch the packets
   -clickhouseDryRun=false: process the packets but don't write them to clickhouse. This option will still try to connect to db. For testing only
   -config="": path to config file
   -cpuprofile="": write cpu profile to file
@@ -28,6 +28,7 @@ Usage of dnsmonster:
   -devName="": Device used to capture
   -filter="((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))": BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
   -gcTime=10: Time in seconds to garbage collect the tcp assembly and ip defragmentation
+  -gomaxprocs=-1: GOMAXPROCS variable
   -loggerFilename=false: Show the file name and number of the logged string
   -maskSize=32: Mask source IPs by bits. 32 means all the bits of IP is saved in DB
   -memprofile="": write memory profile to file
@@ -44,6 +45,7 @@ Usage of dnsmonster:
   -tcpHandlers=1: Number of routines used to handle tcp assembly
   -tcpResultChannelSize=1000: Size of the tcp result channel
   -useAfpacket=false: Use AFPacket for live captures
+
 ```
 
 

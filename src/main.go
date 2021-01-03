@@ -24,7 +24,7 @@ var filter = fs.String("filter", "((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 
 var port = fs.Uint("port", 53, "Port selected to filter packets")
 var gcTime = fs.Uint("gcTime", 10, "Time in seconds to garbage collect the tcp assembly and ip defragmentation")
 var clickhouseAddress = fs.String("clickhouseAddress", "localhost:9000", "Address of the clickhouse database to save the results")
-var clickhouseDelay = fs.Uint("clickhouseDelay", 1, "Number of seconds to batch the packets")
+var clickhouseDelay = fs.Uint("clickhouseDelay", 1000, "Number of milliseconds to batch the packets")
 var clickhouseDebug = fs.Bool("clickhouseDebug", false, "Debug Clickhouse connection")
 var clickhouseDryRun = fs.Bool("clickhouseDryRun", false, "process the packets but don't write them to clickhouse. This option will still try to connect to db. For testing only")
 var captureStatsDelay = fs.Duration("captureStatsDelay", time.Second, "Number of seconds to calculate interface stats")
@@ -45,6 +45,7 @@ var defraggerChannelSize = fs.Uint("defraggerChannelSize", 500, "Size of the cha
 var defraggerChannelReturnSize = fs.Uint("defraggerChannelReturnSize", 500, "Size of the channel where the defragged packets are returned")
 var cpuprofile = fs.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = fs.String("memprofile", "", "write memory profile to file")
+var gomaxprocs = fs.Int("gomaxprocs", -1, "GOMAXPROCS variable")
 var loggerFilename = fs.Bool("loggerFilename", false, "Show the file name and number of the logged string")
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
 
@@ -96,6 +97,7 @@ func checkFlags() {
 
 func main() {
 	checkFlags()
+	runtime.GOMAXPROCS(*gomaxprocs)
 	if *cpuprofile != "" {
 		log.Println("Writing CPU profile")
 		f, err := os.Create(*cpuprofile)

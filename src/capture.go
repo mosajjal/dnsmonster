@@ -290,9 +290,11 @@ func (capturer *DNSCapturer) Start() {
 			return
 		case <-captureStatsTicker:
 			if handle != nil {
-				mystats, _ := handle.Stats()
-				myStats.PacketsGot = mystats.PacketsReceived
-				myStats.PacketsLost = mystats.PacketsDropped
+				mystats, err := handle.Stats()
+				if err == nil {
+					myStats.PacketsGot = mystats.PacketsReceived
+					myStats.PacketsLost = mystats.PacketsDropped
+				}
 			} else {
 				mystats, statsv3, _ := afhandle.TPacket.SocketStats()
 				myStats.PacketsGot = int(mystats.Packets() + statsv3.Packets())

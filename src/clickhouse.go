@@ -53,7 +53,7 @@ func min(a, b int) int {
 	return b
 }
 
-func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, clickhouseHost string, batchSize, batchDelay uint, limit int, server string) {
+func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, clickhouseHost string, batchSize uint, batchDelay time.Duration, limit int, server string) {
 	wg.Add(1)
 	defer wg.Done()
 	serverByte := []byte(server)
@@ -61,7 +61,7 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 	connect := connectClickhouseRetry(exiting, clickhouseHost)
 	batch := make([]DNSResult, 0, batchSize)
 
-	ticker := time.Tick(time.Duration(batchDelay) * time.Millisecond)
+	ticker := time.Tick(batchDelay)
 	for {
 		select {
 		case data := <-resultChannel:

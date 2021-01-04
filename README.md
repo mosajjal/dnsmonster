@@ -14,12 +14,12 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ## Command line options
 ```
 Usage of dnsmonster:
- -AfpacketBuffersizeMb=64: Afpacket Buffersize in MB
+  -AfpacketBuffersizeMb=64: Afpacket Buffersize in MB
   -batchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
-  -captureStatsDelay=1s: Number of seconds to calculate interface stats
+  -captureStatsDelay=1s: Duration to calculate interface stats
   -clickhouseAddress="localhost:9000": Address of the clickhouse database to save the results
   -clickhouseDebug=false: Debug Clickhouse connection
-  -clickhouseDelay=1000: Number of milliseconds to batch the packets
+  -clickhouseDelay=1s: Interval between sending results to ClickHouse
   -clickhouseDryRun=false: process the packets but don't write them to clickhouse. This option will still try to connect to db. For testing only
   -config="": path to config file
   -cpuprofile="": write cpu profile to file
@@ -27,7 +27,7 @@ Usage of dnsmonster:
   -defraggerChannelSize=500: Size of the channel to send packets to be defragged
   -devName="": Device used to capture
   -filter="((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))": BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
-  -gcTime=10: Time in seconds to garbage collect the tcp assembly and ip defragmentation
+  -gcTime=10s: Garbage Collection interval for tcp assembly and ip defragmentation
   -gomaxprocs=-1: GOMAXPROCS variable
   -loggerFilename=false: Show the file name and number of the logged string
   -maskSize=32: Mask source IPs by bits. 32 means all the bits of IP is saved in DB
@@ -37,7 +37,7 @@ Usage of dnsmonster:
   -packetLimit=0: Limit of packets logged to clickhouse every iteration. Default 0 (disabled)
   -pcapFile="": Pcap filename to run
   -port=53: Port selected to filter packets
-  -printStatsDelay=10s: Number of seconds to print capture and database stats
+  -printStatsDelay=10s: Duration to print capture and database stats
   -resultChannelSize=100000: Size of the result processor channel size
   -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
   -serverName="default": Name of the server used to index the metrics.

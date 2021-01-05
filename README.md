@@ -50,8 +50,7 @@ the privacy of the end-users, with the ability to mask source IP from 1 to 32 bi
 
 ## AIO Installation using Docker
 
-![Basic AIO Diagram](stat### Clickhouse Cluster
-ic/dnsmonster-basic.svg)
+![Basic AIO Diagram](static/dnsmonster-basic.svg)
 
 In the example diagram, the egress/ingress of the DNS server traffic is captured, after that, an optional layer of packet aggregation is added before hitting the DNSMonster Server. The outbound data going out of DNS Servers is quite useful to perform cache and performance analysis on the DNS fleet. If an aggregator is not available for you, you can have both TAPs connected directly to DNSMonster and have two DNSMonster Agents looking at the traffic. 
 

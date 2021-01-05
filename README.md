@@ -37,7 +37,7 @@ the privacy of the end-users, with the ability to mask source IP from 1 to 32 bi
 - Can fuzz source IP to enhance privacy
 - Can have a pre-processing sampling ratio
 - Can have a list of "skip" `fqdn`s to avoid writing some domains/suffix to storage, thus improving DB performance
-- Hot-reload of skip domains
+- Hot-reload of skip domain file
 - Automatic data retention policy using ClickHouse's TTL attribute
 - Built-in dashboard using Grafana
 - Can be shipped as a single, statically-linked binary

@@ -262,8 +262,14 @@ func (capturer *DNSCapturer) Start() {
 	// Setup SIGINT handling
 	handleInterrupt(options.Done)
 
+	// Set up various tickers for different tasks
 	captureStatsTicker := time.Tick(*captureStatsDelay)
 	printStatsTicker := time.Tick(*printStatsDelay)
+	skipDomainsFileTicker := time.NewTicker(*skipDomainsRefreshInterval)
+	skipDomainsFileTickerChan := skipDomainsFileTicker.C
+	if *skipDomainsFile == "" {
+		skipDomainsFileTicker.Stop()
+	}
 	var cnt = 0
 	for {
 		cnt++
@@ -304,7 +310,8 @@ func (capturer *DNSCapturer) Start() {
 
 		case <-printStatsTicker:
 			log.Printf("%+v\n", myStats)
-
+		case <-skipDomainsFileTickerChan:
+			SkipDomainList = loadSkipDomains()
 		}
 
 	}

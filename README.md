@@ -41,6 +41,9 @@ Usage of dnsmonster:
   -resultChannelSize=100000: Size of the result processor channel size
   -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
   -serverName="default": Name of the server used to index the metrics.
+  -skipDomainsBehavior="suffix": Matching logic for SkipDomains. Options are 'suffix' and 'full'
+  -skipDomainsFile="": Skip saving the domains in the text file, matching the skipDomainsBehavior
+  -skipDomainsRefreshInterval=1m0s: Hot-Reload SkipDomains file interval
   -tcpAssemblyChannelSize=1000: Size of the tcp assembler
   -tcpHandlers=1: Number of routines used to handle tcp assembly
   -tcpResultChannelSize=1000: Size of the tcp result channel
@@ -133,7 +136,7 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Adding `afpacket` support
 - [x] Configuration file option
 - [ ] Splunk Dashboard
-- [ ] Exclude FQDNs from being indexed
+- [x] Exclude FQDNs from being indexed
 - [ ] Adding an optional Kafka middleware
 - [ ] More DB engine support (Influx, Elasticsearch etc)
 - [ ] Getting the data ready to be used for Anomaly Detection

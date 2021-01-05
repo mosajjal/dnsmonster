@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 
 	"log"
 	"net"
@@ -81,6 +82,23 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 	}
 }
 
+func CheckSkipDomain(domainName string) bool {
+	for _, item := range SkipDomainList {
+
+		if *skipDomainsBehavior == "suffix" {
+
+			if strings.HasSuffix(domainName, item) {
+				return true
+			}
+		} else if *skipDomainsBehavior == "full" {
+			if domainName == item {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) error {
 	if len(batch) == 0 {
 		return nil
@@ -122,6 +140,13 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 			b.Reserve()
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
+
+					// skip saving queries that have google.com in them
+					if SkipDomainsBool {
+						if CheckSkipDomain(dnsQuery.Name) {
+							continue
+						}
+					}
 					// getting variables ready
 					ip := batch[k].DstIP
 					if batch[k].IPVersion == 4 {

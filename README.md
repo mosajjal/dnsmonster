@@ -1,6 +1,82 @@
+Table of Contents
+- [DNS Monster](#dns-monster)
+- [Main features](#main-features)
+- [Architecture](#architecture)
+  - [AIO Installation using Docker](#aio-installation-using-docker)
+    - [AIO Demo](#aio-demo)
+  - [Enterprise Deployment](#enterprise-deployment)
+    - [Set up a ClickHouse Cluster](#set-up-a-clickhouse-cluster)
+- [Configuration](#configuration)
+  - [Command line options](#command-line-options)
+  - [Environment variables](#environment-variables)
+  - [Configuration file](#configuration-file)
+  - [What's the retention policy](#whats-the-retention-policy)
+- [Sampling and Skipping](#sampling-and-skipping)
+  - [pre-process sampling](#pre-process-sampling)
+  - [skip domains](#skip-domains)
+  - [SAMPLE in clickhouse SELECT queries](#sample-in-clickhouse-select-queries)
+- [Build Manually](#build-manually)
+  - [Static Build](#static-build)
+  - [pre-built Binary](#pre-built-binary)
+- [Roadmap](#roadmap)
+- [Related projects](#related-projects)
+
 # DNS Monster
 
-Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana: [Blogpost](https://blog.n0p.me/dnsmonster/)
+Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana: 
+`dnsmonster` implements a packet sniffer for DNS traffic. It can accept traffic from a `pcap` file or a live interface,
+and can be used to index and store thousands of DNS queries per second. It aims to be scalable and easy to use, and help
+security teams to understand the details about an enterprise's DNS traffic. It does not aim to breach
+the privacy of the end-users, with the ability to mask source IP from 1 to 32 bits, making the data potentially untraceable. [Blogpost](https://blog.n0p.me/dnsmonster/)
+
+
+# Main features
+
+- Can use Linux's `afpacket` and zero-copy packet capture.
+- Supports BPF
+- Can fuzz source IP to enhance privacy
+- Can have a pre-processing sampling ratio
+- Can have a list of "skip" `fqdn`s to avoid writing some domains/suffix to storage, thus improving DB performance
+- Hot-reload of skip domains
+- Automatic data retention policy using ClickHouse's TTL attribute
+- Built-in dashboard using Grafana
+- Can be shipped as a single, statically-linked binary
+- Ability to be configured using Env variables, command line options or configuration file
+- Ability to sample output metrics using ClickHouse's SAMPLE capability
+- High compression ratio thanks to ClickHouse's built-in LZ4 storage
+- Supports DNS Over TCP, Fragmented DNS (udp/tcp) and IPv6
+
+# Architecture
+
+## AIO Installation using Docker
+
+![Basic AIO Diagram](stat### Clickhouse Cluster
+ic/dnsmonster-basic.svg)
+
+In the example diagram, the egress/ingress of the DNS server traffic is captured, after that, an optional layer of packet aggregation is added before hitting the DNSMonster Server. The outbound data going out of DNS Servers is quite useful to perform cache and performance analysis on the DNS fleet. If an aggregator is not available for you, you can have both TAPs connected directly to DNSMonster and have two DNSMonster Agents looking at the traffic. 
+
+running `./autobuild.sh` creates multiple containers:
+
+* multiple instances of `dnsmonster` to look at the traffic on any interface. Interface list will be prompted as part of `autobuild.sh`
+* an instance of `clickhouse` to collect `dnsmonster`'s output and saves all the logs/data to a data and logs directory. Both will be prompted as part of `autobuild.sh`
+* an instance of `grafana` looking at the `clickhouse` data with pre-built dashboard.
+
+
+### AIO Demo
+
+[![AIO Demo](static/aio_demo.svg)](static/aio_demo.svg)
+
+
+## Enterprise Deployment
+
+
+![Basic AIO Diagram](static/dnsmonster-enterprise.svg)
+
+### Set up a ClickHouse Cluster
+
+Clickhouse website provides an excellent tutorial on how to create a cluster with a "virtual" table, [reference](https://clickhouse.tech/docs/en/getting-started/tutorial/#cluster-deployment). Note that `DNS_LOG` has to be created virtually in this cluster in order to provide HA and load balancing across the nodes. 
+
+Configuration of Agent as well as Grafana is Coming soon!
 
 # Configuration
 
@@ -71,27 +147,15 @@ $ export DNSMONSTER_CONFIG=dnsmonster.cfg
 $ sudo -E dnsmonster
 ```
 
-# Quick start
-
-## AIO Installation using Docker
-
-![Basic AIO Diagram](static/dnsmonster-basic.svg)
-
-In the example diagram, the egress/ingress of the DNS server traffic is captured, after that, an optional layer of packet aggregation is added before hitting the DNSMonster Server. The outbound data going out of DNS Servers is quite useful to perform cache and performance analysis on the DNS fleet. If an aggregator is not available for you, you can have both TAPs connected directly to DNSMonster and have two DNSMonster Agents looking at the traffic. 
-
-running `./autobuild.sh` creates multiple containers:
-
-* multiple instances of `dnsmonster` to look at the traffic on any interface. Interface list will be prompted as part of `autobuild.sh`
-* an instance of `clickhouse` to collect `dnsmonster`'s output and saves all the logs/data to a data and logs directory. Both will be prompted as part of `autobuild.sh`
-* an instance of `grafana` looking at the `clickhouse` data with pre-built dashboard.
 
 ## What's the retention policy
 
 The default retention policy for the DNS data is set to 30 days. You can change the number by building the containers using `./autobuild.sh`. Since ClickHouse doesn't have an internal timestamp, the TTL will look at incoming packet's date in `pcap` files. So while importing old `pcap` files, ClickHouse may automatically start removing the data as they're being written and you won't see any actual data in your Grafana. To fix that, you can change TTL to a day older than your earliest packet inside the PCAP file. 
 
 NOTE: to change a TTL at any point in time, you need to directly connect to the Clickhouse server using a `clickhouse` client and run the following SQL statement (this example changes it from 30 to 90 days):
-
-`ALTER TABLE DNS_LOG MODIFY TTL DnsDate + INTERVAL 90 DAY;` 
+```sql
+ALTER TABLE DNS_LOG MODIFY TTL DnsDate + INTERVAL 90 DAY;`
+```
 
 NOTE: The above command only changes TTL for the raw DNS log data, which is the majority of your capacity consumption. To make sure that you adjust the TTL for every single aggregation table, you can run the following:
 
@@ -109,31 +173,27 @@ ALTER TABLE `.inner.DNS_RESPONSECODE` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ALTER TABLE `.inner.DNS_IP_MASK` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ```
 
+# Sampling and Skipping
 
-## AIO Demo
+## pre-process sampling
+`dnsmonster` supports pre-processing sampling of packet using a simple parameter: `sampleRatio`. this parameter accepts a "ratio" value, like "1:2". "1:2" means for each 2 packet that arrives, only process one of them (50% sampling). Note that this sampling happens AFTER `bpf` filters and not before. if you have an issue keeping up with the volume of your DNS traffic, you can set this to something like "2:10", meaning 20% of the packets that pass your `bpf` filter, will be processed by `dnsmonster`. 
 
-[![AIO Demo](static/aio_demo.svg)](static/aio_demo.svg)
+## skip domains
+`dnsmonster` supports a post-processing domain skip list to avoid writing noisy, repetitive data to your Database. The domain skip list is a csv-formatted file, with only two columns: a string and a logic for that particular string. `dnsmonster` supports two logics: `suffix` and `fqdn`. `suffix` means that only the domains ending with the mentioned string will be skipped to be written to DB. Note that since we're talking about DNS questions, your string will most likely have a trailing `.` that needs to be included in your skip list row as well (take a look at [skipdomains.csv.sample](skipdomains.csv.sample) for a better view). You can also have a full FQDN match to avoid writing highly noisy FQDNs into your database.
 
+FQDN prefix will not be supported at this point since the trust tree of a FQDN starts at the end not at the beginning, which will allow a malicious domain to have a prefix of "google.com" in their domain, creating false negatives for `dnsmonster`.
 
-## Scalable deployment Howto
+## SAMPLE in clickhouse SELECT queries
+By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS_LOG`) file have the ability to sample down a result as needed, since each DNS question has a semi-unique UUID associated with it. For more information about SAMPLE queries in Clickhouse, please check out [this](https://clickhouse.tech/docs/en/sql-reference/statements/select/sample/) document.
 
-### Clickhouse Cluster
-
-![Basic AIO Diagram](static/dnsmonster-enterprise.svg)
-
-### Set up a ClickHouse Cluster
-
-Clickhouse website provides an excellent tutorial on how to create a cluster with a "virtual" table, [reference](https://clickhouse.tech/docs/en/getting-started/tutorial/#cluster-deployment). Note that `DNS_LOG` has to be created virtually in this cluster in order to provide HA and load balancing across the nodes. 
-
-Configuration of Agent as well as Grafana is Coming soon!
 
 # Build Manually
 
-Make sure you have `libpcap-devel` package installed
+Make sure you have `libpcap-devel` and `linux-headers` packages installed.
 
 `go get gitlab.com/mosajjal/dnsmonster/src`
 
-## Static Build (WIP)
+## Static Build
 
 ```
  $ git clone https://gitlab.com/mosajjal/dnsmonster
@@ -142,11 +202,13 @@ Make sure you have `libpcap-devel` package installed
  $ go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
 ```
 
+For more information on how the statically linked binary is created, take a look at [this](Dockerfile) Dockerfile.
+
 ## pre-built Binary
 
 There are two binary flavours released for each release. A statically-linked self-contained binary built against `musl` on Alpine Linux, which will be maintained [here](https://n0p.me/bin/dnsmonster), and dynamically linked binaries for Windows and Linux, which will depend on `libpcap`. These releases are built against `glibc` so they will have a slight performance advantage over `musl`. These builds will be available in the [release](https://github.com/mosajjal/dnsmonster/releases) section of Github repository. 
 
-## TODO
+# Roadmap
 - [x] Down-sampling capability for SELECT queries
 - [x] Adding `afpacket` support
 - [x] Configuration file option
@@ -159,7 +221,7 @@ There are two binary flavours released for each release. A statically-linked sel
 - [ ] remove libpcap dependency and move to `pcapgo`
 - [ ] [dnstrap](https://github.com/dnstap/golang-dnstap) support
 
-## Special Thanks to
+# Related projects
 
 - [dnszeppelin](https://github.com/niclabs/dnszeppelin)
 - [passivedns](https://github.com/gamelinux/passivedns)

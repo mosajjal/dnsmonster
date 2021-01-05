@@ -41,7 +41,6 @@ Usage of dnsmonster:
   -resultChannelSize=100000: Size of the result processor channel size
   -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
   -serverName="default": Name of the server used to index the metrics.
-  -skipDomainsBehavior="suffix": Matching logic for SkipDomains. Options are 'suffix' and 'full'
   -skipDomainsFile="": Skip saving the domains in the text file, matching the skipDomainsBehavior
   -skipDomainsRefreshInterval=1m0s: Hot-Reload SkipDomains file interval
   -tcpAssemblyChannelSize=1000: Size of the tcp assembler
@@ -60,7 +59,6 @@ $ export DNSMONSTER_PORT=53
 $ export DNSMONSTER_DEVNAME=lo
 $ sudo -E dnsmonster
 ```
-
 
 ## Configuration file
 you can run `dnsmonster` using the following command to in order to use configuration file:
@@ -89,11 +87,28 @@ running `./autobuild.sh` creates multiple containers:
 
 ## What's the retention policy
 
-The default retention policy for the DNS data is set to 30 days. You can change the number by building the containers using `./autobuild.sh`.
+The default retention policy for the DNS data is set to 30 days. You can change the number by building the containers using `./autobuild.sh`. Since ClickHouse doesn't have an internal timestamp, the TTL will look at incoming packet's date in `pcap` files. So while importing old `pcap` files, ClickHouse may automatically start removing the data as they're being written and you won't see any actual data in your Grafana. To fix that, you can change TTL to a day older than your earliest packet inside the PCAP file. 
 
 NOTE: to change a TTL at any point in time, you need to directly connect to the Clickhouse server using a `clickhouse` client and run the following SQL statement (this example changes it from 30 to 90 days):
 
 `ALTER TABLE DNS_LOG MODIFY TTL DnsDate + INTERVAL 90 DAY;` 
+
+NOTE: The above command only changes TTL for the raw DNS log data, which is the majority of your capacity consumption. To make sure that you adjust the TTL for every single aggregation table, you can run the following:
+
+```sql
+ALTER TABLE DNS_LOG MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_DOMAIN_COUNT` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_DOMAIN_UNIQUE` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_PROTOCOL` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_GENERAL_AGGREGATIONS` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_EDNS` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_OPCODE` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_TYPE` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_CLASS` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_RESPONSECODE` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+ALTER TABLE `.inner.DNS_IP_MASK` MODIFY TTL DnsDate + INTERVAL 90 DAY;
+```
+
 
 ## AIO Demo
 

@@ -50,7 +50,6 @@ var gomaxprocs = fs.Int("gomaxprocs", -1, "GOMAXPROCS variable")
 var loggerFilename = fs.Bool("loggerFilename", false, "Show the file name and number of the logged string")
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
 var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip saving the domains in the text file, matching the skipDomainsBehavior")
-var skipDomainsBehavior = fs.String("skipDomainsBehavior", "suffix", "Matching logic for SkipDomains. Options are 'suffix' and 'full'")
 var skipDomainsRefreshInterval = fs.Duration("skipDomainsRefreshInterval", 60*time.Second, "Hot-Reload SkipDomains file interval")
 
 // Ratio numbers
@@ -58,7 +57,7 @@ var ratioA int
 var ratioB int
 
 // SkipDomainList represents the list of skipped domains
-var SkipDomainList []string
+var SkipDomainList [][]string
 
 // SkipDomainsBool is a boolean to see if we're actually doing skipDomainsFile or not
 var SkipDomainsBool bool
@@ -71,9 +70,6 @@ func checkFlags() {
 
 	SkipDomainsBool = *skipDomainsFile != ""
 	if SkipDomainsBool {
-		if *skipDomainsBehavior != "suffix" && *skipDomainsBehavior != "full" {
-			log.Fatal("skipDomainsBehavior only supports 'suffix' and 'full' as options")
-		}
 		// check to see if the file provided exists
 		if _, err := os.Stat(*skipDomainsFile); err != nil {
 			log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
@@ -116,7 +112,7 @@ func checkFlags() {
 	}
 }
 
-func loadSkipDomains() []string {
+func loadSkipDomains() [][]string {
 	file, err := os.Open(*skipDomainsFile)
 	if err != nil {
 		log.Fatal("error in opening skipDomainsFile: ", err)
@@ -124,10 +120,10 @@ func loadSkipDomains() []string {
 	log.Println("(re)loading skipDomainsFile: ", *skipDomainsFile)
 	defer file.Close()
 
-	var lines []string
+	var lines [][]string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+		lines = append(lines, strings.Split(scanner.Text(), ","))
 	}
 	return lines
 }

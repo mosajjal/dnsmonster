@@ -84,15 +84,16 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 
 func CheckSkipDomain(domainName string) bool {
 	for _, item := range SkipDomainList {
+		if len(item) == 2 {
+			if item[1] == "suffix" {
 
-		if *skipDomainsBehavior == "suffix" {
-
-			if strings.HasSuffix(domainName, item) {
-				return true
-			}
-		} else if *skipDomainsBehavior == "full" {
-			if domainName == item {
-				return true
+				if strings.HasSuffix(domainName, item[0]) {
+					return true
+				}
+			} else if item[1] == "fqdn" {
+				if domainName == item[0] {
+					return true
+				}
 			}
 		}
 	}
@@ -144,6 +145,7 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 					// skip saving queries that have google.com in them
 					if SkipDomainsBool {
 						if CheckSkipDomain(dnsQuery.Name) {
+							myStats.skippedDomains++
 							continue
 						}
 					}

@@ -22,6 +22,7 @@ type Stats struct {
 	PacketsLost       int
 	PacketLossPercent float32
 	sentToDB          int
+	skippedDomains    int
 }
 
 var myStats Stats

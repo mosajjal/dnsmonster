@@ -2,23 +2,40 @@ name: Publish binaries on Release
 on: 
   release:
     types: [created]
-  workflow_dispatch:
 
 jobs:
-  releases-matrix:
-    name: Release Go Binary
+  build:
+    name: Build
     runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        # build and publish in parallel: linux/386, linux/amd64, windows/386, windows/amd64, darwin/386, darwin/amd64 
-        goos: [linux, windows]
-        goarch: [amd64]
     steps:
-    - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@master
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: |
+        docker build -t myrepo:latest -f Dockerfile-release .
+        id=$(docker create myrepo:latest)
+        docker cp $id:/tmp/dnsmonster-linux-amd64.bin /tmp/dnsmonster-linux-amd64.bin
+        docker cp $id:/tmp/dnsmonster-windows-amd64.exe /tmp/dnsmonster-windows-amd64.exe
+        strip --strip-all /tmp/dnsmonster-linux-amd64.bin
+        tar czf /tmp/dnsmonster-linux-amd64.bin.tar.gz /tmp/dnsmonster-linux-amd64.bin
+    
+    - name: Upload Linux binary to release
+      uses: svenstaro/upload-release-action@v2
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: ${{ matrix.goos }}
-        goarch: ${{ matrix.goarch }}
-        project_path: src
-        pre_command: "sh -c \"apt update && apt install -y libpcap0.8-dev linux-headers-4.9.0-14-amd64\""
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: /tmp/dnsmonster-linux-amd64.bin.tar.gz
+        asset_name: dnsmonster-musl-static-stripped.tar.gz
+        tag: ${{ github.ref }}
+        overwrite: true
+        body: ""
+    - name: Upload windows binary to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: /tmp/dnsmonster-windows-amd64.exe
+        asset_name: dnsmonster-windows-amd64.exe
+        tag: ${{ github.ref }}
+        overwrite: true
+        body: ""

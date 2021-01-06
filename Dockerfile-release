@@ -1,0 +1,10 @@
+FROM alpine:edge
+LABEL maintainer "Ali Mosajjal <hi@n0p.me>"
+
+RUN apk add --no-cache libcap-static libpcap-dev linux-headers git go file --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/
+
+RUN git clone https://github.com/mosajjal/dnsmonster.git /opt/dnsmonster --depth 1 \
+    && cd /opt/dnsmonster/src \
+    && go build --ldflags "-L /usr/lib/libcap.a -linkmode external -extldflags \"-static\"" -o /tmp/dnsmonster-linux-amd64.bin
+
+RUN sh -c 'cd /opt/dnsmonster/src && CGO_ENABLED=1; GOOS=windows; GOARCH=amd64; go build -o /tmp/dnsmonster-windows-amd64.exe'

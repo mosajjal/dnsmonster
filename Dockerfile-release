@@ -7,4 +7,8 @@ RUN git clone https://github.com/mosajjal/dnsmonster.git /opt/dnsmonster --depth
     && cd /opt/dnsmonster/src \
     && go build --ldflags "-L /usr/lib/libcap.a -linkmode external -extldflags \"-static\"" -o /tmp/dnsmonster-linux-amd64.bin
 
-RUN sh -c 'cd /opt/dnsmonster/src && CGO_ENABLED=1; GOOS=windows; GOARCH=amd64; go build -o /tmp/dnsmonster-windows-amd64.exe'
+
+ENV CGO_ENABLED=1
+ENV GOOS=windows
+ENV GOARCH=amd64
+RUN sh -c 'cd /opt/dnsmonster/src && go build -o /tmp/dnsmonster-windows-amd64.exe'

@@ -1,6 +1,9 @@
 Table of Contents
 - [DNS Monster](#dns-monster)
 - [Main features](#main-features)
+- [Manual Installation](#manual-installation)
+  - [Linux](#linux)
+  - [Windows](#windows)
 - [Architecture](#architecture)
   - [AIO Installation using Docker](#aio-installation-using-docker)
     - [AIO Demo](#aio-demo)
@@ -45,6 +48,25 @@ the privacy of the end-users, with the ability to mask source IP from 1 to 32 bi
 - Ability to sample output metrics using ClickHouse's SAMPLE capability
 - High compression ratio thanks to ClickHouse's built-in LZ4 storage
 - Supports DNS Over TCP, Fragmented DNS (udp/tcp) and IPv6
+
+# Manual Installation
+
+## Linux
+For `afpacket` v3 support, you need to use kernel 3.x+. Any Linux distro since 5 years ago is shipped with a 3.x+ version so it should work out of the box. The release binary is shipped as a statically-linked binary and shouldn't need any dependencies and will work out of the box. If your distro is not running the pre-compiled version properly, please submit an issue with the details and build `dnsmonster` manually using this section [Build Manually](#build-manually).
+
+## Windows
+Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. I've tested it in a Windows 10 environment and it ran without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
+
+  - open cmd.exe (probably as Admin) and run the following: `getmac.exe`, you'll see a table with your interfaces' MAC address and a Transport Name column with something like this: `\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}`
+  - run `dnsmonster.exe` in `cmd.exe` like this:
+
+```batch
+dnsmonster.exe \Device\NPF_{16000000-0000-0000-0000-145C4638064C}
+```
+
+Note that you should change `\Tcpip` from `getmac.exe` to `\NPF` inside `dnsmonster.exe`.
+
+Since `afpacket` is a Linux feature and Windows is not supported, `useAfpacket` and its related options will not work and will cause unexpected behavior on Windows.
 
 # Architecture
 

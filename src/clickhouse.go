@@ -19,6 +19,10 @@ var uuidGen = fastuuid.MustNewGenerator()
 
 func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse.Clickhouse {
 	tick := time.NewTicker(5 * time.Second)
+	// don't retry connection if we're doing dry run
+	if *clickhouseDryRun {
+		tick.Stop()
+	}
 	defer tick.Stop()
 	for {
 		c, err := connectClickhouse(exiting, clickhouseHost)

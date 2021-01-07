@@ -74,7 +74,7 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 				batch = append(batch, data)
 			}
 		case <-ticker:
-			if err := SendData(connect, batch, serverByte); err != nil {
+			if err := sendData(connect, batch, serverByte); err != nil {
 				log.Println(err)
 				connect = connectClickhouseRetry(exiting, clickhouseHost)
 			} else {
@@ -86,7 +86,7 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 	}
 }
 
-func CheckSkipDomain(domainName string) bool {
+func checkSkipDomain(domainName string) bool {
 	for _, item := range SkipDomainList {
 		if len(item) == 2 {
 			if item[1] == "suffix" {
@@ -104,7 +104,7 @@ func CheckSkipDomain(domainName string) bool {
 	return false
 }
 
-func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) error {
+func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) error {
 	if len(batch) == 0 {
 		return nil
 	}
@@ -148,7 +148,7 @@ func SendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 
 					// skip saving queries that have google.com in them
 					if SkipDomainsBool {
-						if CheckSkipDomain(dnsQuery.Name) {
+						if checkSkipDomain(dnsQuery.Name) {
 							myStats.skippedDomains++
 							continue
 						}

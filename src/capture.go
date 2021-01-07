@@ -14,6 +14,7 @@ import (
 	mkdns "github.com/miekg/dns"
 )
 
+// Stats is capturing statistics about our current live captures. At this point it's not accurate for PCAP files.
 type Stats struct {
 	PacketsGot        int
 	PacketsLost       int
@@ -24,6 +25,7 @@ type Stats struct {
 
 var myStats Stats
 
+// CaptureOptions is a set of generated options variables to use within our capture routine
 type CaptureOptions struct {
 	DevName                      string
 	useAfpacket                  bool
@@ -42,11 +44,14 @@ type CaptureOptions struct {
 	Done                         chan bool
 }
 
+// DNSCapturer oobject is used to make our configuration portable within the entire code
 type DNSCapturer struct {
 	options    CaptureOptions
 	processing chan gopacket.Packet
 }
 
+// DNSResult is the middleware that connects the packet encoder to Clickhouse.
+// For DNStap, this is probably going to be replaced with something else.
 type DNSResult struct {
 	Timestamp    time.Time
 	DNS          mkdns.Msg
@@ -103,7 +108,7 @@ func handleInterrupt(done chan bool) {
 	}()
 }
 
-func NewDNSCapturer(options CaptureOptions) DNSCapturer {
+func newDNSCapturer(options CaptureOptions) DNSCapturer {
 	if options.DevName != "" && options.PcapFile != "" {
 		log.Fatal("You cant set DevName and PcapFile.")
 	}
@@ -144,7 +149,7 @@ func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 	return DNSCapturer{options, processingChannel}
 }
 
-func (capturer *DNSCapturer) Start() {
+func (capturer *DNSCapturer) start() {
 	var handle *pcap.Handle
 	var afhandle *afpacketHandle
 	var packetSource *gopacket.PacketSource
@@ -190,7 +195,6 @@ func (capturer *DNSCapturer) Start() {
 				close(options.Done)
 				return
 			}
-
 			if cnt%ratioB < ratioA {
 				if cnt > ratioB*ratioA {
 					cnt = 0

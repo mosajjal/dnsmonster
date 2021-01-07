@@ -23,6 +23,8 @@ var fs = flag.NewFlagSetWithEnvPrefix(os.Args[0], "DNSMONSTER", 0)
 var devName = fs.String("devName", "", "Device used to capture")
 var pcapFile = fs.String("pcapFile", "", "Pcap filename to run")
 
+// var dnstapSocket = fs.String("dnstapSocket", "", "dnstrap socket path")
+
 // Filter is not using "(port 53)", as it will filter out fragmented udp packets, instead, we filter by the ip protocol
 // and check again in the application.
 var config = fs.String(flag.DefaultConfigFlagname, "", "path to config file")
@@ -178,7 +180,7 @@ func main() {
 	}
 
 	// Start listening
-	capturer := NewDNSCapturer(CaptureOptions{
+	capturer := newDNSCapturer(CaptureOptions{
 		*devName,
 		*useAfpacket,
 		*pcapFile,
@@ -195,7 +197,7 @@ func main() {
 		*defraggerChannelReturnSize,
 		exiting,
 	})
-	capturer.Start()
+	capturer.start()
 	// Wait for the output to finish
 	log.Println("Exiting")
 	wg.Wait()

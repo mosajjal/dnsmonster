@@ -76,7 +76,7 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	var err error
 	handle := &afpacketHandle{}
 
-	frame_size, block_size, num_blocks, err := afpacketComputeSize(
+	frameSize, blockSize, numBlocks, err := afpacketComputeSize(
 		*afPacketBuffersizeMb,
 		65536,
 		uint(os.Getpagesize()))
@@ -86,9 +86,9 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 
 	handle.TPacket, err = afpacket.NewTPacket(
 		afpacket.OptInterface(devName),
-		afpacket.OptFrameSize(frame_size),
-		afpacket.OptBlockSize(block_size),
-		afpacket.OptNumBlocks(num_blocks),
+		afpacket.OptFrameSize(frameSize),
+		afpacket.OptBlockSize(blockSize),
+		afpacket.OptNumBlocks(numBlocks),
 		afpacket.OptPollTimeout(pcap.BlockForever),
 		afpacket.SocketRaw,
 		afpacket.TPacketVersion3)

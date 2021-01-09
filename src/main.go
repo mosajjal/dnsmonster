@@ -22,8 +22,7 @@ import (
 var fs = flag.NewFlagSetWithEnvPrefix(os.Args[0], "DNSMONSTER", 0)
 var devName = fs.String("devName", "", "Device used to capture")
 var pcapFile = fs.String("pcapFile", "", "Pcap filename to run")
-
-// var dnstapSocket = fs.String("dnstapSocket", "", "dnstrap socket path")
+var dnstapSocket = fs.String("dnstapSocket", "", "dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080")
 
 // Filter is not using "(port 53)", as it will filter out fragmented udp packets, instead, we filter by the ip protocol
 // and check again in the application.
@@ -58,6 +57,7 @@ var loggerFilename = fs.Bool("loggerFilename", false, "Show the file name and nu
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
 var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip saving the domains in the text file, matching the skipDomainsBehavior")
 var skipDomainsRefreshInterval = fs.Duration("skipDomainsRefreshInterval", 60*time.Second, "Hot-Reload SkipDomains file interval")
+var dnstapPermission = fs.String("dnstapPermission", "755", "Set the dnstap socket permission, only applicable when unix:// is used")
 
 // Ratio numbers
 var ratioA int
@@ -94,12 +94,22 @@ func checkFlags() {
 	if *maskSize > 32 || *maskSize < 0 {
 		log.Fatal("-maskSize must be between 0 and 32")
 	}
-	if *devName == "" && *pcapFile == "" {
-		log.Fatal("-devName or -pcapFile is required")
+	if *devName == "" && *pcapFile == "" && *dnstapSocket == "" {
+		log.Fatal("one of -devName, -pcapFile or -dnstapSocket is required")
 	}
 
-	if *devName != "" && *pcapFile != "" {
-		log.Fatal("You must set only -devName or -pcapFile, and not both")
+	if *devName != "" {
+		if *pcapFile != "" || *dnstapSocket != "" {
+			log.Fatal("You must set only -devName, -pcapFile or -dnstapSocket")
+		}
+	} else {
+		if *pcapFile != "" && *dnstapSocket != "" {
+			log.Fatal("You must set only -devName, -pcapFile or -dnstapSocket")
+		}
+	}
+
+	if !strings.HasPrefix(*dnstapSocket, "unix://") && !strings.HasPrefix(*dnstapSocket, "tcp://") {
+		log.Fatal("You must provide a unix:// or tcp:// socket for dnstap")
 	}
 
 	if *packetLimit < 0 {
@@ -179,26 +189,30 @@ func main() {
 		}()
 	}
 
-	// Start listening
-	capturer := newDNSCapturer(CaptureOptions{
-		*devName,
-		*useAfpacket,
-		*pcapFile,
-		*filter,
-		uint16(*port),
-		*gcTime,
-		resultChannel,
-		*packetHandlerCount,
-		*packetChannelSize,
-		*tcpHandlerCount,
-		*tcpAssemblyChannelSize,
-		*tcpResultChannelSize,
-		*defraggerChannelSize,
-		*defraggerChannelReturnSize,
-		exiting,
-	})
-	capturer.start()
-	// Wait for the output to finish
-	log.Println("Exiting")
-	wg.Wait()
+	// Start listening if we're using pcap or afpacket
+	if *dnstapSocket == "" {
+		capturer := newDNSCapturer(CaptureOptions{
+			*devName,
+			*useAfpacket,
+			*pcapFile,
+			*filter,
+			uint16(*port),
+			*gcTime,
+			resultChannel,
+			*packetHandlerCount,
+			*packetChannelSize,
+			*tcpHandlerCount,
+			*tcpAssemblyChannelSize,
+			*tcpResultChannelSize,
+			*defraggerChannelSize,
+			*defraggerChannelReturnSize,
+			exiting,
+		})
+		capturer.start()
+		// Wait for the output to finish
+		log.Println("Exiting")
+		wg.Wait()
+	} else {
+		startDNSTap(resultChannel)
+	}
 }

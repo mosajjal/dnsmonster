@@ -48,6 +48,7 @@ the privacy of the end-users, with the ability to mask source IP from 1 to 32 bi
 - Ability to sample output metrics using ClickHouse's SAMPLE capability
 - High compression ratio thanks to ClickHouse's built-in LZ4 storage
 - Supports DNS Over TCP, Fragmented DNS (udp/tcp) and IPv6
+- Supports [dnstrap](https://github.com/dnstap/golang-dnstap) over Unix socket or TCP
 
 # Manual Installation
 
@@ -123,6 +124,8 @@ Usage of dnsmonster:
   -defraggerChannelReturnSize=500: Size of the channel where the defragged packets are returned
   -defraggerChannelSize=500: Size of the channel to send packets to be defragged
   -devName="": Device used to capture
+  -dnstapPermission="755": Set the dnstap socket permission, only applicable when unix:// is used
+  -dnstapSocket="": dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
   -filter="((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))": BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
   -gcTime=10s: Garbage Collection interval for tcp assembly and ip defragmentation
   -gomaxprocs=-1: GOMAXPROCS variable
@@ -144,6 +147,7 @@ Usage of dnsmonster:
   -tcpHandlers=1: Number of routines used to handle tcp assembly
   -tcpResultChannelSize=1000: Size of the tcp result channel
   -useAfpacket=false: Use AFPacket for live captures
+
 
 ```
 
@@ -240,7 +244,7 @@ There are two binary flavours released for each release. A statically-linked sel
 - [ ] Getting the data ready to be used for Anomaly Detection
 - [ ] Grafana dashboard performance improvements
 - [ ] remove libpcap dependency and move to `pcapgo`
-- [ ] [dnstrap](https://github.com/dnstap/golang-dnstap) support
+- [x] [dnstrap](https://github.com/dnstap/golang-dnstap) support
 
 # Related projects
 

@@ -8,6 +8,8 @@ clickhouseDryRun=false
 defraggerChannelReturnSize=500
 defraggerChannelSize=500
 devName=lo
+dnstapPermission=755
+dnstapSocket=
 filter=((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))
 gcTime=10s
 gomaxprocs=-1

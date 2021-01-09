@@ -108,8 +108,10 @@ func checkFlags() {
 		}
 	}
 
-	if !strings.HasPrefix(*dnstapSocket, "unix://") && !strings.HasPrefix(*dnstapSocket, "tcp://") {
-		log.Fatal("You must provide a unix:// or tcp:// socket for dnstap")
+	if *dnstapSocket != "" {
+		if !strings.HasPrefix(*dnstapSocket, "unix://") && !strings.HasPrefix(*dnstapSocket, "tcp://") {
+			log.Fatal("You must provide a unix:// or tcp:// socket for dnstap")
+		}
 	}
 
 	if *packetLimit < 0 {

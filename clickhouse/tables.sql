@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS DNS_LOG (
   Type UInt16,
   Edns0Present UInt8,
   DoBit UInt8,
+  FullQuery String,
   ResponseCode UInt8,
   Question String,
   Size UInt16,

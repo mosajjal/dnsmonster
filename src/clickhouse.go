@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -120,7 +121,7 @@ func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 		return err
 	}
 
-	_, err = connect.Prepare("INSERT INTO DNS_LOG (DnsDate, timestamp, Server, IPVersion, IPPrefix, Protocol, QR, OpCode, Class, Type, ResponseCode, Question, Size, Edns0Present, DoBit, ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	_, err = connect.Prepare("INSERT INTO DNS_LOG (DnsDate, timestamp, Server, IPVersion, IPPrefix, Protocol, QR, OpCode, Class, Type, ResponseCode, Question, Size, Edns0Present, DoBit,FullQuery, ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
@@ -153,6 +154,14 @@ func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 							continue
 						}
 					}
+
+					var fullQuery []byte
+					if *saveFullQuery {
+
+						fullQuery, _ = json.Marshal(batch[k].DNS)
+					}
+					// log.Printf("myDNSResulttJSON: %#s\n", string(c))
+
 					// getting variables ready
 					ip := batch[k].DstIP
 					if batch[k].IPVersion == 4 {
@@ -187,9 +196,11 @@ func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 					b.WriteUInt16(12, batch[k].PacketLength)
 					b.WriteUInt8(13, edns)
 					b.WriteUInt8(14, doBit)
+
+					b.WriteFixedString(15, fullQuery)
 					// b.WriteFixedString(15, uuid.NewV4().Bytes())
 					myUUID := uuidGen.Next()
-					b.WriteFixedString(15, myUUID[:16])
+					b.WriteFixedString(16, myUUID[:16])
 					// b.WriteArray(15, uuidGen.Next())
 				}
 			}

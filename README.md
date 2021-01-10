@@ -33,6 +33,8 @@ security teams to understand the details about an enterprise's DNS traffic. `dns
 the privacy of the end-users, with the ability to mask source IP from 1 to 32 bits, making the data potentially untraceable. [Blogpost](https://blog.n0p.me/dnsmonster/)
 
 
+IMPORTANT NOTE: The code before version 1.x is considered beta quality and is subject to breaking changes. Please check the release notes for each tag to see the list of breaking scenarios between each release, and how to mitigate potential data loss.
+
 # Main features
 
 - Can use Linux's `afpacket` and zero-copy packet capture.

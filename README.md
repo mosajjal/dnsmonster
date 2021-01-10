@@ -140,6 +140,7 @@ Usage of dnsmonster:
   -printStatsDelay=10s: Duration to print capture and database stats
   -resultChannelSize=100000: Size of the result processor channel size
   -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
+  -saveFullQuery=false: Save full packet query and response in JSON format
   -serverName="default": Name of the server used to index the metrics.
   -skipDomainsFile="": Skip saving the domains in the text file, matching the skipDomainsBehavior
   -skipDomainsRefreshInterval=1m0s: Hot-Reload SkipDomains file interval

@@ -184,9 +184,10 @@ func (capturer *DNSCapturer) start() {
 	if *skipDomainsFile == "" {
 		skipDomainsFileTicker.Stop()
 	}
-	var cnt = 0
+	var ratioCnt = 0
+	var totalCnt = 0
 	for {
-		cnt++
+		ratioCnt++
 		select {
 		case packet := <-packetSource.Packets():
 			if packet == nil {
@@ -195,12 +196,13 @@ func (capturer *DNSCapturer) start() {
 				close(options.Done)
 				return
 			}
-			if cnt%ratioB < ratioA {
-				if cnt > ratioB*ratioA {
-					cnt = 0
+			if ratioCnt%ratioB < ratioA {
+				if ratioCnt > ratioB*ratioA {
+					ratioCnt = 0
 				}
 				select {
 				case capturer.processing <- packet:
+					totalCnt++
 				case <-options.Done:
 					return
 				}
@@ -213,6 +215,8 @@ func (capturer *DNSCapturer) start() {
 				if err == nil {
 					myStats.PacketsGot = mystats.PacketsReceived
 					myStats.PacketsLost = mystats.PacketsDropped
+				} else {
+					myStats.PacketsGot = totalCnt
 				}
 			} else {
 				updateAfpacketStats(afhandle)

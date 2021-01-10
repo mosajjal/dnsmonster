@@ -246,6 +246,7 @@ There are two binary flavours released for each release. A statically-linked sel
 - [ ] Grafana dashboard performance improvements
 - [ ] remove libpcap dependency and move to `pcapgo`
 - [x] [dnstrap](https://github.com/dnstap/golang-dnstap) support
+- [ ] Database versioning and migration tool
 
 # Related projects
 

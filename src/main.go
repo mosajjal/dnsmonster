@@ -24,8 +24,6 @@ var devName = fs.String("devName", "", "Device used to capture")
 var pcapFile = fs.String("pcapFile", "", "Pcap filename to run")
 var dnstapSocket = fs.String("dnstapSocket", "", "dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080")
 
-// Filter is not using "(port 53)", as it will filter out fragmented udp packets, instead, we filter by the ip protocol
-// and check again in the application.
 var config = fs.String(flag.DefaultConfigFlagname, "", "path to config file")
 var filter = fs.String("filter", "((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))", "BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.")
 var port = fs.Uint("port", 53, "Port selected to filter packets")

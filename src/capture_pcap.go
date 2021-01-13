@@ -184,6 +184,13 @@ func (capturer *DNSCapturer) start() {
 	if *skipDomainsFile == "" {
 		skipDomainsFileTicker.Stop()
 	}
+
+	allowDomainsFileTicker := time.NewTicker(*allowDomainsRefreshInterval)
+	allowDomainsFileTickerChan := allowDomainsFileTicker.C
+	if *allowDomainsFile == "" {
+		allowDomainsFileTicker.Stop()
+	}
+
 	var ratioCnt = 0
 	var totalCnt = 0
 	for {
@@ -226,7 +233,9 @@ func (capturer *DNSCapturer) start() {
 		case <-printStatsTicker:
 			log.Printf("%+v\n", myStats)
 		case <-skipDomainsFileTickerChan:
-			SkipDomainList = loadSkipDomains()
+			skipDomainList = loadDomains(*skipDomainsFile)
+		case <-allowDomainsFileTickerChan:
+			allowDomainList = loadDomains(*allowDomainsFile)
 		}
 
 	}

@@ -31,7 +31,7 @@ var gcTime = fs.Duration("gcTime", 10*time.Second, "Garbage Collection interval 
 var clickhouseAddress = fs.String("clickhouseAddress", "localhost:9000", "Address of the clickhouse database to save the results")
 var clickhouseDelay = fs.Duration("clickhouseDelay", 1*time.Second, "Interval between sending results to ClickHouse")
 var clickhouseDebug = fs.Bool("clickhouseDebug", false, "Debug Clickhouse connection")
-var clickhouseDryRun = fs.Bool("clickhouseDryRun", false, "process the packets but don't write them to clickhouse. This option will still try to connect to db. For testing only")
+var clickhouseOutputType = fs.String("clickhouseOutputType", "skipdomains", "What should be written to clickhouse. options: all, skipdomains, allowdomains, none. No value for this field means none")
 var captureStatsDelay = fs.Duration("captureStatsDelay", time.Second, "Duration to calculate interface stats")
 var printStatsDelay = fs.Duration("printStatsDelay", time.Second*10, "Duration to print capture and database stats")
 var maskSize = fs.Int("maskSize", 32, "Mask source IPs by bits. 32 means all the bits of IP is saved in DB")
@@ -54,19 +54,31 @@ var memprofile = fs.String("memprofile", "", "write memory profile to file")
 var gomaxprocs = fs.Int("gomaxprocs", -1, "GOMAXPROCS variable")
 var loggerFilename = fs.Bool("loggerFilename", false, "Show the file name and number of the logged string")
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
-var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip saving the domains in the text file, matching the skipDomainsBehavior")
-var skipDomainsRefreshInterval = fs.Duration("skipDomainsRefreshInterval", 60*time.Second, "Hot-Reload SkipDomains file interval")
+var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip outputing domains matching items in the CSV file path")
+var skipDomainsRefreshInterval = fs.Duration("skipDomainsRefreshInterval", 60*time.Second, "Hot-Reload skipDomainsFile interval")
+var allowDomainsFile = fs.String("allowDomainsFile", "", "Only output domains matching items in the CSV file path")
+var allowDomainsRefreshInterval = fs.Duration("allowDomainsRefreshInterval", 60*time.Second, "Hot-Reload allowDomainsFile file interval")
 var dnstapPermission = fs.String("dnstapPermission", "755", "Set the dnstap socket permission, only applicable when unix:// is used")
+var fileOutputType = fs.String("fileOutputType", "none", "What should be written to file. options: all, skipdomains, allowdomains, none. No value for this field means none")
+var fileOutputPath = fs.String("fileOutputPath", "", "Path to output file. Used if fileOutputType is not none")
+var stdoutOutputType = fs.String("stdoutOutputType", "none", "What should be written to stdout. options: all, skipdomains, allowdomains, none. No value for this field means none")
+
+// Output Bool Flags. Will set this to true if the flag is not "none" or empty. Makes for a much faster dispatch
+var fileOutputBool = true
+var stdoutOutputBool = true
+var clickhouseOutputBool = true
 
 // Ratio numbers
 var ratioA int
 var ratioB int
 
-// SkipDomainList represents the list of skipped domains
-var SkipDomainList [][]string
+// skipDomainList represents the list of skipped domains
+var skipDomainList [][]string
+var allowDomainList [][]string
 
-// SkipDomainsBool is a boolean to see if we're actually doing skipDomainsFile or not
-var SkipDomainsBool bool
+// skipDomainsBool is a boolean to see if we're actually doing skipDomainsFile or not
+var skipDomainsBool bool
+var allowDomainsBool bool
 
 func checkFlags() {
 	err := fs.Parse(os.Args[1:])
@@ -74,12 +86,39 @@ func checkFlags() {
 		log.Fatal("Errors in parsing args")
 	}
 
-	SkipDomainsBool = *skipDomainsFile != ""
-	if SkipDomainsBool {
+	skipDomainsBool = *skipDomainsFile != ""
+	if skipDomainsBool {
 		// check to see if the file provided exists
 		if _, err := os.Stat(*skipDomainsFile); err != nil {
 			log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
 		}
+	}
+
+	allowDomainsBool = *allowDomainsFile != ""
+	if allowDomainsBool {
+		// check to see if the file provided exists
+		if _, err := os.Stat(*allowDomainsFile); err != nil {
+			log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
+		}
+	}
+
+	if *stdoutOutputType != "all" && *stdoutOutputType != "skipdomains" && *stdoutOutputType != "allowdomains" && *stdoutOutputType != "none" && *stdoutOutputType != "" {
+		log.Fatal("stdoutOutputType must be one of all, skipdomains, allowdomains, none.")
+	}
+	if *stdoutOutputType == "none" || *stdoutOutputType == "" {
+		stdoutOutputBool = false
+	}
+	if *fileOutputType != "all" && *fileOutputType != "skipdomains" && *fileOutputType != "allowdomains" && *fileOutputType != "none" && *fileOutputType != "" {
+		log.Fatal("fileOutputType must be one of all, skipdomains, allowdomains, none.")
+	}
+	if *fileOutputType == "none" || *fileOutputType == "" {
+		fileOutputBool = false
+	}
+	if *clickhouseOutputType != "all" && *clickhouseOutputType != "skipdomains" && *clickhouseOutputType != "allowdomains" && *clickhouseOutputType != "none" && *clickhouseOutputType != "" {
+		log.Fatal("clickhouseOutputType must be one of all, skipdomains, allowdomains, none.")
+	}
+	if *clickhouseOutputType == "none" || *clickhouseOutputType == "" {
+		clickhouseOutputBool = false
 	}
 
 	if *loggerFilename {
@@ -130,12 +169,12 @@ func checkFlags() {
 	}
 }
 
-func loadSkipDomains() [][]string {
-	file, err := os.Open(*skipDomainsFile)
+func loadDomains(Filename string) [][]string {
+	file, err := os.Open(Filename)
 	if err != nil {
-		log.Fatal("error in opening skipDomainsFile: ", err)
+		log.Fatal("error opening File: ", err)
 	}
-	log.Println("(re)loading skipDomainsFile: ", *skipDomainsFile)
+	log.Println("(re)loading File: ", Filename)
 	defer file.Close()
 
 	var lines [][]string
@@ -145,6 +184,11 @@ func loadSkipDomains() [][]string {
 	}
 	return lines
 }
+
+var clickhouseResultChannel = make(chan DNSResult, *resultChannelSize)
+var stdoutResultChannel = make(chan DNSResult, *resultChannelSize)
+var fileResultChannel = make(chan DNSResult, *resultChannelSize)
+var resultChannel = make(chan DNSResult, *resultChannelSize)
 
 func main() {
 	checkFlags()
@@ -160,18 +204,31 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 	}
-	resultChannel := make(chan DNSResult, *resultChannelSize)
 
 	// Setup output routine
 	exiting := make(chan bool)
 
 	// load the skipDomainFile if exists
-	if SkipDomainsBool {
-		SkipDomainList = loadSkipDomains()
+	if skipDomainsBool {
+		skipDomainList = loadDomains(*skipDomainsFile)
+	}
+	if allowDomainsBool {
+		allowDomainList = loadDomains(*allowDomainsFile)
 	}
 
 	var wg sync.WaitGroup
-	go output(resultChannel, exiting, &wg, *clickhouseAddress, *batchSize, *clickhouseDelay, *packetLimit, *serverName)
+
+	go dispatchOutput(resultChannel, exiting, &wg)
+
+	if fileOutputBool {
+		go fileOutput(stdoutResultChannel, exiting, &wg)
+	}
+	if stdoutOutputBool {
+		go stdoutOutput(stdoutResultChannel, exiting, &wg)
+	}
+	if clickhouseOutputBool {
+		go clickhouseOutput(clickhouseResultChannel, exiting, &wg, *clickhouseAddress, *batchSize, *clickhouseDelay, *packetLimit, *serverName)
+	}
 
 	if *memprofile != "" {
 		go func() {

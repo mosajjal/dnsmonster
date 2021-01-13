@@ -100,6 +100,12 @@ func startDNSTap(resultChannel chan DNSResult) {
 		skipDomainsFileTicker.Stop()
 	}
 
+	allowDomainsFileTicker := time.NewTicker(*allowDomainsRefreshInterval)
+	allowDomainsFileTickerChan := allowDomainsFileTicker.C
+	if *allowDomainsFile == "" {
+		allowDomainsFileTicker.Stop()
+	}
+
 	// Setup SIGINT handling
 	handleDNSTapInterrupt(done)
 
@@ -137,7 +143,9 @@ func startDNSTap(resultChannel chan DNSResult) {
 		case <-printStatsTicker:
 			log.Printf("%+v\n", myStats)
 		case <-skipDomainsFileTickerChan:
-			SkipDomainList = loadSkipDomains()
+			skipDomainList = loadDomains(*skipDomainsFile)
+		case <-allowDomainsFileTickerChan:
+			allowDomainList = loadDomains(*allowDomainsFile)
 		}
 	}
 }

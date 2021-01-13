@@ -21,7 +21,7 @@ var uuidGen = fastuuid.MustNewGenerator()
 func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse.Clickhouse {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if *clickhouseDryRun {
+	if !clickhouseOutputBool {
 		tick.Stop()
 	}
 	defer tick.Stop()
@@ -59,7 +59,7 @@ func min(a, b int) int {
 	return b
 }
 
-func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, clickhouseHost string, batchSize uint, batchDelay time.Duration, limit int, server string) {
+func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, clickhouseHost string, batchSize uint, batchDelay time.Duration, limit int, server string) {
 	wg.Add(1)
 	defer wg.Done()
 	serverByte := []byte(server)
@@ -87,8 +87,8 @@ func output(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup,
 	}
 }
 
-func checkSkipDomain(domainName string) bool {
-	for _, item := range SkipDomainList {
+func checkSkipDomain(domainName string, domainList [][]string) bool {
+	for _, item := range domainList {
 		if len(item) == 2 {
 			if item[1] == "suffix" {
 
@@ -97,6 +97,10 @@ func checkSkipDomain(domainName string) bool {
 				}
 			} else if item[1] == "fqdn" {
 				if domainName == item[0] {
+					return true
+				}
+			} else if item[1] == "prefix" {
+				if strings.HasPrefix(domainName, item[0]) {
 					return true
 				}
 			}
@@ -147,14 +151,21 @@ func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
 
-					// skip saving queries that have google.com in them
-					if SkipDomainsBool {
-						if checkSkipDomain(dnsQuery.Name) {
+					// check skiplist
+					if skipDomainsBool {
+						if checkSkipDomain(dnsQuery.Name, skipDomainList) {
 							myStats.skippedDomains++
 							continue
 						}
 					}
 
+					// check allowdomains
+					if allowDomainsBool {
+						if !checkSkipDomain(dnsQuery.Name, allowDomainList) {
+							myStats.skippedDomains++
+							continue
+						}
+					}
 					var fullQuery []byte
 					if *saveFullQuery {
 

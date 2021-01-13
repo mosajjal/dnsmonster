@@ -41,8 +41,10 @@ IMPORTANT NOTE: The code before version 1.x is considered beta quality and is su
 - Supports BPF
 - Can fuzz source IP to enhance privacy
 - Can have a pre-processing sampling ratio
-- Can have a list of "skip" `fqdn`s to avoid writing some domains/suffix to storage, thus improving DB performance
-- Hot-reload of skip domain file
+- Can have a list of "skip" `fqdn`s to avoid writing some domains/suffix/prefix to storage, thus improving DB performance
+- Can have a list of "allow" domains to only log hits of certain domains in Clickhouse/Stdout/File
+- Modular output with different logic per output stream. Currently stdout/file/clickhouse
+- Hot-reload of skip and allow domain files
 - Automatic data retention policy using ClickHouse's TTL attribute
 - Built-in dashboard using Grafana
 - Can be shipped as a single, statically-linked binary
@@ -115,12 +117,14 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ```
 Usage of dnsmonster:
   -AfpacketBuffersizeMb=64: Afpacket Buffersize in MB
+  -allowDomainsFile="": Only output domains matching items in the CSV file path
+  -allowDomainsRefreshInterval=1m0s: Hot-Reload allowDomainsFile file interval
   -batchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
   -captureStatsDelay=1s: Duration to calculate interface stats
   -clickhouseAddress="localhost:9000": Address of the clickhouse database to save the results
   -clickhouseDebug=false: Debug Clickhouse connection
   -clickhouseDelay=1s: Interval between sending results to ClickHouse
-  -clickhouseDryRun=false: process the packets but don't write them to clickhouse. This option will still try to connect to db. For testing only
+  -clickhouseOutputType="skipdomains": What should be written to clickhouse. options: all, skipdomains, allowdomains, none. No value for this field means none
   -config="": path to config file
   -cpuprofile="": write cpu profile to file
   -defraggerChannelReturnSize=500: Size of the channel where the defragged packets are returned
@@ -128,6 +132,8 @@ Usage of dnsmonster:
   -devName="": Device used to capture
   -dnstapPermission="755": Set the dnstap socket permission, only applicable when unix:// is used
   -dnstapSocket="": dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
+  -fileOutputPath="": Path to output file. Used if fileOutputType is not none
+  -fileOutputType="none": What should be written to file. options: all, skipdomains, allowdomains, none. No value for this field means none
   -filter="((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))": BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
   -gcTime=10s: Garbage Collection interval for tcp assembly and ip defragmentation
   -gomaxprocs=-1: GOMAXPROCS variable
@@ -144,8 +150,9 @@ Usage of dnsmonster:
   -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
   -saveFullQuery=false: Save full packet query and response in JSON format
   -serverName="default": Name of the server used to index the metrics.
-  -skipDomainsFile="": Skip saving the domains in the text file, matching the skipDomainsBehavior
-  -skipDomainsRefreshInterval=1m0s: Hot-Reload SkipDomains file interval
+  -skipDomainsFile="": Skip outputing domains matching items in the CSV file path
+  -skipDomainsRefreshInterval=1m0s: Hot-Reload skipDomainsFile interval
+  -stdoutOutputType="none": What should be written to stdout. options: all, skipdomains, allowdomains, none. No value for this field means none
   -tcpAssemblyChannelSize=1000: Size of the tcp assembler
   -tcpHandlers=1: Number of routines used to handle tcp assembly
   -tcpResultChannelSize=1000: Size of the tcp result channel
@@ -207,9 +214,10 @@ ALTER TABLE `.inner.DNS_IP_MASK` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 `dnsmonster` supports pre-processing sampling of packet using a simple parameter: `sampleRatio`. this parameter accepts a "ratio" value, like "1:2". "1:2" means for each 2 packet that arrives, only process one of them (50% sampling). Note that this sampling happens AFTER `bpf` filters and not before. if you have an issue keeping up with the volume of your DNS traffic, you can set this to something like "2:10", meaning 20% of the packets that pass your `bpf` filter, will be processed by `dnsmonster`. 
 
 ## skip domains
-`dnsmonster` supports a post-processing domain skip list to avoid writing noisy, repetitive data to your Database. The domain skip list is a csv-formatted file, with only two columns: a string and a logic for that particular string. `dnsmonster` supports two logics: `suffix` and `fqdn`. `suffix` means that only the domains ending with the mentioned string will be skipped to be written to DB. Note that since we're talking about DNS questions, your string will most likely have a trailing `.` that needs to be included in your skip list row as well (take a look at [skipdomains.csv.sample](skipdomains.csv.sample) for a better view). You can also have a full FQDN match to avoid writing highly noisy FQDNs into your database.
+`dnsmonster` supports a post-processing domain skip list to avoid writing noisy, repetitive data to your Database. The domain skip list is a csv-formatted file, with only two columns: a string and a logic for that particular string. `dnsmonster` supports three logics: `prefix`, `suffix` and `fqdn`. `prefix` and `suffix` means that only the domains starting/ending with the mentioned string will be skipped to be written to DB. Note that since we're talking about DNS questions, your string will most likely have a trailing `.` that needs to be included in your skip list row as well (take a look at [skipdomains.csv.sample](skipdomains.csv.sample) for a better view). You can also have a full FQDN match to avoid writing highly noisy FQDNs into your database.
 
-FQDN prefix will not be supported at this point since the trust tree of a FQDN starts at the end not at the beginning, which will allow a malicious domain to have a prefix of "google.com" in their domain, creating false negatives for `dnsmonster`.
+## allow domains
+`dnsmonster` has the concept of "allowdomains", which helps building the detection if certain FQDNs, prefixes or suffixes are present in the DNS traffic. Given the fact that `dnsmonster` supports multiple output streams with different logic for each one, it's possible to collect all DNS traffic in ClickHouse, but collect only "allowlist" domains in stdout or in a file in the same instance of `dnsmonster`.
 
 ## SAMPLE in clickhouse SELECT queries
 By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS_LOG`) file have the ability to sample down a result as needed, since each DNS question has a semi-unique UUID associated with it. For more information about SAMPLE queries in Clickhouse, please check out [this](https://clickhouse.tech/docs/en/sql-reference/statements/select/sample/) document.
@@ -242,6 +250,9 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Configuration file option
 - [ ] Splunk Dashboard
 - [x] Exclude FQDNs from being indexed
+- [ ] FQDN whitelisting to only log certain domains
+- [ ] Optional SSL for Clickhouse
+- [ ] De-duplication support
 - [ ] Adding an optional Kafka middleware
 - [ ] More DB engine support (Influx, Elasticsearch etc)
 - [ ] Getting the data ready to be used for Anomaly Detection

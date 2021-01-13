@@ -4,12 +4,14 @@ captureStatsDelay=1s
 clickhouseAddress=localhost:9000
 clickhouseDebug=false
 clickhouseDelay=1s
-clickhouseDryRun=false
+clickhouseOutputType=skipdomains
 defraggerChannelReturnSize=500
 defraggerChannelSize=500
 devName=lo
 dnstapPermission=755
 dnstapSocket=
+fileOutputPath=
+fileOutputType=none
 filter=((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))
 gcTime=10s
 gomaxprocs=-1

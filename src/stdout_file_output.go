@@ -109,7 +109,7 @@ func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGr
 				}
 
 				fullQuery, _ := json.Marshal(data)
-				_, err := fileObject.WriteString(fmt.Sprintf("%#s\n", fullQuery))
+				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", fullQuery))
 				if err != nil {
 					log.Println("error in writing to the log file: ", err)
 				}

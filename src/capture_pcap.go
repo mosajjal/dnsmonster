@@ -233,9 +233,17 @@ func (capturer *DNSCapturer) start() {
 		case <-printStatsTicker:
 			log.Printf("%+v\n", myStats)
 		case <-skipDomainsFileTickerChan:
-			skipDomainList = loadDomains(*skipDomainsFile)
+			if skipDomainMapBool {
+				skipDomainMap = loadDomainsToMap(*skipDomainsFile)
+			} else {
+				skipDomainList = loadDomainsToList(*skipDomainsFile)
+			}
 		case <-allowDomainsFileTickerChan:
-			allowDomainList = loadDomains(*allowDomainsFile)
+			if allowDomainMapBool {
+				allowDomainMap = loadDomainsToMap(*allowDomainsFile)
+			} else {
+				allowDomainList = loadDomainsToList(*allowDomainsFile)
+			}
 		}
 
 	}

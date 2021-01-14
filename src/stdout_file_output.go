@@ -33,7 +33,12 @@ func stdoutOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 
 				// check skiplist
 				if skipDomainsBool {
-					if checkSkipDomain(dnsQuery.Name, skipDomainList) {
+					if skipDomainMapBool {
+						if checkSkipDomainHash(dnsQuery.Name, skipDomainMap) {
+							myStats.skippedDomains++
+							continue
+						}
+					} else if checkSkipDomainList(dnsQuery.Name, skipDomainList) {
 						myStats.skippedDomains++
 						continue
 					}
@@ -41,7 +46,12 @@ func stdoutOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 
 				// check allowdomains
 				if allowDomainsBool {
-					if !checkSkipDomain(dnsQuery.Name, allowDomainList) {
+					if allowDomainMapBool {
+						if !checkSkipDomainHash(dnsQuery.Name, allowDomainMap) {
+							myStats.skippedDomains++
+							continue
+						}
+					} else if !checkSkipDomainList(dnsQuery.Name, allowDomainList) {
 						myStats.skippedDomains++
 						continue
 					}
@@ -53,9 +63,17 @@ func stdoutOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 		case <-exiting:
 			return
 		case <-skipDomainsFileTickerChan:
-			skipDomainList = loadDomains(*skipDomainsFile)
+			if skipDomainMapBool {
+				skipDomainMap = loadDomainsToMap(*skipDomainsFile)
+			} else {
+				skipDomainList = loadDomainsToList(*skipDomainsFile)
+			}
 		case <-allowDomainsFileTickerChan:
-			allowDomainList = loadDomains(*allowDomainsFile)
+			if allowDomainMapBool {
+				allowDomainMap = loadDomainsToMap(*allowDomainsFile)
+			} else {
+				allowDomainList = loadDomainsToList(*allowDomainsFile)
+			}
 		}
 	}
 }
@@ -94,7 +112,12 @@ func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGr
 
 				// check skiplist
 				if skipDomainsBool {
-					if checkSkipDomain(dnsQuery.Name, skipDomainList) {
+					if skipDomainMapBool {
+						if checkSkipDomainHash(dnsQuery.Name, skipDomainMap) {
+							myStats.skippedDomains++
+							continue
+						}
+					} else if checkSkipDomainList(dnsQuery.Name, skipDomainList) {
 						myStats.skippedDomains++
 						continue
 					}
@@ -102,7 +125,12 @@ func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGr
 
 				// check allowdomains
 				if allowDomainsBool {
-					if !checkSkipDomain(dnsQuery.Name, allowDomainList) {
+					if allowDomainMapBool {
+						if !checkSkipDomainHash(dnsQuery.Name, allowDomainMap) {
+							myStats.skippedDomains++
+							continue
+						}
+					} else if !checkSkipDomainList(dnsQuery.Name, allowDomainList) {
 						myStats.skippedDomains++
 						continue
 					}
@@ -117,9 +145,17 @@ func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGr
 		case <-exiting:
 			return
 		case <-skipDomainsFileTickerChan:
-			skipDomainList = loadDomains(*skipDomainsFile)
+			if skipDomainMapBool {
+				skipDomainMap = loadDomainsToMap(*skipDomainsFile)
+			} else {
+				skipDomainList = loadDomainsToList(*skipDomainsFile)
+			}
 		case <-allowDomainsFileTickerChan:
-			allowDomainList = loadDomains(*allowDomainsFile)
+			if allowDomainMapBool {
+				allowDomainMap = loadDomainsToMap(*allowDomainsFile)
+			} else {
+				allowDomainList = loadDomainsToList(*allowDomainsFile)
+			}
 		}
 	}
 }

@@ -87,11 +87,10 @@ func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.
 	}
 }
 
-func checkSkipDomain(domainName string, domainList [][]string) bool {
+func checkSkipDomainList(domainName string, domainList [][]string) bool {
 	for _, item := range domainList {
 		if len(item) == 2 {
 			if item[1] == "suffix" {
-
 				if strings.HasSuffix(domainName, item[0]) {
 					return true
 				}
@@ -105,6 +104,13 @@ func checkSkipDomain(domainName string, domainList [][]string) bool {
 				}
 			}
 		}
+	}
+	return false
+}
+
+func checkSkipDomainHash(domainName string, inputHashTable map[string]bool) bool {
+	if inputHashTable[domainName] {
+		return true
 	}
 	return false
 }
@@ -153,7 +159,12 @@ func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 
 					// check skiplist
 					if skipDomainsBool {
-						if checkSkipDomain(dnsQuery.Name, skipDomainList) {
+						if skipDomainMapBool {
+							if checkSkipDomainHash(dnsQuery.Name, skipDomainMap) {
+								myStats.skippedDomains++
+								continue
+							}
+						} else if checkSkipDomainList(dnsQuery.Name, skipDomainList) {
 							myStats.skippedDomains++
 							continue
 						}
@@ -161,7 +172,12 @@ func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 
 					// check allowdomains
 					if allowDomainsBool {
-						if !checkSkipDomain(dnsQuery.Name, allowDomainList) {
+						if allowDomainMapBool {
+							if !checkSkipDomainHash(dnsQuery.Name, allowDomainMap) {
+								myStats.skippedDomains++
+								continue
+							}
+						} else if !checkSkipDomainList(dnsQuery.Name, allowDomainList) {
 							myStats.skippedDomains++
 							continue
 						}

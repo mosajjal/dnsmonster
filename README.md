@@ -116,8 +116,9 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ## Command line options
 ```
 Usage of dnsmonster:
-  -AfpacketBuffersizeMb=64: Afpacket Buffersize in MB
+  -afpacketBuffersizeMb=64: Afpacket Buffersize in MB
   -allowDomainsFile="": Only output domains matching items in the CSV file path
+  -allowDomainsFileType="csv": allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
   -allowDomainsRefreshInterval=1m0s: Hot-Reload allowDomainsFile file interval
   -batchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
   -captureStatsDelay=1s: Duration to calculate interface stats
@@ -151,6 +152,7 @@ Usage of dnsmonster:
   -saveFullQuery=false: Save full packet query and response in JSON format
   -serverName="default": Name of the server used to index the metrics.
   -skipDomainsFile="": Skip outputing domains matching items in the CSV file path
+  -skipDomainsFileType="csv": skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
   -skipDomainsRefreshInterval=1m0s: Hot-Reload skipDomainsFile interval
   -stdoutOutputType="none": What should be written to stdout. options: all, skipdomains, allowdomains, none. No value for this field means none
   -tcpAssemblyChannelSize=1000: Size of the tcp assembler
@@ -250,7 +252,7 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Configuration file option
 - [ ] Splunk Dashboard
 - [x] Exclude FQDNs from being indexed
-- [ ] FQDN whitelisting to only log certain domains
+- [x] FQDN whitelisting to only log certain domains
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
 - [ ] Adding an optional Kafka middleware

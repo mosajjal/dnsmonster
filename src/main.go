@@ -42,7 +42,7 @@ var saveFullQuery = fs.Bool("saveFullQuery", false, "Save full packet query and 
 var packetHandlerCount = fs.Uint("packetHandlers", 1, "Number of routines used to handle received packets")
 var tcpHandlerCount = fs.Uint("tcpHandlers", 1, "Number of routines used to handle tcp assembly")
 var useAfpacket = fs.Bool("useAfpacket", false, "Use AFPacket for live captures")
-var afPacketBuffersizeMb = fs.Uint("AfpacketBuffersizeMb", 64, "Afpacket Buffersize in MB")
+var afpacketBuffersizeMb = fs.Uint("afpacketBuffersizeMb", 64, "Afpacket Buffersize in MB")
 var packetChannelSize = fs.Uint("packetHandlerChannelSize", 100000, "Size of the packet handler channel")
 var tcpAssemblyChannelSize = fs.Uint("tcpAssemblyChannelSize", 1000, "Size of the tcp assembler")
 var tcpResultChannelSize = fs.Uint("tcpResultChannelSize", 1000, "Size of the tcp result channel")
@@ -56,8 +56,10 @@ var loggerFilename = fs.Bool("loggerFilename", false, "Show the file name and nu
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
 var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip outputing domains matching items in the CSV file path")
 var skipDomainsRefreshInterval = fs.Duration("skipDomainsRefreshInterval", 60*time.Second, "Hot-Reload skipDomainsFile interval")
+var skipDomainsFileType = fs.String("skipDomainsFileType", "csv", "skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower")
 var allowDomainsFile = fs.String("allowDomainsFile", "", "Only output domains matching items in the CSV file path")
 var allowDomainsRefreshInterval = fs.Duration("allowDomainsRefreshInterval", 60*time.Second, "Hot-Reload allowDomainsFile file interval")
+var allowDomainsFileType = fs.String("allowDomainsFileType", "csv", "allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower")
 var dnstapPermission = fs.String("dnstapPermission", "755", "Set the dnstap socket permission, only applicable when unix:// is used")
 var fileOutputType = fs.String("fileOutputType", "none", "What should be written to file. options: all, skipdomains, allowdomains, none. No value for this field means none")
 var fileOutputPath = fs.String("fileOutputPath", "", "Path to output file. Used if fileOutputType is not none")
@@ -76,6 +78,12 @@ var ratioB int
 var skipDomainList [][]string
 var allowDomainList [][]string
 
+var skipDomainMap = make(map[string]bool)
+var allowDomainMap = make(map[string]bool)
+
+var skipDomainMapBool = false
+var allowDomainMapBool = false
+
 // skipDomainsBool is a boolean to see if we're actually doing skipDomainsFile or not
 var skipDomainsBool bool
 var allowDomainsBool bool
@@ -92,6 +100,12 @@ func checkFlags() {
 		if _, err := os.Stat(*skipDomainsFile); err != nil {
 			log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
 		}
+		if *skipDomainsFileType != "csv" && *skipDomainsFileType != "hashtable" {
+			log.Fatal("skipDomainsFileType must be either csv or hashtable")
+		}
+		if *skipDomainsFileType == "hashtable" {
+			skipDomainMapBool = true
+		}
 	}
 
 	allowDomainsBool = *allowDomainsFile != ""
@@ -99,6 +113,12 @@ func checkFlags() {
 		// check to see if the file provided exists
 		if _, err := os.Stat(*allowDomainsFile); err != nil {
 			log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
+		}
+		if *allowDomainsFileType != "csv" && *allowDomainsFileType != "hashtable" {
+			log.Fatal("allowDomainsFileType must be either csv or hashtable")
+		}
+		if *allowDomainsFileType == "hashtable" {
+			allowDomainMapBool = true
 		}
 	}
 
@@ -169,7 +189,7 @@ func checkFlags() {
 	}
 }
 
-func loadDomains(Filename string) [][]string {
+func loadDomainsToList(Filename string) [][]string {
 	file, err := os.Open(Filename)
 	if err != nil {
 		log.Fatal("error opening File: ", err)
@@ -181,6 +201,23 @@ func loadDomains(Filename string) [][]string {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		lines = append(lines, strings.Split(scanner.Text(), ","))
+	}
+	return lines
+}
+
+func loadDomainsToMap(Filename string) map[string]bool {
+	file, err := os.Open(Filename)
+	if err != nil {
+		log.Fatal("error opening File: ", err)
+	}
+	log.Println("(re)loading File: ", Filename)
+	defer file.Close()
+
+	lines := make(map[string]bool)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fqdn := strings.Split(scanner.Text(), ",")[0]
+		lines[fqdn] = true
 	}
 	return lines
 }
@@ -210,10 +247,18 @@ func main() {
 
 	// load the skipDomainFile if exists
 	if skipDomainsBool {
-		skipDomainList = loadDomains(*skipDomainsFile)
+		if skipDomainMapBool {
+			skipDomainMap = loadDomainsToMap(*skipDomainsFile)
+		} else {
+			skipDomainList = loadDomainsToList(*skipDomainsFile)
+		}
 	}
 	if allowDomainsBool {
-		allowDomainList = loadDomains(*allowDomainsFile)
+		if allowDomainMapBool {
+			allowDomainMap = loadDomainsToMap(*allowDomainsFile)
+		} else {
+			allowDomainList = loadDomainsToList(*allowDomainsFile)
+		}
 	}
 
 	var wg sync.WaitGroup

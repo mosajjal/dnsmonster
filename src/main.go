@@ -133,6 +133,10 @@ func checkFlags() {
 	}
 	if *fileOutputType == "none" || *fileOutputType == "" {
 		fileOutputBool = false
+	} else {
+		if *fileOutputPath == "" {
+			log.Fatal("fileOutputType is set but fileOutputPath is not provided. Exiting")
+		}
 	}
 	if *clickhouseOutputType != "all" && *clickhouseOutputType != "skipdomains" && *clickhouseOutputType != "allowdomains" && *clickhouseOutputType != "none" && *clickhouseOutputType != "" {
 		log.Fatal("clickhouseOutputType must be one of all, skipdomains, allowdomains, none.")
@@ -266,7 +270,7 @@ func main() {
 	go dispatchOutput(resultChannel, exiting, &wg)
 
 	if fileOutputBool {
-		go fileOutput(stdoutResultChannel, exiting, &wg)
+		go fileOutput(fileResultChannel, exiting, &wg)
 	}
 	if stdoutOutputBool {
 		go stdoutOutput(stdoutResultChannel, exiting, &wg)

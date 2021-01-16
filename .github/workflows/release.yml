@@ -19,7 +19,7 @@ jobs:
         docker cp $id:/tmp/dnsmonster-linux-amd64.bin /tmp/dnsmonster-linux-amd64.bin
         docker cp $id:/tmp/dnsmonster-windows-amd64.exe /tmp/dnsmonster-windows-amd64.exe
         strip --strip-all /tmp/dnsmonster-linux-amd64.bin
-        tar czf /tmp/dnsmonster-linux-amd64.bin.tar.gz /tmp/dnsmonster-linux-amd64.bin
+        tar -C /tmp/ czf /tmp/dnsmonster-linux-amd64.bin.tar.gz dnsmonster-linux-amd64.bin
     
     - name: Upload Linux binary to release
       uses: svenstaro/upload-release-action@v2

@@ -65,34 +65,26 @@ type DNSResult struct {
 func initializeLivePcap(devName, filter string) *pcap.Handle {
 	// Open device
 	handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
-	if err != nil {
-		log.Fatal(err)
-	}
+	errorHandler(err)
 
 	// Set Filter
 	log.Printf("Using Device: %s\n", devName)
 	log.Printf("Filter: %s\n", filter)
 	err = handle.SetBPFFilter(filter)
-	if err != nil {
-		log.Fatal(err)
-	}
+	errorHandler(err)
 
 	return handle
 }
 
 func initializeOfflinePcap(fileName, filter string) *pcap.Handle {
 	handle, err := pcap.OpenOffline(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
+	errorHandler(err)
 
 	// Set Filter
 	log.Printf("Using File: %s\n", fileName)
 	log.Printf("Filter: %s\n", filter)
 	err = handle.SetBPFFilter(filter)
-	if err != nil {
-		log.Fatal(err)
-	}
+	errorHandler(err)
 	return handle
 }
 

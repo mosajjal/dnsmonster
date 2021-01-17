@@ -90,9 +90,7 @@ var allowDomainsBool bool
 
 func checkFlags() {
 	err := fs.Parse(os.Args[1:])
-	if err != nil {
-		log.Fatal("Errors in parsing args")
-	}
+	errorHandler(err)
 
 	skipDomainsBool = *skipDomainsFile != ""
 	if skipDomainsBool {
@@ -195,9 +193,7 @@ func checkFlags() {
 
 func loadDomainsToList(Filename string) [][]string {
 	file, err := os.Open(Filename)
-	if err != nil {
-		log.Fatal("error opening File: ", err)
-	}
+	errorHandler(err)
 	log.Println("(re)loading File: ", Filename)
 	defer file.Close()
 
@@ -209,11 +205,15 @@ func loadDomainsToList(Filename string) [][]string {
 	return lines
 }
 
+func errorHandler(err error) {
+	if err != nil {
+		log.Fatal("fatal Error: ", err)
+	}
+}
+
 func loadDomainsToMap(Filename string) map[string]bool {
 	file, err := os.Open(Filename)
-	if err != nil {
-		log.Fatal("error opening File: ", err)
-	}
+	errorHandler(err)
 	log.Println("(re)loading File: ", Filename)
 	defer file.Close()
 
@@ -237,12 +237,9 @@ func main() {
 	if *cpuprofile != "" {
 		log.Println("Writing CPU profile")
 		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal("could not create CPU profile: ", err)
-		}
-		if err := pprof.StartCPUProfile(f); err != nil {
-			log.Fatal("could not start CPU profile: ", err)
-		}
+		errorHandler(err)
+		err = pprof.StartCPUProfile(f)
+		errorHandler(err)
 		defer pprof.StopCPUProfile()
 	}
 
@@ -284,14 +281,11 @@ func main() {
 			time.Sleep(120 * time.Second)
 			log.Println("Writing memory profile")
 			f, err := os.Create(*memprofile)
-			if err != nil {
-				log.Fatal("could not create memory profile: ", err)
-			}
+			errorHandler(err)
 			runtime.GC() // get up-to-date statistics
 
-			if err := pprof.Lookup("heap").WriteTo(f, 0); err != nil {
-				log.Fatal("could not write memory profile: ", err)
-			}
+			err = pprof.Lookup("heap").WriteTo(f, 0)
+			errorHandler(err)
 			f.Close()
 		}()
 	}

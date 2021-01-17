@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -17,25 +18,24 @@ var done = make(chan bool)
 var ln net.Listener
 
 func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSockInput {
-	connArray := strings.Split(socketString, "://")
 	var err error
-	ln, err = net.Listen(connArray[0], connArray[1])
-
-	if err != nil {
-		log.Fatalf("%v\n", err)
+	uri, err := url.ParseRequestURI(socketString)
+	errorHandler(err)
+	if uri.Scheme == "tcp4" || uri.Scheme == "tcp" || uri.Scheme == "tcp6" {
+		ln, err = net.Listen(uri.Scheme, uri.Host)
+		errorHandler(err)
+	} else {
+		ln, err = net.Listen(uri.Scheme, uri.Path)
+		errorHandler(err)
 	}
 	log.Printf("listening on DNStap socket %v\n", socketString)
 
-	if strings.Contains(socketString, "unix://") {
+	if uri.Scheme == "unix" {
 		//Chmod is defined in 8 bits not 10 bits, needs to be converter then passed on to the program
 		permission, err := strconv.ParseInt(socketChmod, 8, 0)
-		if err != nil {
-			log.Fatalf("%v\n", err)
-		}
-		err = os.Chmod(connArray[1], os.FileMode(permission))
-		if err != nil {
-			log.Fatalf("%v\n", err)
-		}
+		errorHandler(err)
+		err = os.Chmod(uri.Path, os.FileMode(permission))
+		errorHandler(err)
 	}
 	return dnstap.NewFrameStreamSockInput(ln)
 

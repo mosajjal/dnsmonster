@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -86,9 +85,7 @@ func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGr
 		var err error
 		fileObject, err = os.OpenFile(*fileOutputPath,
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Println(err)
-		}
+		errorHandler(err)
 		defer fileObject.Close()
 	}
 
@@ -138,9 +135,7 @@ func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGr
 
 				fullQuery, _ := json.Marshal(data)
 				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", fullQuery))
-				if err != nil {
-					log.Println("error in writing to the log file: ", err)
-				}
+				errorHandler(err)
 			}
 		case <-exiting:
 			return

@@ -27,9 +27,7 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 }
 func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 	pcapBPF, err := pcap.CompileBPFFilter(layers.LinkTypeEthernet, snaplen, filter)
-	if err != nil {
-		return err
-	}
+	errorHandler(err)
 	bpfIns := []bpf.RawInstruction{}
 	for _, ins := range pcapBPF {
 		bpfIns2 := bpf.RawInstruction{
@@ -80,10 +78,7 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 		*afpacketBuffersizeMb,
 		65536,
 		uint(os.Getpagesize()))
-	if err != nil {
-		log.Fatalf("Error calculating afpacket size: %s", err)
-	}
-
+	errorHandler(err)
 	handle.TPacket, err = afpacket.NewTPacket(
 		afpacket.OptInterface(devName),
 		afpacket.OptFrameSize(frameSize),
@@ -92,9 +87,7 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 		afpacket.OptPollTimeout(pcap.BlockForever),
 		afpacket.SocketRaw,
 		afpacket.TPacketVersion3)
-	if err != nil {
-		log.Fatalf("Error opening afpacket interface: %s", err)
-	}
+	errorHandler(err)
 
 	handle.SetBPFFilter(filter, 1024)
 

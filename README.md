@@ -253,18 +253,20 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Down-sampling capability for SELECT queries
 - [x] Adding `afpacket` support
 - [x] Configuration file option
-- [ ] Splunk Dashboard
 - [x] Exclude FQDNs from being indexed
 - [x] FQDN whitelisting to only log certain domains
+- [x] [dnstrap](https://github.com/dnstap/golang-dnstap) support
+- [ ] Splunk Dashboard
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
 - [ ] Adding an optional Kafka middleware
 - [ ] More DB engine support (Influx, Elasticsearch etc)
-- [ ] Getting the data ready to be used for Anomaly Detection
+- [ ] Getting the data ready to be used for ML & Anomaly Detection
 - [ ] Grafana dashboard performance improvements
-- [ ] remove libpcap dependency and move to `pcapgo`
-- [x] [dnstrap](https://github.com/dnstap/golang-dnstap) support
+- [ ] remove `libpcap` dependency and move to `pcapgo`
 - [ ] Database versioning and migration tool
+- [ ] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
+- [ ] `statsd` and `Prometheus` support 
 
 # Related projects
 

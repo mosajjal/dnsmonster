@@ -17,6 +17,7 @@ Table of Contents
 - [Sampling and Skipping](#sampling-and-skipping)
   - [pre-process sampling](#pre-process-sampling)
   - [skip domains](#skip-domains)
+  - [allow domains](#allow-domains)
   - [SAMPLE in clickhouse SELECT queries](#sample-in-clickhouse-select-queries)
 - [Build Manually](#build-manually)
   - [Static Build](#static-build)
@@ -34,6 +35,8 @@ the privacy of the end-users, with the ability to mask source IP from 1 to 32 bi
 
 
 IMPORTANT NOTE: The code before version 1.x is considered beta quality and is subject to breaking changes. Please check the release notes for each tag to see the list of breaking scenarios between each release, and how to mitigate potential data loss.
+
+![Inner logic of dnsmonster](static/dnsmonster-inner.svg)
 
 # Main features
 

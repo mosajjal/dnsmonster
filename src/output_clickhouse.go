@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"log"
 	"net"
@@ -16,12 +15,14 @@ import (
 	"github.com/rogpeppe/fastuuid"
 )
 
+var chstats = outputStats{"Clickhouse", 0, 0}
+
 var uuidGen = fastuuid.MustNewGenerator()
 
 func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse.Clickhouse {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if !clickhouseOutputBool {
+	if *clickhouseOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
@@ -59,15 +60,16 @@ func min(a, b int) int {
 	return b
 }
 
-func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, clickhouseHost string, batchSize uint, batchDelay time.Duration, limit int, server string) {
+func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, clickhouseHost string, clickhouseBatchSize uint, batchDelay time.Duration, limit int, server string) {
 	wg.Add(1)
 	defer wg.Done()
 	serverByte := []byte(server)
 
 	connect := connectClickhouseRetry(exiting, clickhouseHost)
-	batch := make([]DNSResult, 0, batchSize)
+	batch := make([]DNSResult, 0, clickhouseBatchSize)
 
 	ticker := time.Tick(batchDelay)
+	printStatsTicker := time.Tick(*printStatsDelay)
 	for {
 		select {
 		case data := <-resultChannel:
@@ -75,57 +77,28 @@ func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.
 				batch = append(batch, data)
 			}
 		case <-ticker:
-			if err := sendData(connect, batch, serverByte); err != nil {
+			if err := clickhouseSendData(connect, batch, serverByte); err != nil {
 				log.Println(err)
 				connect = connectClickhouseRetry(exiting, clickhouseHost)
 			} else {
-				batch = make([]DNSResult, 0, batchSize)
+				batch = make([]DNSResult, 0, clickhouseBatchSize)
 			}
 		case <-exiting:
 			return
+		case <-printStatsTicker:
+			log.Printf("output: %+v\n", chstats)
 		}
 	}
 }
 
-func checkSkipDomainList(domainName string, domainList [][]string) bool {
-	for _, item := range domainList {
-		if len(item) == 2 {
-			if item[1] == "suffix" {
-				if strings.HasSuffix(domainName, item[0]) {
-					return true
-				}
-			} else if item[1] == "fqdn" {
-				if domainName == item[0] {
-					return true
-				}
-			} else if item[1] == "prefix" {
-				if strings.HasPrefix(domainName, item[0]) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func checkSkipDomainHash(domainName string, inputHashTable map[string]bool) bool {
-	if inputHashTable[domainName] {
-		return true
-	}
-	return false
-}
-
-func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) error {
+func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) error {
 	if len(batch) == 0 {
 		return nil
 	}
-
 	// Return if the connection is null, we are exiting
 	if connect == nil {
 		return nil
 	}
-	// log.Println("Sending ", len(batch))
-	myStats.sentToDB += len(batch)
 	_, err := connect.Begin()
 	if err != nil {
 		return err
@@ -157,37 +130,16 @@ func sendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) e
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
 
-					// check skiplist
-					if skipDomainsBool {
-						if skipDomainMapBool {
-							if checkSkipDomainHash(dnsQuery.Name, skipDomainMap) {
-								myStats.skippedDomains++
-								continue
-							}
-						} else if checkSkipDomainList(dnsQuery.Name, skipDomainList) {
-							myStats.skippedDomains++
-							continue
-						}
+					if checkIfWeSkip(*clickhouseOutputType, dnsQuery.Name) {
+						chstats.Skipped++
+						continue
 					}
+					chstats.SentToOutput++
 
-					// check allowdomains
-					if allowDomainsBool {
-						if allowDomainMapBool {
-							if !checkSkipDomainHash(dnsQuery.Name, allowDomainMap) {
-								myStats.skippedDomains++
-								continue
-							}
-						} else if !checkSkipDomainList(dnsQuery.Name, allowDomainList) {
-							myStats.skippedDomains++
-							continue
-						}
-					}
 					var fullQuery []byte
 					if *saveFullQuery {
-
 						fullQuery, _ = json.Marshal(batch[k].DNS)
 					}
-					// log.Printf("myDNSResulttJSON: %#s\n", string(c))
 
 					// getting variables ready
 					ip := batch[k].DstIP

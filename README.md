@@ -123,12 +123,12 @@ Usage of dnsmonster:
   -allowDomainsFile="": Only output domains matching items in the CSV file path
   -allowDomainsFileType="csv": allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
   -allowDomainsRefreshInterval=1m0s: Hot-Reload allowDomainsFile file interval
-  -batchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
   -captureStatsDelay=1s: Duration to calculate interface stats
   -clickhouseAddress="localhost:9000": Address of the clickhouse database to save the results
+  -clickhouseBatchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
   -clickhouseDebug=false: Debug Clickhouse connection
   -clickhouseDelay=1s: Interval between sending results to ClickHouse
-  -clickhouseOutputType="skipdomains": What should be written to clickhouse. options: all, skipdomains, allowdomains, none. No value for this field means none
+  -clickhouseOutputType=2: What should be written to clickhouse. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -config="": path to config file
   -cpuprofile="": write cpu profile to file
   -defraggerChannelReturnSize=500: Size of the channel where the defragged packets are returned
@@ -137,10 +137,14 @@ Usage of dnsmonster:
   -dnstapPermission="755": Set the dnstap socket permission, only applicable when unix:// is used
   -dnstapSocket="": dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
   -fileOutputPath="": Path to output file. Used if fileOutputType is not none
-  -fileOutputType="none": What should be written to file. options: all, skipdomains, allowdomains, none. No value for this field means none
+  -fileOutputType=0: What should be written to file. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -filter="((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))": BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
   -gcTime=10s: Garbage Collection interval for tcp assembly and ip defragmentation
   -gomaxprocs=-1: GOMAXPROCS variable
+  -kafkaBatchSize=1000: Minimun capacity of the cache array used to send data to Kafka
+  -kafkaOutputBrokers="": comma-separated list of kafka brokers. Used if kafkaOutputType is not none
+  -kafkaOutputTopic="": Kafka topic for logging
+  -kafkaOutputType=0: What should be written to kafka. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -loggerFilename=false: Show the file name and number of the logged string
   -maskSize=32: Mask source IPs by bits. 32 means all the bits of IP is saved in DB
   -memprofile="": write memory profile to file
@@ -157,11 +161,12 @@ Usage of dnsmonster:
   -skipDomainsFile="": Skip outputing domains matching items in the CSV file path
   -skipDomainsFileType="csv": skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
   -skipDomainsRefreshInterval=1m0s: Hot-Reload skipDomainsFile interval
-  -stdoutOutputType="none": What should be written to stdout. options: all, skipdomains, allowdomains, none. No value for this field means none
+  -stdoutOutputType=0: What should be written to stdout. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -tcpAssemblyChannelSize=1000: Size of the tcp assembler
   -tcpHandlers=1: Number of routines used to handle tcp assembly
   -tcpResultChannelSize=1000: Size of the tcp result channel
   -useAfpacket=false: Use AFPacket for live captures
+
 
 
 ```

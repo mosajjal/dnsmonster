@@ -91,23 +91,12 @@ func startDNSTap(resultChannel chan DNSResult) {
 	ratioCnt := 0
 	totalCnt := 0
 
+	// Setup SIGINT handling
+	handleDNSTapInterrupt(done)
+
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.Tick(*captureStatsDelay)
 	printStatsTicker := time.Tick(*printStatsDelay)
-	skipDomainsFileTicker := time.NewTicker(*skipDomainsRefreshInterval)
-	skipDomainsFileTickerChan := skipDomainsFileTicker.C
-	if *skipDomainsFile == "" {
-		skipDomainsFileTicker.Stop()
-	}
-
-	allowDomainsFileTicker := time.NewTicker(*allowDomainsRefreshInterval)
-	allowDomainsFileTickerChan := allowDomainsFileTicker.C
-	if *allowDomainsFile == "" {
-		allowDomainsFileTicker.Stop()
-	}
-
-	// Setup SIGINT handling
-	handleDNSTapInterrupt(done)
 
 	for {
 
@@ -137,23 +126,11 @@ func startDNSTap(resultChannel chan DNSResult) {
 		case <-done:
 			return
 		case <-captureStatsTicker:
-			myStats.PacketsGot = totalCnt
-			myStats.PacketsLost = 0
-			myStats.PacketLossPercent = (float32(myStats.PacketsLost) * 100.0 / float32(myStats.PacketsGot))
+			pcapStats.PacketsGot = totalCnt
+			pcapStats.PacketsLost = 0
+			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
 		case <-printStatsTicker:
-			log.Printf("%+v\n", myStats)
-		case <-skipDomainsFileTickerChan:
-			if skipDomainMapBool {
-				skipDomainMap = loadDomainsToMap(*skipDomainsFile)
-			} else {
-				skipDomainList = loadDomainsToList(*skipDomainsFile)
-			}
-		case <-allowDomainsFileTickerChan:
-			if allowDomainMapBool {
-				allowDomainMap = loadDomainsToMap(*allowDomainsFile)
-			} else {
-				allowDomainList = loadDomainsToList(*allowDomainsFile)
-			}
+			log.Printf("%+v\n", pcapStats)
 		}
 	}
 }

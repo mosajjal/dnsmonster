@@ -14,16 +14,7 @@ import (
 	mkdns "github.com/miekg/dns"
 )
 
-// Stats is capturing statistics about our current live captures. At this point it's not accurate for PCAP files.
-type Stats struct {
-	PacketsGot        int
-	PacketsLost       int
-	PacketLossPercent float32
-	sentToDB          int
-	skippedDomains    int
-}
-
-var myStats Stats
+var pcapStats captureStats
 
 // CaptureOptions is a set of generated options variables to use within our capture routine
 type CaptureOptions struct {
@@ -171,17 +162,6 @@ func (capturer *DNSCapturer) start() {
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.Tick(*captureStatsDelay)
 	printStatsTicker := time.Tick(*printStatsDelay)
-	skipDomainsFileTicker := time.NewTicker(*skipDomainsRefreshInterval)
-	skipDomainsFileTickerChan := skipDomainsFileTicker.C
-	if *skipDomainsFile == "" {
-		skipDomainsFileTicker.Stop()
-	}
-
-	allowDomainsFileTicker := time.NewTicker(*allowDomainsRefreshInterval)
-	allowDomainsFileTickerChan := allowDomainsFileTicker.C
-	if *allowDomainsFile == "" {
-		allowDomainsFileTicker.Stop()
-	}
 
 	var ratioCnt = 0
 	var totalCnt = 0
@@ -212,30 +192,19 @@ func (capturer *DNSCapturer) start() {
 			if handle != nil {
 				mystats, err := handle.Stats()
 				if err == nil {
-					myStats.PacketsGot = mystats.PacketsReceived
-					myStats.PacketsLost = mystats.PacketsDropped
+					pcapStats.PacketsGot = mystats.PacketsReceived
+					pcapStats.PacketsLost = mystats.PacketsDropped
 				} else {
-					myStats.PacketsGot = totalCnt
+					pcapStats.PacketsGot = totalCnt
 				}
 			} else {
 				updateAfpacketStats(afhandle)
 			}
-			myStats.PacketLossPercent = (float32(myStats.PacketsLost) * 100.0 / float32(myStats.PacketsGot))
+			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
 
 		case <-printStatsTicker:
-			log.Printf("%+v\n", myStats)
-		case <-skipDomainsFileTickerChan:
-			if skipDomainMapBool {
-				skipDomainMap = loadDomainsToMap(*skipDomainsFile)
-			} else {
-				skipDomainList = loadDomainsToList(*skipDomainsFile)
-			}
-		case <-allowDomainsFileTickerChan:
-			if allowDomainMapBool {
-				allowDomainMap = loadDomainsToMap(*allowDomainsFile)
-			} else {
-				allowDomainList = loadDomainsToList(*allowDomainsFile)
-			}
+			log.Printf("%+v\n", pcapStats)
+
 		}
 
 	}

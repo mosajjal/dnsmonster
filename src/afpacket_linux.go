@@ -96,6 +96,6 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 
 func updateAfpacketStats(afhandle *afpacketHandle) {
 	mystats, statsv3, _ := afhandle.TPacket.SocketStats()
-	myStats.PacketsGot = int(mystats.Packets() + statsv3.Packets())
-	myStats.PacketsLost = int(mystats.Drops() + statsv3.Drops())
+	pcapStats.PacketsGot = int(mystats.Packets() + statsv3.Packets())
+	pcapStats.PacketsLost = int(mystats.Drops() + statsv3.Drops())
 }

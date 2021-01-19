@@ -31,12 +31,12 @@ var gcTime = fs.Duration("gcTime", 10*time.Second, "Garbage Collection interval 
 var clickhouseAddress = fs.String("clickhouseAddress", "localhost:9000", "Address of the clickhouse database to save the results")
 var clickhouseDelay = fs.Duration("clickhouseDelay", 1*time.Second, "Interval between sending results to ClickHouse")
 var clickhouseDebug = fs.Bool("clickhouseDebug", false, "Debug Clickhouse connection")
-var clickhouseOutputType = fs.String("clickhouseOutputType", "skipdomains", "What should be written to clickhouse. options: all, skipdomains, allowdomains, none. No value for this field means none")
+var clickhouseOutputType = fs.Uint("clickhouseOutputType", 2, "What should be written to clickhouse. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
+var clickhouseBatchSize = fs.Uint("clickhouseBatchSize", 100000, "Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations")
 var captureStatsDelay = fs.Duration("captureStatsDelay", time.Second, "Duration to calculate interface stats")
 var printStatsDelay = fs.Duration("printStatsDelay", time.Second*10, "Duration to print capture and database stats")
 var maskSize = fs.Int("maskSize", 32, "Mask source IPs by bits. 32 means all the bits of IP is saved in DB")
 var serverName = fs.String("serverName", "default", "Name of the server used to index the metrics.")
-var batchSize = fs.Uint("batchSize", 100000, "Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations")
 var sampleRatio = fs.String("sampleRatio", "1:1", "Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets")
 var saveFullQuery = fs.Bool("saveFullQuery", false, "Save full packet query and response in JSON format")
 var packetHandlerCount = fs.Uint("packetHandlers", 1, "Number of routines used to handle received packets")
@@ -61,14 +61,13 @@ var allowDomainsFile = fs.String("allowDomainsFile", "", "Only output domains ma
 var allowDomainsRefreshInterval = fs.Duration("allowDomainsRefreshInterval", 60*time.Second, "Hot-Reload allowDomainsFile file interval")
 var allowDomainsFileType = fs.String("allowDomainsFileType", "csv", "allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower")
 var dnstapPermission = fs.String("dnstapPermission", "755", "Set the dnstap socket permission, only applicable when unix:// is used")
-var fileOutputType = fs.String("fileOutputType", "none", "What should be written to file. options: all, skipdomains, allowdomains, none. No value for this field means none")
+var fileOutputType = fs.Uint("fileOutputType", 0, "What should be written to file. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
 var fileOutputPath = fs.String("fileOutputPath", "", "Path to output file. Used if fileOutputType is not none")
-var stdoutOutputType = fs.String("stdoutOutputType", "none", "What should be written to stdout. options: all, skipdomains, allowdomains, none. No value for this field means none")
-
-// Output Bool Flags. Will set this to true if the flag is not "none" or empty. Makes for a much faster dispatch
-var fileOutputBool = true
-var stdoutOutputBool = true
-var clickhouseOutputBool = true
+var stdoutOutputType = fs.Uint("stdoutOutputType", 0, "What should be written to stdout. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
+var kafkaOutputType = fs.Uint("kafkaOutputType", 0, "What should be written to kafka. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
+var kafkaOutputBrokers = fs.String("kafkaOutputBrokers", "", "comma-separated list of kafka brokers. Used if kafkaOutputType is not none")
+var kafkaOutputTopic = fs.String("kafkaOutputTopic", "", "Kafka topic for logging")
+var kafkaBatchSize = fs.Uint("kafkaBatchSize", 1000, "Minimun capacity of the cache array used to send data to Kafka")
 
 // Ratio numbers
 var ratioA int
@@ -84,16 +83,11 @@ var allowDomainMap = make(map[string]bool)
 var skipDomainMapBool = false
 var allowDomainMapBool = false
 
-// skipDomainsBool is a boolean to see if we're actually doing skipDomainsFile or not
-var skipDomainsBool bool
-var allowDomainsBool bool
-
 func checkFlags() {
 	err := fs.Parse(os.Args[1:])
 	errorHandler(err)
 
-	skipDomainsBool = *skipDomainsFile != ""
-	if skipDomainsBool {
+	if *skipDomainsFile != "" {
 		// check to see if the file provided exists
 		if _, err := os.Stat(*skipDomainsFile); err != nil {
 			log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
@@ -106,8 +100,7 @@ func checkFlags() {
 		}
 	}
 
-	allowDomainsBool = *allowDomainsFile != ""
-	if allowDomainsBool {
+	if *allowDomainsFile != "" {
 		// check to see if the file provided exists
 		if _, err := os.Stat(*allowDomainsFile); err != nil {
 			log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
@@ -120,27 +113,21 @@ func checkFlags() {
 		}
 	}
 
-	if *stdoutOutputType != "all" && *stdoutOutputType != "skipdomains" && *stdoutOutputType != "allowdomains" && *stdoutOutputType != "none" && *stdoutOutputType != "" {
-		log.Fatal("stdoutOutputType must be one of all, skipdomains, allowdomains, none.")
+	if *stdoutOutputType >= 5 {
+		log.Fatal("stdoutOutputType must be one of 0, 1, 2, 3 or 4")
 	}
-	if *stdoutOutputType == "none" || *stdoutOutputType == "" {
-		stdoutOutputBool = false
-	}
-	if *fileOutputType != "all" && *fileOutputType != "skipdomains" && *fileOutputType != "allowdomains" && *fileOutputType != "none" && *fileOutputType != "" {
-		log.Fatal("fileOutputType must be one of all, skipdomains, allowdomains, none.")
-	}
-	if *fileOutputType == "none" || *fileOutputType == "" {
-		fileOutputBool = false
-	} else {
+	if *fileOutputType >= 5 {
+		log.Fatal("fileOutputType must be one of 0, 1, 2, 3 or 4")
+	} else if *fileOutputType > 0 {
 		if *fileOutputPath == "" {
 			log.Fatal("fileOutputType is set but fileOutputPath is not provided. Exiting")
 		}
 	}
-	if *clickhouseOutputType != "all" && *clickhouseOutputType != "skipdomains" && *clickhouseOutputType != "allowdomains" && *clickhouseOutputType != "none" && *clickhouseOutputType != "" {
-		log.Fatal("clickhouseOutputType must be one of all, skipdomains, allowdomains, none.")
+	if *clickhouseOutputType >= 5 {
+		log.Fatal("clickhouseOutputType must be one of 0, 1, 2, 3 or 4")
 	}
-	if *clickhouseOutputType == "none" || *clickhouseOutputType == "" {
-		clickhouseOutputBool = false
+	if *kafkaOutputType >= 5 {
+		log.Fatal("kafkaOutputType must be one of 0, 1, 2, 3 or 4")
 	}
 
 	if *loggerFilename {
@@ -189,6 +176,7 @@ func checkFlags() {
 	if errA != nil || errB != nil || ratioA > ratioB {
 		log.Fatal("wrong -sampleRatio syntax")
 	}
+
 }
 
 func loadDomainsToList(Filename string) [][]string {
@@ -247,14 +235,14 @@ func main() {
 	exiting := make(chan bool)
 
 	// load the skipDomainFile if exists
-	if skipDomainsBool {
+	if *skipDomainsFile != "" {
 		if skipDomainMapBool {
 			skipDomainMap = loadDomainsToMap(*skipDomainsFile)
 		} else {
 			skipDomainList = loadDomainsToList(*skipDomainsFile)
 		}
 	}
-	if allowDomainsBool {
+	if *allowDomainsFile != "" {
 		if allowDomainMapBool {
 			allowDomainMap = loadDomainsToMap(*allowDomainsFile)
 		} else {
@@ -266,16 +254,16 @@ func main() {
 
 	go dispatchOutput(resultChannel, exiting, &wg)
 
-	if fileOutputBool {
+	if *fileOutputType > 0 {
 		go fileOutput(fileResultChannel, exiting, &wg)
 	}
-	if stdoutOutputBool {
+	if *stdoutOutputType > 0 {
 		go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
-	if clickhouseOutputBool {
-		go clickhouseOutput(clickhouseResultChannel, exiting, &wg, *clickhouseAddress, *batchSize, *clickhouseDelay, *packetLimit, *serverName)
+	if *clickhouseOutputType > 0 {
+		go clickhouseOutput(clickhouseResultChannel, exiting, &wg, *clickhouseAddress, *clickhouseBatchSize, *clickhouseDelay, *packetLimit, *serverName)
 	}
-
+	// TODO: write Kafka output function here
 	if *memprofile != "" {
 		go func() {
 			time.Sleep(120 * time.Second)

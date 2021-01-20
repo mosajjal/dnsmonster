@@ -20,7 +20,7 @@ filter=((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6]
 gcTime=10s
 gomaxprocs=-1
 kafkaBatchSize=1000
-kafkaOutputBrokers=
+kafkaOutputBroker=
 kafkaOutputTopic=
 kafkaOutputType=0
 loggerFilename=false

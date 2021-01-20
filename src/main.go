@@ -65,8 +65,8 @@ var fileOutputType = fs.Uint("fileOutputType", 0, "What should be written to fil
 var fileOutputPath = fs.String("fileOutputPath", "", "Path to output file. Used if fileOutputType is not none")
 var stdoutOutputType = fs.Uint("stdoutOutputType", 0, "What should be written to stdout. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
 var kafkaOutputType = fs.Uint("kafkaOutputType", 0, "What should be written to kafka. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
-var kafkaOutputBrokers = fs.String("kafkaOutputBrokers", "", "comma-separated list of kafka brokers. Used if kafkaOutputType is not none")
-var kafkaOutputTopic = fs.String("kafkaOutputTopic", "", "Kafka topic for logging")
+var kafkaOutputBroker = fs.String("kafkaOutputBroker", "", "kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none")
+var kafkaOutputTopic = fs.String("kafkaOutputTopic", "dnsmonster", "Kafka topic for logging")
 var kafkaBatchSize = fs.Uint("kafkaBatchSize", 1000, "Minimun capacity of the cache array used to send data to Kafka")
 
 // Ratio numbers
@@ -215,6 +215,7 @@ func loadDomainsToMap(Filename string) map[string]bool {
 }
 
 var clickhouseResultChannel = make(chan DNSResult, *resultChannelSize)
+var kafkaResultChannel = make(chan DNSResult, *resultChannelSize)
 var stdoutResultChannel = make(chan DNSResult, *resultChannelSize)
 var fileResultChannel = make(chan DNSResult, *resultChannelSize)
 var resultChannel = make(chan DNSResult, *resultChannelSize)
@@ -263,7 +264,9 @@ func main() {
 	if *clickhouseOutputType > 0 {
 		go clickhouseOutput(clickhouseResultChannel, exiting, &wg, *clickhouseAddress, *clickhouseBatchSize, *clickhouseDelay, *packetLimit, *serverName)
 	}
-	// TODO: write Kafka output function here
+	if *kafkaOutputType > 0 {
+		go kafkaOutput(kafkaResultChannel, exiting, &wg, *kafkaOutputBroker, *kafkaOutputTopic, *kafkaBatchSize, *clickhouseDelay, *packetLimit)
+	}
 	if *memprofile != "" {
 		go func() {
 			time.Sleep(120 * time.Second)

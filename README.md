@@ -142,8 +142,8 @@ Usage of dnsmonster:
   -gcTime=10s: Garbage Collection interval for tcp assembly and ip defragmentation
   -gomaxprocs=-1: GOMAXPROCS variable
   -kafkaBatchSize=1000: Minimun capacity of the cache array used to send data to Kafka
-  -kafkaOutputBrokers="": comma-separated list of kafka brokers. Used if kafkaOutputType is not none
-  -kafkaOutputTopic="": Kafka topic for logging
+  -kafkaOutputBroker="": kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none
+  -kafkaOutputTopic="dnsmonster": Kafka topic for logging
   -kafkaOutputType=0: What should be written to kafka. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -loggerFilename=false: Show the file name and number of the logged string
   -maskSize=32: Mask source IPs by bits. 32 means all the bits of IP is saved in DB
@@ -166,8 +166,6 @@ Usage of dnsmonster:
   -tcpHandlers=1: Number of routines used to handle tcp assembly
   -tcpResultChannelSize=1000: Size of the tcp result channel
   -useAfpacket=false: Use AFPacket for live captures
-
-
 
 ```
 
@@ -261,10 +259,10 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Exclude FQDNs from being indexed
 - [x] FQDN whitelisting to only log certain domains
 - [x] [dnstrap](https://github.com/dnstap/golang-dnstap) support
+- [x] Adding an optional Kafka middleware
 - [ ] Splunk Dashboard
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
-- [ ] Adding an optional Kafka middleware
 - [ ] More DB engine support (Influx, Elasticsearch etc)
 - [ ] Getting the data ready to be used for ML & Anomaly Detection
 - [ ] Grafana dashboard performance improvements

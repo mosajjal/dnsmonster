@@ -34,7 +34,9 @@ func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wa
 			if *clickhouseOutputType > 0 {
 				clickhouseResultChannel <- data
 			}
-			// TODO: Write Kafka
+			if *kafkaOutputType > 0 {
+				kafkaResultChannel <- data
+			}
 		case <-exiting:
 			return
 		case <-skipDomainsFileTickerChan:

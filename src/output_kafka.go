@@ -2,14 +2,20 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 	"time"
 
+	"github.com/rogpeppe/fastuuid"
 	"github.com/segmentio/kafka-go"
 )
 
-func connectKafkaRetry(exiting chan bool, kafkaHost string) *kafka.Conn {
+var kafkaUuidGen = fastuuid.MustNewGenerator()
+var kafkastats = outputStats{"Kafka", 0, 0}
+
+func connectKafkaRetry(exiting chan bool, kafkaBroker string, kafkaTopic string) *kafka.Conn {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if *kafkaOutputType == 0 {
@@ -17,7 +23,7 @@ func connectKafkaRetry(exiting chan bool, kafkaHost string) *kafka.Conn {
 	}
 	defer tick.Stop()
 	for {
-		conn, err := connectKafka(exiting, kafkaHost)
+		conn, err := connectKafka(exiting, kafkaBroker, kafkaTopic)
 		if err == nil {
 			return conn
 		}
@@ -33,8 +39,8 @@ func connectKafkaRetry(exiting chan bool, kafkaHost string) *kafka.Conn {
 	}
 }
 
-func connectKafka(exiting chan bool, kafkaHost string) (*kafka.Conn, error) {
-	conn, err := kafka.DialLeader(context.Background(), "tcp", "localhost:9092", "topic", 0)
+func connectKafka(exiting chan bool, kafkaBroker string, kafkaTopic string) (*kafka.Conn, error) {
+	conn, err := kafka.DialLeader(context.Background(), "tcp", kafkaBroker, kafkaTopic, 0)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -43,14 +49,16 @@ func connectKafka(exiting chan bool, kafkaHost string) (*kafka.Conn, error) {
 	return conn, err
 }
 
-func kafkaOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, clickhouseHost string, kafkaBatchSize uint, batchDelay time.Duration, limit int, server string) {
+func kafkaOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, kafkaBroker string, kafkaTopic string, kafkaBatchSize uint, batchDelay time.Duration, limit int) {
 	wg.Add(1)
 	defer wg.Done()
 
-	connect := connectKafkaRetry(exiting, clickhouseHost)
+	connect := connectKafkaRetry(exiting, kafkaBroker, kafkaTopic)
 	batch := make([]DNSResult, 0, kafkaBatchSize)
 
 	ticker := time.Tick(batchDelay)
+	printStatsTicker := time.Tick(*printStatsDelay)
+
 	for {
 		select {
 		case data := <-resultChannel:
@@ -60,17 +68,40 @@ func kafkaOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitG
 		case <-ticker:
 			if err := kafkaSendData(connect, batch); err != nil {
 				log.Println(err)
-				connect = connectKafkaRetry(exiting, clickhouseHost)
+				connect = connectKafkaRetry(exiting, kafkaBroker, kafkaBroker)
 			} else {
 				batch = make([]DNSResult, 0, kafkaBatchSize)
 			}
 		case <-exiting:
 			return
+		case <-printStatsTicker:
+			log.Printf("output: %+v\n", kafkastats)
 		}
 	}
 }
 
 func kafkaSendData(connect *kafka.Conn, batch []DNSResult) error {
-	return nil
-	// TODO
+	var msg []kafka.Message
+	for i := range batch {
+		for _, dnsQuery := range batch[i].DNS.Question {
+			if checkIfWeSkip(*kafkaOutputType, dnsQuery.Name) {
+				kafkastats.Skipped++
+				continue
+			}
+			kafkastats.SentToOutput++
+
+			myUUID := kafkaUuidGen.Hex128()
+			fullQuery, err := json.Marshal(batch[i])
+			errorHandler(err)
+
+			msg = append(msg, kafka.Message{
+				Key:   []byte(myUUID),
+				Value: []byte(fmt.Sprintf("%s\n", fullQuery)),
+			})
+
+		}
+	}
+	_, err := connect.WriteMessages(msg...)
+	return err
+
 }

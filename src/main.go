@@ -19,6 +19,8 @@ import (
 	"github.com/namsral/flag"
 )
 
+const VERSION = "v0.8.0"
+
 var fs = flag.NewFlagSetWithEnvPrefix(os.Args[0], "DNSMONSTER", 0)
 var devName = fs.String("devName", "", "Device used to capture")
 var pcapFile = fs.String("pcapFile", "", "Pcap filename to run")
@@ -69,6 +71,8 @@ var kafkaOutputBroker = fs.String("kafkaOutputBroker", "", "kafka broker address
 var kafkaOutputTopic = fs.String("kafkaOutputTopic", "dnsmonster", "Kafka topic for logging")
 var kafkaBatchSize = fs.Uint("kafkaBatchSize", 1000, "Minimun capacity of the cache array used to send data to Kafka")
 
+var version = fs.Bool("version", false, "show version and exit")
+
 // Ratio numbers
 var ratioA int
 var ratioB int
@@ -86,6 +90,10 @@ var allowDomainMapBool = false
 func checkFlags() {
 	err := fs.Parse(os.Args[1:])
 	errorHandler(err)
+
+	if *version {
+		log.Fatalln("dnsmonster version:", VERSION)
+	}
 
 	if *skipDomainsFile != "" {
 		// check to see if the file provided exists

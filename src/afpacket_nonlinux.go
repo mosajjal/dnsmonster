@@ -35,8 +35,8 @@ func (h *afpacketHandle) Close() {
 }
 
 func updateAfpacketStats(afhandle *afpacketHandle) {
-	myStats.PacketsGot = 0
-	myStats.PacketsLost = 0
+	pcapStats.PacketsGot = 0
+	pcapStats.PacketsLost = 0
 }
 
 func initializeLiveAFpacket(devName, filter string) *afpacketHandle {

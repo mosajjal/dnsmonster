@@ -2,6 +2,7 @@
 ![Go Version](https://img.shields.io/github/go-mod/go-version/mosajjal/dnsmonster/main?filename=src%2Fgo.mod&style=flat-square)
 ![Latest Version](https://img.shields.io/github/v/tag/mosajjal/dnsmonster?label=latest&style=flat-square)
 ![License](https://img.shields.io/github/license/mosajjal/dnsmonster?style=flat-square)
+![Open Issues](https://img.shields.io/github/issues/mosajjal/dnsmonster?style=flat-square)
 
 Table of Contents
 - [DNS Monster](#dns-monster)

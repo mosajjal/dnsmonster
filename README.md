@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/mosajjal/dnsmonster/workflows/Build%20Test/badge.svg)](https://github.com/mosajjal/dnsmonster/actions)
+![Build Status](https://github.com/mosajjal/dnsmonster/workflows/Build%20Test/badge.svg?style=flat-square)
 ![Go Version](https://img.shields.io/github/go-mod/go-version/mosajjal/dnsmonster/main?filename=src%2Fgo.mod&style=flat-square)
 ![Latest Version](https://img.shields.io/github/v/tag/mosajjal/dnsmonster?label=latest&style=flat-square)
 ![License](https://img.shields.io/github/license/mosajjal/dnsmonster?style=flat-square)

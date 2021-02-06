@@ -273,7 +273,7 @@ There are two binary flavours released for each release. A statically-linked sel
 - [ ] Getting the data ready to be used for ML & Anomaly Detection
 - [ ] Grafana dashboard performance improvements
 - [ ] remove `libpcap` dependency and move to `pcapgo`
-- [ ] Database versioning and migration tool
+- [ ] Clickhouse versioning and migration tool
 - [ ] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
 - [ ] `statsd` and `Prometheus` support 
 

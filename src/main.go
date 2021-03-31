@@ -8,6 +8,7 @@ package main
 import (
 	"bufio"
 	"log"
+	"net/http"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -56,10 +57,10 @@ var memprofile = fs.String("memprofile", "", "write memory profile to file")
 var gomaxprocs = fs.Int("gomaxprocs", -1, "GOMAXPROCS variable")
 var loggerFilename = fs.Bool("loggerFilename", false, "Show the file name and number of the logged string")
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
-var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip outputing domains matching items in the CSV file path")
+var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path")
 var skipDomainsRefreshInterval = fs.Duration("skipDomainsRefreshInterval", 60*time.Second, "Hot-Reload skipDomainsFile interval")
 var skipDomainsFileType = fs.String("skipDomainsFileType", "csv", "skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower")
-var allowDomainsFile = fs.String("allowDomainsFile", "", "Only output domains matching items in the CSV file path")
+var allowDomainsFile = fs.String("allowDomainsFile", "", "Allow Domains logic input file. Can accept a URL (http:// or https://) or path")
 var allowDomainsRefreshInterval = fs.Duration("allowDomainsRefreshInterval", 60*time.Second, "Hot-Reload allowDomainsFile file interval")
 var allowDomainsFileType = fs.String("allowDomainsFileType", "csv", "allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower")
 var dnstapPermission = fs.String("dnstapPermission", "755", "Set the dnstap socket permission, only applicable when unix:// is used")
@@ -97,9 +98,10 @@ func checkFlags() {
 
 	if *skipDomainsFile != "" {
 		// check to see if the file provided exists
-		if _, err := os.Stat(*skipDomainsFile); err != nil {
-			log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
-		}
+		// commented because this now can be either filepath or URL, WIP
+		// if _, err := os.Stat(*skipDomainsFile); err != nil {
+		// 	log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
+		// }
 		if *skipDomainsFileType != "csv" && *skipDomainsFileType != "hashtable" {
 			log.Fatal("skipDomainsFileType must be either csv or hashtable")
 		}
@@ -110,9 +112,10 @@ func checkFlags() {
 
 	if *allowDomainsFile != "" {
 		// check to see if the file provided exists
-		if _, err := os.Stat(*allowDomainsFile); err != nil {
-			log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
-		}
+		// commented because this now can be either filepath or URL, WIP
+		// if _, err := os.Stat(*allowDomainsFile); err != nil {
+		// 	log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
+		// }
 		if *allowDomainsFileType != "csv" && *allowDomainsFileType != "hashtable" {
 			log.Fatal("allowDomainsFileType must be either csv or hashtable")
 		}
@@ -188,13 +191,31 @@ func checkFlags() {
 }
 
 func loadDomainsToList(Filename string) [][]string {
-	file, err := os.Open(Filename)
-	errorHandler(err)
-	log.Println("(re)loading File: ", Filename)
-	defer file.Close()
-
 	var lines [][]string
-	scanner := bufio.NewScanner(file)
+	var scanner *bufio.Scanner
+	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
+		client := http.Client{
+			CheckRedirect: func(r *http.Request, via []*http.Request) error {
+				r.URL.Opaque = r.URL.Path
+				return nil
+			},
+		}
+		resp, err := client.Get(Filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println("(re)fetching URL: ", Filename)
+		defer resp.Body.Close()
+		scanner = bufio.NewScanner(resp.Body)
+
+	} else {
+		file, err := os.Open(Filename)
+		errorHandler(err)
+		log.Println("(re)loading File: ", Filename)
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		lines = append(lines, strings.Split(scanner.Text(), ","))
 	}
@@ -208,13 +229,31 @@ func errorHandler(err error) {
 }
 
 func loadDomainsToMap(Filename string) map[string]bool {
-	file, err := os.Open(Filename)
-	errorHandler(err)
-	log.Println("(re)loading File: ", Filename)
-	defer file.Close()
-
 	lines := make(map[string]bool)
-	scanner := bufio.NewScanner(file)
+	var scanner *bufio.Scanner
+	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
+		client := http.Client{
+			CheckRedirect: func(r *http.Request, via []*http.Request) error {
+				r.URL.Opaque = r.URL.Path
+				return nil
+			},
+		}
+		resp, err := client.Get(Filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println("(re)fetching URL: ", Filename)
+		defer resp.Body.Close()
+		scanner = bufio.NewScanner(resp.Body)
+
+	} else {
+		file, err := os.Open(Filename)
+		errorHandler(err)
+		log.Println("(re)loading File: ", Filename)
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
+	}
+
 	for scanner.Scan() {
 		fqdn := strings.Split(scanner.Text(), ",")[0]
 		lines[fqdn] = true

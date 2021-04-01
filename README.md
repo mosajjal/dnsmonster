@@ -126,7 +126,7 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ```
 Usage of dnsmonster:
   -afpacketBuffersizeMb=64: Afpacket Buffersize in MB
-  -allowDomainsFile="": Only output domains matching items in the CSV file path
+  -allowDomainsFile="": Allow Domains logic input file. Can accept a URL (http:// or https://) or path
   -allowDomainsFileType="csv": allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
   -allowDomainsRefreshInterval=1m0s: Hot-Reload allowDomainsFile file interval
   -captureStatsDelay=1s: Duration to calculate interface stats
@@ -164,7 +164,7 @@ Usage of dnsmonster:
   -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
   -saveFullQuery=false: Save full packet query and response in JSON format
   -serverName="default": Name of the server used to index the metrics.
-  -skipDomainsFile="": Skip outputing domains matching items in the CSV file path
+  -skipDomainsFile="": Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path
   -skipDomainsFileType="csv": skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
   -skipDomainsRefreshInterval=1m0s: Hot-Reload skipDomainsFile interval
   -stdoutOutputType=0: What should be written to stdout. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
@@ -172,7 +172,7 @@ Usage of dnsmonster:
   -tcpHandlers=1: Number of routines used to handle tcp assembly
   -tcpResultChannelSize=1000: Size of the tcp result channel
   -useAfpacket=false: Use AFPacket for live captures
-
+  -version=false: show version and exit
 ```
 
 

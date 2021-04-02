@@ -265,7 +265,8 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Exclude FQDNs from being indexed
 - [x] FQDN whitelisting to only log certain domains
 - [x] [dnstrap](https://github.com/dnstap/golang-dnstap) support
-- [x] Adding an optional Kafka middleware
+- [x] Kafka output support
+- [x] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
 - [ ] Splunk Dashboard
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
@@ -274,7 +275,6 @@ There are two binary flavours released for each release. A statically-linked sel
 - [ ] Grafana dashboard performance improvements
 - [ ] remove `libpcap` dependency and move to `pcapgo`
 - [ ] Clickhouse versioning and migration tool
-- [ ] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
 - [ ] `statsd` and `Prometheus` support 
 
 # Related projects

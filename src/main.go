@@ -71,6 +71,12 @@ var kafkaOutputType = fs.Uint("kafkaOutputType", 0, "What should be written to k
 var kafkaOutputBroker = fs.String("kafkaOutputBroker", "", "kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none")
 var kafkaOutputTopic = fs.String("kafkaOutputTopic", "dnsmonster", "Kafka topic for logging")
 var kafkaBatchSize = fs.Uint("kafkaBatchSize", 1000, "Minimun capacity of the cache array used to send data to Kafka")
+var kafkaBatchDelay = fs.Duration("kafkaBatchDelay", 1*time.Second, "Interval between sending results to Kafka if Batch size is not filled")
+var elasticOutputType = fs.Uint("elasticOutputType", 0, "What should be written to elastic. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
+var elasticOutputEndpoint = fs.String("elasticOutputEndpoint", "", "elastic broker address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none")
+var elasticOutputIndex = fs.String("elasticOutputIndex", "default", "elastic index")
+var elasticBatchSize = fs.Uint("elasticBatchSize", 1000, "Send data to Elastic in batch sizes")
+var elasticBatchDelay = fs.Duration("elasticBatchDelay", 1*time.Second, "Interval between sending results to Elastic if Batch size is not filled")
 
 var version = fs.Bool("version", false, "show version and exit")
 
@@ -139,6 +145,9 @@ func checkFlags() {
 	}
 	if *kafkaOutputType >= 5 {
 		log.Fatal("kafkaOutputType must be one of 0, 1, 2, 3 or 4")
+	}
+	if *elasticOutputType >= 5 {
+		log.Fatal("elasticOutputType must be one of 0, 1, 2, 3 or 4")
 	}
 
 	if *loggerFilename {
@@ -263,6 +272,7 @@ func loadDomainsToMap(Filename string) map[string]bool {
 
 var clickhouseResultChannel = make(chan DNSResult, *resultChannelSize)
 var kafkaResultChannel = make(chan DNSResult, *resultChannelSize)
+var elasticResultChannel = make(chan DNSResult, *resultChannelSize)
 var stdoutResultChannel = make(chan DNSResult, *resultChannelSize)
 var fileResultChannel = make(chan DNSResult, *resultChannelSize)
 var resultChannel = make(chan DNSResult, *resultChannelSize)
@@ -312,7 +322,10 @@ func main() {
 		go clickhouseOutput(clickhouseResultChannel, exiting, &wg, *clickhouseAddress, *clickhouseBatchSize, *clickhouseDelay, *packetLimit, *serverName)
 	}
 	if *kafkaOutputType > 0 {
-		go kafkaOutput(kafkaResultChannel, exiting, &wg, *kafkaOutputBroker, *kafkaOutputTopic, *kafkaBatchSize, *clickhouseDelay, *packetLimit)
+		go kafkaOutput(kafkaResultChannel, exiting, &wg, *kafkaOutputBroker, *kafkaOutputTopic, *kafkaBatchSize, *kafkaBatchDelay, *packetLimit)
+	}
+	if *elasticOutputType > 0 {
+		go elasticOutput(elasticResultChannel, exiting, &wg, *elasticOutputEndpoint, *elasticOutputIndex, *elasticBatchSize, *elasticBatchDelay, *packetLimit)
 	}
 	if *memprofile != "" {
 		go func() {

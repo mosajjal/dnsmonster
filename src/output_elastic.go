@@ -66,6 +66,7 @@ func connectelastic(exiting chan bool, elasticEndpoint string) (*elastic.Client,
 	}
 	fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
 
+	return client, err
 }
 
 func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, elasticEndpoint string, elasticIndex string, elasticBatchSize uint, batchDelay time.Duration, limit int) {
@@ -80,17 +81,13 @@ func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wai
 
 	// Use the IndexExists service to check if a specified index exists.
 	exists, err := client.IndexExists(elasticIndex).Do(ctx)
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
+	errorHandler(err)
+
 	if !exists {
 		// Create a new index.
 		createIndex, err := client.CreateIndex(elasticIndex).Do(ctx)
-		if err != nil {
-			// Handle error
-			panic(err)
-		}
+		errorHandler(err)
+
 		if !createIndex.Acknowledged {
 			// Not acknowledged
 		}
@@ -103,9 +100,9 @@ func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wai
 				batch = append(batch, data)
 			}
 		case <-ticker:
-			if err := elasticSendData(connect, batch); err != nil {
+			if err := elasticSendData(client, elasticIndex, batch); err != nil {
 				log.Println(err)
-				connect = connectelasticRetry(exiting, elasticEndpoint, elasticEndpoint)
+				client = connectelasticRetry(exiting, elasticEndpoint)
 			} else {
 				batch = make([]DNSResult, 0, elasticBatchSize)
 			}
@@ -117,8 +114,7 @@ func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wai
 	}
 }
 
-func elasticSendData(connect *elastic.Conn, batch []DNSResult) error {
-	var msg []elastic.Message
+func elasticSendData(client *elastic.Client, elasticIndex string, batch []DNSResult) error {
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
 			if checkIfWeSkip(*elasticOutputType, dnsQuery.Name) {
@@ -127,18 +123,19 @@ func elasticSendData(connect *elastic.Conn, batch []DNSResult) error {
 			}
 			elasticstats.SentToOutput++
 
-			myUUID := elasticUuidGen.Hex128()
+			// batch[i].UUID = elasticUuidGen.Hex128()
 			fullQuery, err := json.Marshal(batch[i])
 			errorHandler(err)
 
-			msg = append(msg, elastic.Message{
-				Key:   []byte(myUUID),
-				Value: []byte(fmt.Sprintf("%s\n", fullQuery)),
-			})
+			_, err = client.Index().
+				Index(elasticIndex).
+				BodyJson(fullQuery).
+				Do(ctx)
 
+			errorHandler(err)
 		}
 	}
-	_, err := connect.WriteMessages(msg...)
+	_, err := client.Flush().Index(elasticIndex).Do(ctx)
 	return err
 
 }

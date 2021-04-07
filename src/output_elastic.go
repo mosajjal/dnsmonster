@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/olivere/elastic"
-	"github.com/rogpeppe/fastuuid"
 )
 
-var elasticUuidGen = fastuuid.MustNewGenerator()
+// var elasticUuidGen = fastuuid.MustNewGenerator()
 var elasticstats = outputStats{"elastic", 0, 0}
 var ctx = context.Background()
 

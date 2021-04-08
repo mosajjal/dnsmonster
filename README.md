@@ -267,10 +267,11 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] [dnstrap](https://github.com/dnstap/golang-dnstap) support
 - [x] Kafka output support
 - [x] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
+- [x] Elasticsearch output support
 - [ ] Splunk Dashboard
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
-- [ ] More DB engine support (Influx, Elasticsearch etc)
+- [ ] More DB engine support (Influx etc)
 - [ ] Getting the data ready to be used for ML & Anomaly Detection
 - [ ] Grafana dashboard performance improvements
 - [ ] remove `libpcap` dependency and move to `pcapgo`

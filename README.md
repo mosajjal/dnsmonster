@@ -25,6 +25,7 @@ Table of Contents
   - [skip domains](#skip-domains)
   - [allow domains](#allow-domains)
   - [SAMPLE in clickhouse SELECT queries](#sample-in-clickhouse-select-queries)
+- [Supported Outputs](#supported-outputs)
 - [Build Manually](#build-manually)
   - [Static Build](#static-build)
   - [pre-built Binary](#pre-built-binary)
@@ -237,6 +238,14 @@ ALTER TABLE `.inner.DNS_IP_MASK` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS_LOG`) file have the ability to sample down a result as needed, since each DNS question has a semi-unique UUID associated with it. For more information about SAMPLE queries in Clickhouse, please check out [this](https://clickhouse.tech/docs/en/sql-reference/statements/select/sample/) document.
 
 
+# Supported Outputs
+
+* Clickhouse
+* Kafka
+* Elasticsearch
+* Stdout
+* File
+
 # Build Manually
 
 Make sure you have `libpcap-devel` and `linux-headers` packages installed.
@@ -268,7 +277,10 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Kafka output support
 - [x] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
 - [x] Elasticsearch output support
+- [ ] Splunk HEC output support
+- [ ] Syslog output support
 - [ ] Splunk Dashboard
+- [ ] Kibana Dashbaord
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
 - [ ] More DB engine support (Influx etc)

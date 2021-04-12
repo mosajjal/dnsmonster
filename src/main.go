@@ -80,7 +80,12 @@ var elasticBatchSize = fs.Uint("elasticBatchSize", 1000, "Send data to Elastic i
 var elasticBatchDelay = fs.Duration("elasticBatchDelay", 1*time.Second, "Interval between sending results to Elastic if Batch size is not filled")
 var splunkOutputType = fs.Uint("splunkOutputType", 0, "What should be written to HEC. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
 var splunkOutputEndpoint = fs.String("splunkOutputEndpoint", "", "HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none")
-var splunkHecToken = fs.String("splunkHecToken", "00000000-0000-0000-0000-000000000000", "Splunk HEC Token")
+var splunkOutputToken = fs.String("splunkOutputToken", "00000000-0000-0000-0000-000000000000", "Splunk HEC Token")
+var splunkOutputIndex = fs.String("splunkOutputIndex", "temp", "Splunk Output Index")
+var splunkOutputSource = fs.String("splunkOutputSource", "dnsmonster", "Splunk Output Source")
+var splunkOutputSourceType = fs.String("splunkOutputSourceType", "json", "Splunk Output Sourcetype")
+var splunkBatchSize = fs.Uint("splunkBatchSize", 1000, "Send data to HEC in batch sizes")
+var splunkBatchDelay = fs.Duration("splunkBatchDelay", 1*time.Second, "Interval between sending results to HEC if Batch size is not filled")
 
 var version = fs.Bool("version", false, "show version and exit")
 

@@ -282,6 +282,7 @@ func loadDomainsToMap(Filename string) map[string]bool {
 var clickhouseResultChannel = make(chan DNSResult, *resultChannelSize)
 var kafkaResultChannel = make(chan DNSResult, *resultChannelSize)
 var elasticResultChannel = make(chan DNSResult, *resultChannelSize)
+var splunkResultChannel = make(chan DNSResult, *resultChannelSize)
 var stdoutResultChannel = make(chan DNSResult, *resultChannelSize)
 var fileResultChannel = make(chan DNSResult, *resultChannelSize)
 var resultChannel = make(chan DNSResult, *resultChannelSize)
@@ -335,6 +336,9 @@ func main() {
 	}
 	if *elasticOutputType > 0 {
 		go elasticOutput(elasticResultChannel, exiting, &wg, *elasticOutputEndpoint, *elasticOutputIndex, *elasticBatchSize, *elasticBatchDelay, *packetLimit)
+	}
+	if *splunkOutputType > 0 {
+		go splunkOutput(splunkResultChannel, exiting, &wg, *splunkOutputEndpoint, *splunkOutputToken, *splunkOutputIndex, *splunkBatchSize, *splunkBatchDelay, *packetLimit)
 	}
 	if *memprofile != "" {
 		go func() {

@@ -40,6 +40,9 @@ func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wa
 			if *elasticOutputType > 0 {
 				elasticResultChannel <- data
 			}
+			if *splunkOutputType > 0 {
+				splunkResultChannel <- data
+			}
 		case <-exiting:
 			return
 		case <-skipDomainsFileTickerChan:

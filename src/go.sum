@@ -56,6 +56,12 @@ github.com/mattn/go-sqlite3 v1.9.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOq
 github.com/miekg/dns v1.1.31/go.mod h1:KNUDUusw/aVsxyTYZM1oqvCicbwhgbNgztCETuNZ7xM=
 github.com/miekg/dns v1.1.35 h1:oTfOaDH+mZkdcgdIjH6yBajRGtIwcwcaR+rt23ZSrJs=
 github.com/miekg/dns v1.1.35/go.mod h1:KNUDUusw/aVsxyTYZM1oqvCicbwhgbNgztCETuNZ7xM=
+github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.3 h1:h8mGPDAUFFTc97kqhh1iYIMhhKV2Ecx3R3g+atHsrw4=
+github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.3/go.mod h1:AcnVnp0ahYACYnWg1nIR0BzpwzCq4hYeLvhO5xk4xTo=
+github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.4 h1:RWoZF/fG6DFr1RUzAAk/Q1lTqvu2xsTBs2zMolcOPBY=
+github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.4/go.mod h1:AcnVnp0ahYACYnWg1nIR0BzpwzCq4hYeLvhO5xk4xTo=
+github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.5 h1:W/r2Mi+UgUYkH29F+RluyOsR4hATxPfnyEmkAl3xXwE=
+github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.5/go.mod h1:AcnVnp0ahYACYnWg1nIR0BzpwzCq4hYeLvhO5xk4xTo=
 github.com/namsral/flag v1.7.4-pre h1:b2ScHhoCUkbsq0d2C15Mv+VU8bl8hAXV8arnWiOHNZs=
 github.com/namsral/flag v1.7.4-pre/go.mod h1:OXldTctbM6SWH1K899kPZcf65KxJiD7MsceFUpB5yDo=
 github.com/olivere/elastic v6.2.35+incompatible h1:MMklYDy2ySi01s123CB2WLBuDMzFX4qhFcA5tKWJPgM=

@@ -143,16 +143,22 @@ Usage of dnsmonster:
   -devName="": Device used to capture
   -dnstapPermission="755": Set the dnstap socket permission, only applicable when unix:// is used
   -dnstapSocket="": dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
+  -elasticBatchDelay=1s: Interval between sending results to Elastic if Batch size is not filled
+  -elasticBatchSize=1000: Send data to Elastic in batch sizes
+  -elasticOutputEndpoint="": elastic endpoint address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none
+  -elasticOutputIndex="default": elastic index
+  -elasticOutputType=0: What should be written to elastic. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -fileOutputPath="": Path to output file. Used if fileOutputType is not none
   -fileOutputType=0: What should be written to file. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -filter="((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))": BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
   -gcTime=10s: Garbage Collection interval for tcp assembly and ip defragmentation
   -gomaxprocs=-1: GOMAXPROCS variable
+  -kafkaBatchDelay=1s: Interval between sending results to Kafka if Batch size is not filled
   -kafkaBatchSize=1000: Minimun capacity of the cache array used to send data to Kafka
   -kafkaOutputBroker="": kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none
   -kafkaOutputTopic="dnsmonster": Kafka topic for logging
   -kafkaOutputType=0: What should be written to kafka. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -loggerFilename=false: Show the file name and number of the logged string
+  -loggerFilename=false: Show the file name in log outputs
   -maskSize=32: Mask source IPs by bits. 32 means all the bits of IP is saved in DB
   -memprofile="": write memory profile to file
   -packetHandlerChannelSize=100000: Size of the packet handler channel
@@ -168,6 +174,15 @@ Usage of dnsmonster:
   -skipDomainsFile="": Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path
   -skipDomainsFileType="csv": skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
   -skipDomainsRefreshInterval=1m0s: Hot-Reload skipDomainsFile interval
+  -skipTlsVerification=false: Skip TLS verification when making HTTPS connections
+  -splunkBatchDelay=1s: Interval between sending results to HEC if Batch size is not filled
+  -splunkBatchSize=1000: Send data to HEC in batch sizes
+  -splunkOutputEndpoint="": HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none
+  -splunkOutputIndex="temp": Splunk Output Index
+  -splunkOutputSource="dnsmonster": Splunk Output Source
+  -splunkOutputSourceType="json": Splunk Output Sourcetype
+  -splunkOutputToken="00000000-0000-0000-0000-000000000000": Splunk HEC Token
+  -splunkOutputType=0: What should be written to HEC. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -stdoutOutputType=0: What should be written to stdout. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -tcpAssemblyChannelSize=1000: Size of the tcp assembler
   -tcpHandlers=1: Number of routines used to handle tcp assembly
@@ -243,6 +258,7 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 * Clickhouse
 * Kafka
 * Elasticsearch
+* Splunk HEC
 * Stdout
 * File
 
@@ -277,13 +293,12 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Kafka output support
 - [x] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
 - [x] Elasticsearch output support
-- [ ] Splunk HEC output support
+- [x] Splunk HEC output support
 - [ ] Syslog output support
 - [ ] Splunk Dashboard
 - [ ] Kibana Dashbaord
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
-- [ ] More DB engine support (Influx etc)
 - [ ] Getting the data ready to be used for ML & Anomaly Detection
 - [ ] Grafana dashboard performance improvements
 - [ ] remove `libpcap` dependency and move to `pcapgo`

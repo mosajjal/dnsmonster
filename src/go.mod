@@ -12,7 +12,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/miekg/dns v1.1.35
-	github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.5
+	github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.7
 	github.com/namsral/flag v1.7.4-pre
 	github.com/olivere/elastic v6.2.35+incompatible
 	github.com/pkg/errors v0.9.1 // indirect

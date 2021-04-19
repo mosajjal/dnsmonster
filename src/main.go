@@ -7,7 +7,6 @@ package main
 
 import (
 	"bufio"
-	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -16,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/namsral/flag"
 )
@@ -67,7 +68,6 @@ var defraggerChannelReturnSize = fs.Uint("defraggerChannelReturnSize", 500, "Siz
 var cpuprofile = fs.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = fs.String("memprofile", "", "write memory profile to file")
 var gomaxprocs = fs.Int("gomaxprocs", -1, "GOMAXPROCS variable")
-var loggerFilename = fs.Bool("loggerFilename", false, "Show the file name in log outputs")
 var skipTlsVerification = fs.Bool("skipTlsVerification", false, "Skip TLS verification when making HTTPS connections")
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
 var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path")
@@ -116,17 +116,21 @@ var allowDomainMapBool = false
 
 func checkFlags() {
 	fs.Var(&splunkOutputEndpoints, "splunkOutputEndpoint", "HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none")
+	log.Info("Parsing flags")
 	err := fs.Parse(os.Args[1:])
-	log.Println(splunkOutputEndpoints)
 	errorHandler(err)
 
 	if *version {
 		log.Fatalln("dnsmonster version:", VERSION)
 	}
 
+	//TODO: log format needs to be a configurable parameter
+	log.SetFormatter(&log.JSONFormatter{})
+
 	if *skipDomainsFile != "" {
+		log.Info("skipDomainsFile is provided")
 		// check to see if the file provided exists
-		// commented because this now can be either filepath or URL, WIP
+		// commented because this now can be either filepath or URL, TODO
 		// if _, err := os.Stat(*skipDomainsFile); err != nil {
 		// 	log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
 		// }
@@ -139,8 +143,9 @@ func checkFlags() {
 	}
 
 	if *allowDomainsFile != "" {
+		log.Info("allowDomainsFile is provided")
 		// check to see if the file provided exists
-		// commented because this now can be either filepath or URL, WIP
+		// commented because this now can be either filepath or URL, TODO
 		// if _, err := os.Stat(*allowDomainsFile); err != nil {
 		// 	log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
 		// }
@@ -170,12 +175,6 @@ func checkFlags() {
 	}
 	if *elasticOutputType >= 5 {
 		log.Fatal("elasticOutputType must be one of 0, 1, 2, 3 or 4")
-	}
-
-	if *loggerFilename {
-		log.SetFlags(log.LstdFlags | log.Lshortfile)
-	} else {
-		log.SetFlags(log.LstdFlags)
 	}
 	if *port > 65535 {
 		log.Fatal("-port must be between 1 and 65535")
@@ -222,9 +221,11 @@ func checkFlags() {
 }
 
 func loadDomainsToList(Filename string) [][]string {
+	log.Info("Loading the domain from file/url to a list")
 	var lines [][]string
 	var scanner *bufio.Scanner
 	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
+		log.Info("domain list is a URL, trying to fetch")
 		client := http.Client{
 			CheckRedirect: func(r *http.Request, via []*http.Request) error {
 				r.URL.Opaque = r.URL.Path
@@ -235,14 +236,14 @@ func loadDomainsToList(Filename string) [][]string {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("(re)fetching URL: ", Filename)
+		log.Info("(re)fetching URL: ", Filename)
 		defer resp.Body.Close()
 		scanner = bufio.NewScanner(resp.Body)
 
 	} else {
 		file, err := os.Open(Filename)
 		errorHandler(err)
-		log.Println("(re)loading File: ", Filename)
+		log.Info("(re)loading File: ", Filename)
 		defer file.Close()
 		scanner = bufio.NewScanner(file)
 	}
@@ -250,6 +251,7 @@ func loadDomainsToList(Filename string) [][]string {
 	for scanner.Scan() {
 		lines = append(lines, strings.Split(scanner.Text(), ","))
 	}
+	log.Infof("%s loaded with %d lines", Filename, len(lines))
 	return lines
 }
 
@@ -260,9 +262,11 @@ func errorHandler(err error) {
 }
 
 func loadDomainsToMap(Filename string) map[string]bool {
+	log.Info("Loading the domain from file/url to a hashmap")
 	lines := make(map[string]bool)
 	var scanner *bufio.Scanner
 	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
+		log.Info("domain list is a URL, trying to fetch")
 		client := http.Client{
 			CheckRedirect: func(r *http.Request, via []*http.Request) error {
 				r.URL.Opaque = r.URL.Path
@@ -273,14 +277,14 @@ func loadDomainsToMap(Filename string) map[string]bool {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("(re)fetching URL: ", Filename)
+		log.Info("(re)fetching URL: ", Filename)
 		defer resp.Body.Close()
 		scanner = bufio.NewScanner(resp.Body)
 
 	} else {
 		file, err := os.Open(Filename)
 		errorHandler(err)
-		log.Println("(re)loading File: ", Filename)
+		log.Info("(re)loading File: ", Filename)
 		defer file.Close()
 		scanner = bufio.NewScanner(file)
 	}
@@ -289,6 +293,7 @@ func loadDomainsToMap(Filename string) map[string]bool {
 		fqdn := strings.Split(scanner.Text(), ",")[0]
 		lines[fqdn] = true
 	}
+	log.Infof("%s loaded with %d lines", Filename, len(lines))
 	return lines
 }
 
@@ -304,7 +309,7 @@ func main() {
 	checkFlags()
 	runtime.GOMAXPROCS(*gomaxprocs)
 	if *cpuprofile != "" {
-		log.Println("Writing CPU profile")
+		log.Info("Writing CPU profile")
 		f, err := os.Create(*cpuprofile)
 		errorHandler(err)
 		err = pprof.StartCPUProfile(f)
@@ -356,7 +361,7 @@ func main() {
 	if *memprofile != "" {
 		go func() {
 			time.Sleep(120 * time.Second)
-			log.Println("Writing memory profile")
+			log.Info("Writing memory profile")
 			f, err := os.Create(*memprofile)
 			errorHandler(err)
 			runtime.GC() // get up-to-date statistics
@@ -388,7 +393,7 @@ func main() {
 		})
 		capturer.start()
 		// Wait for the output to finish
-		log.Println("Exiting")
+		log.Info("Exiting")
 		wg.Wait()
 	} else {
 		startDNSTap(resultChannel)

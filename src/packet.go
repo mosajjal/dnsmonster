@@ -123,7 +123,7 @@ func (encoder *packetEncoder) run() {
 							}
 							break
 						}
-						// log.Printf("packet %v coming to %p\n", timestamp, &encoder)
+						// log.Infof("packet %v coming to %p\n", timestamp, &encoder)
 						encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), timestamp, 4, ip4.SrcIP, ip4.DstIP)
 						break
 					case layers.LayerTypeIPv6:

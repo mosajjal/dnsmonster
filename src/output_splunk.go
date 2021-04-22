@@ -4,12 +4,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
 )
@@ -89,7 +90,7 @@ func splunkOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 		case <-ticker:
 			client := clients[rand.Intn(len(clients))]
 			if err := splunkSendData(client, splunkIndex, *splunkOutputSource, *splunkOutputSourceType, batch); err != nil {
-				log.Println(err)
+				log.Info(err)
 				client = connectSplunkRetry(exiting, client.URL, splunkHecToken, *skipTlsVerification)
 			} else {
 				batch = make([]DNSResult, 0, splunkBatchSize)
@@ -97,7 +98,7 @@ func splunkOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 		case <-exiting:
 			return
 		case <-printStatsTicker:
-			log.Printf("output: %+v\n", splunkStats)
+			log.Infof("output: %+v", splunkStats)
 		}
 	}
 }

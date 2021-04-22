@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/rogpeppe/fastuuid"
 	"github.com/segmentio/kafka-go"
@@ -42,7 +43,7 @@ func connectKafkaRetry(exiting chan bool, kafkaBroker string, kafkaTopic string)
 func connectKafka(exiting chan bool, kafkaBroker string, kafkaTopic string) (*kafka.Conn, error) {
 	conn, err := kafka.DialLeader(context.Background(), "tcp", kafkaBroker, kafkaTopic, 0)
 	if err != nil {
-		log.Println(err)
+		log.Info(err)
 		return nil, err
 	}
 
@@ -67,7 +68,7 @@ func kafkaOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitG
 			}
 		case <-ticker:
 			if err := kafkaSendData(connect, batch); err != nil {
-				log.Println(err)
+				log.Info(err)
 				connect = connectKafkaRetry(exiting, kafkaBroker, kafkaBroker)
 			} else {
 				batch = make([]DNSResult, 0, kafkaBatchSize)
@@ -75,7 +76,7 @@ func kafkaOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitG
 		case <-exiting:
 			return
 		case <-printStatsTicker:
-			log.Printf("output: %+v\n", kafkastats)
+			log.Infof("output: %+v", kafkastats)
 		}
 	}
 }

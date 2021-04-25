@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net"
 	"net/url"
 	"os"
@@ -9,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	dnstap "github.com/dnstap/golang-dnstap"
 	"github.com/golang/protobuf/proto"
@@ -28,7 +29,7 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 		ln, err = net.Listen(uri.Scheme, uri.Path)
 		errorHandler(err)
 	}
-	log.Printf("listening on DNStap socket %v\n", socketString)
+	log.Infof("listening on DNStap socket %v", socketString)
 
 	if uri.Scheme == "unix" {
 		//Chmod is defined in 8 bits not 10 bits, needs to be converter then passed on to the program
@@ -46,7 +47,7 @@ func handleDNSTapInterrupt(done chan bool) {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
-			log.Printf("SIGINT received.. Cleaning up")
+			log.Infof("SIGINT received.. Cleaning up")
 			if strings.Contains(*dnstapSocket, "unix://") {
 				os.Remove(strings.Split(*dnstapSocket, "://")[1])
 			} else {
@@ -83,7 +84,7 @@ func dnsTapMsgToDNSResult(msg []byte) DNSResult {
 }
 
 func startDNSTap(resultChannel chan DNSResult) {
-	log.Println("Starting DNStap capture")
+	log.Info("Starting DNStap capture")
 	input := parseDnstapSocket(*dnstapSocket, *dnstapPermission)
 
 	buf := make(chan []byte, 1024)
@@ -107,7 +108,7 @@ func startDNSTap(resultChannel chan DNSResult) {
 			totalCnt++
 
 			if msg == nil {
-				log.Println("dnstap socket is returning nil. exiting..")
+				log.Info("dnstap socket is returning nil. exiting..")
 				time.Sleep(time.Second * 2)
 				close(done)
 				return
@@ -130,7 +131,7 @@ func startDNSTap(resultChannel chan DNSResult) {
 			pcapStats.PacketsLost = 0
 			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
 		case <-printStatsTicker:
-			log.Printf("%+v\n", pcapStats)
+			log.Infof("%+v", pcapStats)
 		}
 	}
 }

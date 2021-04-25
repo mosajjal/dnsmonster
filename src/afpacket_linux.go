@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/afpacket"
@@ -61,7 +62,7 @@ func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	numBlocks = (targetSizeMb * 1024 * 1024) / blockSize
 
 	if numBlocks == 0 {
-		log.Println("Interface buffersize is too small")
+		log.Info("Interface buffersize is too small")
 		return 0, 0, 0, err
 	}
 

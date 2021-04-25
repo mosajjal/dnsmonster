@@ -1,9 +1,10 @@
 package main
 
 import (
-	"log"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"net"
 	"os"
@@ -59,8 +60,8 @@ func initializeLivePcap(devName, filter string) *pcap.Handle {
 	errorHandler(err)
 
 	// Set Filter
-	log.Printf("Using Device: %s\n", devName)
-	log.Printf("Filter: %s\n", filter)
+	log.Infof("Using Device: %s", devName)
+	log.Infof("Filter: %s", filter)
 	err = handle.SetBPFFilter(filter)
 	errorHandler(err)
 
@@ -72,8 +73,8 @@ func initializeOfflinePcap(fileName, filter string) *pcap.Handle {
 	errorHandler(err)
 
 	// Set Filter
-	log.Printf("Using File: %s\n", fileName)
-	log.Printf("Filter: %s\n", filter)
+	log.Infof("Using File: %s", fileName)
+	log.Infof("Filter: %s", filter)
 	err = handle.SetBPFFilter(filter)
 	errorHandler(err)
 	return handle
@@ -84,7 +85,7 @@ func handleInterrupt(done chan bool) {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
-			log.Printf("SIGINT received")
+			log.Infof("SIGINT received")
 			close(done)
 			return
 		}
@@ -141,17 +142,17 @@ func (capturer *DNSCapturer) start() {
 		handle = initializeLivePcap(options.DevName, options.Filter)
 		defer handle.Close()
 		packetSource = gopacket.NewPacketSource(handle, handle.LinkType())
-		log.Println("Waiting for packets")
+		log.Info("Waiting for packets")
 	} else if options.DevName != "" && options.useAfpacket {
 		afhandle = initializeLiveAFpacket(options.DevName, options.Filter)
 		defer afhandle.Close()
 		packetSource = gopacket.NewPacketSource(afhandle, afhandle.LinkType())
-		log.Println("Waiting for packets using AFpacket")
+		log.Info("Waiting for packets using AFpacket")
 	} else {
 		handle = initializeOfflinePcap(options.PcapFile, options.Filter)
 		defer handle.Close()
 		packetSource = gopacket.NewPacketSource(handle, handle.LinkType())
-		log.Println("Reading off Pcap file")
+		log.Info("Reading off Pcap file")
 	}
 	packetSource.DecodeOptions.Lazy = true
 	packetSource.NoCopy = true
@@ -170,7 +171,7 @@ func (capturer *DNSCapturer) start() {
 		select {
 		case packet := <-packetSource.Packets():
 			if packet == nil {
-				log.Println("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 10 seconds waiting for processing to finish")
+				log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 10 seconds waiting for processing to finish")
 				time.Sleep(time.Second * 10)
 				close(options.Done)
 				return
@@ -203,7 +204,7 @@ func (capturer *DNSCapturer) start() {
 			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
 
 		case <-printStatsTicker:
-			log.Printf("%+v\n", pcapStats)
+			log.Infof("%+v", pcapStats)
 
 		}
 

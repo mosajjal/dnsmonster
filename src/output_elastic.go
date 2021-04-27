@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/olivere/elastic"
 )
@@ -47,7 +47,7 @@ func connectelastic(exiting chan bool, elasticEndpoint string) (*elastic.Client,
 		elastic.SetHealthcheckInterval(10*time.Second),
 		// elastic.SetRetrier(connectelasticRetry(exiting, elasticEndpoint)),
 		elastic.SetGzip(true),
-		elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)),
+		elastic.SetErrorLog(log.New()),
 		// elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
 		// elastic.SetHeaders(http.Header{
 		//   "X-Caller-Id": []string{"..."},
@@ -63,7 +63,7 @@ func connectelastic(exiting chan bool, elasticEndpoint string) (*elastic.Client,
 		// Handle error
 		panic(err)
 	}
-	fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
+	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
 	return client, err
 }
@@ -100,7 +100,7 @@ func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wai
 			}
 		case <-ticker:
 			if err := elasticSendData(client, elasticIndex, batch); err != nil {
-				log.Println(err)
+				log.Info(err)
 				client = connectelasticRetry(exiting, elasticEndpoint)
 			} else {
 				batch = make([]DNSResult, 0, elasticBatchSize)
@@ -108,7 +108,7 @@ func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wai
 		case <-exiting:
 			return
 		case <-printStatsTicker:
-			log.Printf("output: %+v\n", elasticstats)
+			log.Infof("output: %+v", elasticstats)
 		}
 	}
 }

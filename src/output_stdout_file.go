@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var stdoutstats = outputStats{"Stdout", 0, 0}
@@ -34,7 +35,7 @@ func stdoutOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 		case <-exiting:
 			return
 		case <-printStatsTicker:
-			log.Printf("output: %+v\n", stdoutstats)
+			log.Infof("output: %+v", stdoutstats)
 		}
 	}
 }
@@ -70,7 +71,7 @@ func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGr
 		case <-exiting:
 			return
 		case <-printStatsTicker:
-			log.Printf("output: %+v\n", fileoutstats)
+			log.Infof("output: %+v", fileoutstats)
 		}
 	}
 }

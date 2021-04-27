@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"log"
 	"net"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ClickHouse/clickhouse-go"
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
@@ -46,7 +47,7 @@ func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse
 func connectClickhouse(exiting chan bool, clickhouseHost string) (clickhouse.Clickhouse, error) {
 	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v", clickhouseHost, *clickhouseDebug))
 	if err != nil {
-		log.Println(err)
+		log.Info(err)
 		return nil, err
 	}
 
@@ -78,7 +79,7 @@ func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.
 			}
 		case <-ticker:
 			if err := clickhouseSendData(connect, batch, serverByte); err != nil {
-				log.Println(err)
+				log.Info(err)
 				connect = connectClickhouseRetry(exiting, clickhouseHost)
 			} else {
 				batch = make([]DNSResult, 0, clickhouseBatchSize)
@@ -86,7 +87,7 @@ func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.
 		case <-exiting:
 			return
 		case <-printStatsTicker:
-			log.Printf("output: %+v\n", chstats)
+			log.Infof("output: %+v", chstats)
 		}
 	}
 }

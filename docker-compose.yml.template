@@ -17,7 +17,7 @@ services:
       - "-clickhouseAddress=127.0.0.1:9000"
       - "-batchSize=10000"
   ch:
-    image: yandex/clickhouse-server:20.5
+    image: yandex/clickhouse-server:21.1.7.1
     ports:
       - "8123:8123"
       - "9000:9000"

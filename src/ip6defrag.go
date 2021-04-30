@@ -4,9 +4,10 @@ package main
 import (
 	"container/list"
 	"fmt"
-	"log"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -19,7 +20,7 @@ type debugging bool
 
 func (d debugging) Printf(format string, args ...interface{}) {
 	if d {
-		log.Printf(format, args...)
+		log.Infof(format, args...)
 	}
 }
 

@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/binary"
+	"io"
+	"net"
+	"time"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	"io"
-	"log"
-	"net"
-	"time"
+	log "github.com/sirupsen/logrus"
 )
 
 type tcpPacket struct {
@@ -51,7 +52,7 @@ func (ds *dnsStream) processStream() {
 		if err == io.EOF {
 			return
 		} else if err != nil {
-			log.Println("Error when reading DNS buf", err)
+			log.Info("Error when reading DNS buf", err)
 		} else if count > 0 {
 			data = append(data, tmp[0:count]...)
 			for curLength := len(data); curLength >= 2; curLength = len(data) {

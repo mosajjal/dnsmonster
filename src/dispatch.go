@@ -37,6 +37,9 @@ func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wa
 			if *kafkaOutputType > 0 {
 				kafkaResultChannel <- data
 			}
+			if *elasticOutputType > 0 {
+				elasticResultChannel <- data
+			}
 		case <-exiting:
 			return
 		case <-skipDomainsFileTickerChan:

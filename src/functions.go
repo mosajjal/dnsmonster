@@ -39,10 +39,7 @@ func checkSkipDomainList(domainName string, domainList [][]string) bool {
 
 // checkSkipDomainHash returns true if the domain exists in the inputHashTable
 func checkSkipDomainHash(domainName string, inputHashTable map[string]bool) bool {
-	if inputHashTable[domainName] {
-		return true
-	}
-	return false
+	return inputHashTable[domainName]
 }
 
 //0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic.

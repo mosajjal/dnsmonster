@@ -48,7 +48,7 @@ func connectelastic(exiting chan bool, elasticEndpoint string) (*elastic.Client,
 		// elastic.SetRetrier(connectelasticRetry(exiting, elasticEndpoint)),
 		elastic.SetGzip(true),
 		elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)),
-		elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
+		// elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
 		// elastic.SetHeaders(http.Header{
 		//   "X-Caller-Id": []string{"..."},
 	)
@@ -88,7 +88,7 @@ func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wai
 		errorHandler(err)
 
 		if !createIndex.Acknowledged {
-			// Not acknowledged
+			log.Panicln("Could not create the Elastic index.. Exiting")
 		}
 	}
 
@@ -128,7 +128,8 @@ func elasticSendData(client *elastic.Client, elasticIndex string, batch []DNSRes
 
 			_, err = client.Index().
 				Index(elasticIndex).
-				BodyJson(fullQuery).
+				Type("_doc").
+				BodyString(string(fullQuery)).
 				Do(ctx)
 
 			errorHandler(err)

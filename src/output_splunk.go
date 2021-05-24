@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,7 +16,15 @@ import (
 
 var splunkStats = outputStats{"splunk", 0, 0}
 
-func connecSplunkRetry(exiting chan bool, splunkEndpoint string, splunkHecToken string, skipTlsVerification bool) *splunk.Client {
+func connectMultiSplunkRetry(exiting chan bool, splunkEndpoints []string, splunkHecToken string, skipTlsVerification bool) []*splunk.Client {
+	var outputs []*splunk.Client
+	for _, splunkEndpoint := range splunkEndpoints {
+		outputs = append(outputs, connectSplunkRetry(exiting, splunkEndpoint, splunkHecToken, skipTlsVerification))
+	}
+	return outputs
+}
+
+func connectSplunkRetry(exiting chan bool, splunkEndpoint string, splunkHecToken string, skipTlsVerification bool) *splunk.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if *splunkOutputType == 0 {
@@ -41,9 +51,15 @@ func connectSplunk(exiting chan bool, splunkEndpoint string, splunkHecToken stri
 
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: skipTlsVerification}}
 	httpClient := &http.Client{Timeout: time.Second * 20, Transport: tr}
+
+	splunkURL := splunkEndpoint
+	if !strings.HasSuffix(splunkEndpoint, "/services/collector") {
+		splunkURL = fmt.Sprintf("%s/services/collector", splunkEndpoint)
+	}
+
 	client := splunk.NewClient(
 		httpClient,
-		fmt.Sprintf("%s/services/collector", splunkEndpoint),
+		splunkURL,
 		splunkHecToken,
 		"",
 		"",
@@ -53,14 +69,14 @@ func connectSplunk(exiting chan bool, splunkEndpoint string, splunkHecToken stri
 	return client, err
 }
 
-func splunkOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, splunkEndpoint string, splunkHecToken string, splunkIndex string, splunkBatchSize uint, batchDelay time.Duration, limit int) {
+func splunkOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, splunkEndpoints []string, splunkHecToken string, splunkIndex string, splunkBatchSize uint, batchDelay time.Duration, limit int) {
 	wg.Add(1)
 	defer wg.Done()
 
-	client := connecSplunkRetry(exiting, splunkEndpoint, splunkHecToken, *skipTlsVerification)
+	clients := connectMultiSplunkRetry(exiting, splunkEndpoints, splunkHecToken, *skipTlsVerification)
 
 	batch := make([]DNSResult, 0, splunkBatchSize)
-
+	rand.Seed(time.Now().Unix())
 	ticker := time.Tick(batchDelay)
 	printStatsTicker := time.Tick(*printStatsDelay)
 
@@ -71,9 +87,10 @@ func splunkOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 				batch = append(batch, data)
 			}
 		case <-ticker:
+			client := clients[rand.Intn(len(clients))]
 			if err := splunkSendData(client, splunkIndex, *splunkOutputSource, *splunkOutputSourceType, batch); err != nil {
 				log.Println(err)
-				client = connecSplunkRetry(exiting, splunkEndpoint, splunkHecToken, *skipTlsVerification)
+				client = connectSplunkRetry(exiting, client.URL, splunkHecToken, *skipTlsVerification)
 			} else {
 				batch = make([]DNSResult, 0, splunkBatchSize)
 			}

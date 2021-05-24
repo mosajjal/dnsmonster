@@ -22,6 +22,18 @@ import (
 
 const VERSION = "v0.8.3.2"
 
+type splunkOutputEndpointList []string
+
+func (i *splunkOutputEndpointList) String() string {
+	return strings.Join(*i, " ")
+}
+func (i *splunkOutputEndpointList) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
+var splunkOutputEndpoints splunkOutputEndpointList
+
 var fs = flag.NewFlagSetWithEnvPrefix(os.Args[0], "DNSMONSTER", 0)
 var devName = fs.String("devName", "", "Device used to capture")
 var pcapFile = fs.String("pcapFile", "", "Pcap filename to run")
@@ -79,7 +91,6 @@ var elasticOutputIndex = fs.String("elasticOutputIndex", "default", "elastic ind
 var elasticBatchSize = fs.Uint("elasticBatchSize", 1000, "Send data to Elastic in batch sizes")
 var elasticBatchDelay = fs.Duration("elasticBatchDelay", 1*time.Second, "Interval between sending results to Elastic if Batch size is not filled")
 var splunkOutputType = fs.Uint("splunkOutputType", 0, "What should be written to HEC. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
-var splunkOutputEndpoint = fs.String("splunkOutputEndpoint", "", "HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none")
 var splunkOutputToken = fs.String("splunkOutputToken", "00000000-0000-0000-0000-000000000000", "Splunk HEC Token")
 var splunkOutputIndex = fs.String("splunkOutputIndex", "temp", "Splunk Output Index")
 var splunkOutputSource = fs.String("splunkOutputSource", "dnsmonster", "Splunk Output Source")
@@ -104,7 +115,9 @@ var skipDomainMapBool = false
 var allowDomainMapBool = false
 
 func checkFlags() {
+	fs.Var(&splunkOutputEndpoints, "splunkOutputEndpoint", "HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none")
 	err := fs.Parse(os.Args[1:])
+	log.Println(splunkOutputEndpoints)
 	errorHandler(err)
 
 	if *version {
@@ -338,7 +351,7 @@ func main() {
 		go elasticOutput(elasticResultChannel, exiting, &wg, *elasticOutputEndpoint, *elasticOutputIndex, *elasticBatchSize, *elasticBatchDelay, *packetLimit)
 	}
 	if *splunkOutputType > 0 {
-		go splunkOutput(splunkResultChannel, exiting, &wg, *splunkOutputEndpoint, *splunkOutputToken, *splunkOutputIndex, *splunkBatchSize, *splunkBatchDelay, *packetLimit)
+		go splunkOutput(splunkResultChannel, exiting, &wg, splunkOutputEndpoints, *splunkOutputToken, *splunkOutputIndex, *splunkBatchSize, *splunkBatchDelay, *packetLimit)
 	}
 	if *memprofile != "" {
 		go func() {

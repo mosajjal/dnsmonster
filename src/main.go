@@ -21,7 +21,7 @@ import (
 	"github.com/namsral/flag"
 )
 
-const RELEASE_VERSION = "DEVELOPMENT"
+var releaseVersion string = "DEVELOPMENT"
 
 type splunkOutputEndpointList []string
 
@@ -121,7 +121,7 @@ func checkFlags() {
 	errorHandler(err)
 
 	if *version {
-		log.Fatalln("dnsmonster version:", RELEASE_VERSION)
+		log.Fatalln("dnsmonster version:", releaseVersion)
 	}
 
 	//TODO: log format needs to be a configurable parameter

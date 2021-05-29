@@ -63,6 +63,7 @@ var packetChannelSize = fs.Uint("packetHandlerChannelSize", 100000, "Size of the
 var tcpAssemblyChannelSize = fs.Uint("tcpAssemblyChannelSize", 1000, "Size of the tcp assembler")
 var tcpResultChannelSize = fs.Uint("tcpResultChannelSize", 1000, "Size of the tcp result channel")
 var resultChannelSize = fs.Uint("resultChannelSize", 100000, "Size of the result processor channel size")
+var logLevel = fs.Uint("Log output level", 3, "Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG")
 var defraggerChannelSize = fs.Uint("defraggerChannelSize", 500, "Size of the channel to send packets to be defragged")
 var defraggerChannelReturnSize = fs.Uint("defraggerChannelReturnSize", 500, "Size of the channel where the defragged packets are returned")
 var cpuprofile = fs.String("cpuprofile", "", "write cpu profile to file")
@@ -115,10 +116,27 @@ var skipDomainMapBool = false
 var allowDomainMapBool = false
 
 func checkFlags() {
+
 	fs.Var(&splunkOutputEndpoints, "splunkOutputEndpoint", "HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none")
 	log.Info("Parsing flags")
 	err := fs.Parse(os.Args[1:])
 	errorHandler(err)
+
+	// defualt logging to warning
+	var lvl log.Level = log.WarnLevel
+	switch *logLevel {
+	case 0:
+		lvl = log.PanicLevel
+	case 1:
+		lvl = log.ErrorLevel
+	case 2:
+		lvl = log.WarnLevel
+	case 3:
+		lvl = log.InfoLevel
+	case 4:
+		lvl = log.DebugLevel
+	}
+	log.SetLevel(lvl)
 
 	if *version {
 		log.Fatalln("dnsmonster version:", releaseVersion)
@@ -309,7 +327,7 @@ func main() {
 	checkFlags()
 	runtime.GOMAXPROCS(*gomaxprocs)
 	if *cpuprofile != "" {
-		log.Info("Writing CPU profile")
+		log.Warn("Writing CPU profile")
 		f, err := os.Create(*cpuprofile)
 		errorHandler(err)
 		err = pprof.StartCPUProfile(f)
@@ -338,30 +356,37 @@ func main() {
 
 	var wg sync.WaitGroup
 
+	log.Info("Creating the dispatch Channel")
 	go dispatchOutput(resultChannel, exiting, &wg)
 
 	if *fileOutputType > 0 {
+		log.Info("Creating File Output Channel")
 		go fileOutput(fileResultChannel, exiting, &wg)
 	}
 	if *stdoutOutputType > 0 {
+		log.Info("Creating stdout Output Channel")
 		go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
 	if *clickhouseOutputType > 0 {
+		log.Info("Creating Stdout Output Channel")
 		go clickhouseOutput(clickhouseResultChannel, exiting, &wg, *clickhouseAddress, *clickhouseBatchSize, *clickhouseDelay, *packetLimit, *serverName)
 	}
 	if *kafkaOutputType > 0 {
+		log.Info("Creating Kafka Output Channel")
 		go kafkaOutput(kafkaResultChannel, exiting, &wg, *kafkaOutputBroker, *kafkaOutputTopic, *kafkaBatchSize, *kafkaBatchDelay, *packetLimit)
 	}
 	if *elasticOutputType > 0 {
+		log.Info("Creating Elastic Output Channel")
 		go elasticOutput(elasticResultChannel, exiting, &wg, *elasticOutputEndpoint, *elasticOutputIndex, *elasticBatchSize, *elasticBatchDelay, *packetLimit)
 	}
 	if *splunkOutputType > 0 {
+		log.Info("Creating Splunk Output Channel")
 		go splunkOutput(splunkResultChannel, exiting, &wg, splunkOutputEndpoints, *splunkOutputToken, *splunkOutputIndex, *splunkBatchSize, *splunkBatchDelay, *packetLimit)
 	}
 	if *memprofile != "" {
 		go func() {
 			time.Sleep(120 * time.Second)
-			log.Info("Writing memory profile")
+			log.Warn("Writing memory profile")
 			f, err := os.Create(*memprofile)
 			errorHandler(err)
 			runtime.GC() // get up-to-date statistics

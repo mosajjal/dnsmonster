@@ -46,9 +46,9 @@ func checkSkipDomainHash(domainName string, inputHashTable map[string]bool) bool
 func checkIfWeSkip(outputType uint, query string) bool {
 	switch outputType {
 	case 0:
-		return true
+		return true //always skip
 	case 1:
-		return false
+		return false // never skip
 	case 2:
 		if skipDomainMapBool {
 			if checkSkipDomainHash(query, skipDomainMap) {

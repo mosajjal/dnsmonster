@@ -48,21 +48,12 @@ func connectelastic(exiting chan bool, elasticEndpoint string) (*elastic.Client,
 		// elastic.SetRetrier(connectelasticRetry(exiting, elasticEndpoint)),
 		elastic.SetGzip(true),
 		elastic.SetErrorLog(log.New()),
-		// elastic.SetInfoLog(log.New(os.Stdout, "", log.LstdFlags)),
-		// elastic.SetHeaders(http.Header{
-		//   "X-Caller-Id": []string{"..."},
 	)
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
+	errorHandler(err)
 
 	// Ping the Elasticsearch server to get e.g. the version number
 	info, code, err := client.Ping(elasticEndpoint).Do(ctx)
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
+	errorHandler(err)
 	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
 	return client, err

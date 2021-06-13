@@ -23,6 +23,7 @@ import (
 
 var releaseVersion string = "DEVELOPMENT"
 
+// This is needed for supporting multiple inputs for Splunk output
 type splunkOutputEndpointList []string
 
 func (i *splunkOutputEndpointList) String() string {
@@ -101,7 +102,7 @@ var splunkBatchDelay = fs.Duration("splunkBatchDelay", 1*time.Second, "Interval 
 
 var version = fs.Bool("version", false, "show version and exit")
 
-// Ratio numbers
+// Ratio numbers used for input sampling
 var ratioA int
 var ratioB int
 

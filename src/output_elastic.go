@@ -12,26 +12,42 @@ import (
 	"github.com/olivere/elastic"
 )
 
+type elasticConfig struct {
+	exiting               chan bool
+	wg                    *sync.WaitGroup
+	resultChannel         chan DNSResult
+	elasticOutputEndpoint string
+	elasticOutputIndex    string
+	elasticOutputType     uint
+	elasticBatchSize      uint
+	elasticBatchDelay     time.Duration
+	maskSize              int
+	packetLimit           int
+	saveFullQuery         bool
+	serverName            string
+	printStatsDelay       time.Duration
+}
+
 // var elasticUuidGen = fastuuid.MustNewGenerator()
 var elasticstats = outputStats{"elastic", 0, 0}
 var ctx = context.Background()
 
-func connectelasticRetry(exiting chan bool, elasticEndpoint string) *elastic.Client {
+func connectelasticRetry(esConfig elasticConfig) *elastic.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if *elasticOutputType == 0 {
+	if esConfig.elasticOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
 	for {
-		conn, err := connectelastic(exiting, elasticEndpoint)
+		conn, err := connectelastic(esConfig)
 		if err == nil {
 			return conn
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-exiting:
+		case <-esConfig.exiting:
 			// When exiting, return immediately
 			return nil
 		case <-tick.C:
@@ -40,9 +56,9 @@ func connectelasticRetry(exiting chan bool, elasticEndpoint string) *elastic.Cli
 	}
 }
 
-func connectelastic(exiting chan bool, elasticEndpoint string) (*elastic.Client, error) {
+func connectelastic(esConfig elasticConfig) (*elastic.Client, error) {
 	client, err := elastic.NewClient(
-		elastic.SetURL(elasticEndpoint),
+		elastic.SetURL(esConfig.elasticOutputEndpoint),
 		elastic.SetSniff(false),
 		elastic.SetHealthcheckInterval(10*time.Second),
 		// elastic.SetRetrier(connectelasticRetry(exiting, elasticEndpoint)),
@@ -51,31 +67,32 @@ func connectelastic(exiting chan bool, elasticEndpoint string) (*elastic.Client,
 	)
 	errorHandler(err)
 
+	//TODO: are we retrying without exiting out of dnsmonster?
 	// Ping the Elasticsearch server to get e.g. the version number
-	info, code, err := client.Ping(elasticEndpoint).Do(ctx)
+	info, code, err := client.Ping(esConfig.elasticOutputEndpoint).Do(ctx)
 	errorHandler(err)
 	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
 	return client, err
 }
 
-func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, elasticEndpoint string, elasticIndex string, elasticBatchSize uint, batchDelay time.Duration, limit int) {
-	wg.Add(1)
-	defer wg.Done()
+func elasticOutput(esConfig elasticConfig) {
+	esConfig.wg.Add(1)
+	defer esConfig.wg.Done()
 
-	client := connectelasticRetry(exiting, elasticEndpoint)
-	batch := make([]DNSResult, 0, elasticBatchSize)
+	client := connectelasticRetry(esConfig)
+	batch := make([]DNSResult, 0, esConfig.elasticBatchSize)
 
-	ticker := time.Tick(batchDelay)
-	printStatsTicker := time.Tick(*printStatsDelay)
+	ticker := time.Tick(esConfig.elasticBatchDelay)
+	printStatsTicker := time.Tick(esConfig.printStatsDelay)
 
 	// Use the IndexExists service to check if a specified index exists.
-	exists, err := client.IndexExists(elasticIndex).Do(ctx)
+	exists, err := client.IndexExists(esConfig.elasticOutputIndex).Do(ctx)
 	errorHandler(err)
 
 	if !exists {
 		// Create a new index.
-		createIndex, err := client.CreateIndex(elasticIndex).Do(ctx)
+		createIndex, err := client.CreateIndex(esConfig.elasticOutputIndex).Do(ctx)
 		errorHandler(err)
 
 		if !createIndex.Acknowledged {
@@ -85,18 +102,18 @@ func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wai
 
 	for {
 		select {
-		case data := <-resultChannel:
-			if limit == 0 || len(batch) < limit {
+		case data := <-esConfig.resultChannel:
+			if esConfig.packetLimit == 0 || len(batch) < esConfig.packetLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker:
-			if err := elasticSendData(client, elasticIndex, batch); err != nil {
+			if err := elasticSendData(client, batch, esConfig); err != nil {
 				log.Info(err)
-				client = connectelasticRetry(exiting, elasticEndpoint)
+				client = connectelasticRetry(esConfig)
 			} else {
-				batch = make([]DNSResult, 0, elasticBatchSize)
+				batch = make([]DNSResult, 0, esConfig.elasticBatchSize)
 			}
-		case <-exiting:
+		case <-esConfig.exiting:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", elasticstats)
@@ -104,10 +121,10 @@ func elasticOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wai
 	}
 }
 
-func elasticSendData(client *elastic.Client, elasticIndex string, batch []DNSResult) error {
+func elasticSendData(client *elastic.Client, batch []DNSResult, esConfig elasticConfig) error {
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
-			if checkIfWeSkip(*elasticOutputType, dnsQuery.Name) {
+			if checkIfWeSkip(esConfig.elasticOutputType, dnsQuery.Name) {
 				elasticstats.Skipped++
 				continue
 			}
@@ -118,7 +135,7 @@ func elasticSendData(client *elastic.Client, elasticIndex string, batch []DNSRes
 			errorHandler(err)
 
 			_, err = client.Index().
-				Index(elasticIndex).
+				Index(esConfig.elasticOutputIndex).
 				Type("_doc").
 				BodyString(string(fullQuery)).
 				Do(ctx)
@@ -126,7 +143,7 @@ func elasticSendData(client *elastic.Client, elasticIndex string, batch []DNSRes
 			errorHandler(err)
 		}
 	}
-	_, err := client.Flush().Index(elasticIndex).Do(ctx)
+	_, err := client.Flush().Index(esConfig.elasticOutputIndex).Do(ctx)
 	return err
 
 }

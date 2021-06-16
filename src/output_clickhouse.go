@@ -9,33 +9,48 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rogpeppe/fastuuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/ClickHouse/clickhouse-go"
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
-	"github.com/rogpeppe/fastuuid"
 )
 
-var chstats = outputStats{"Clickhouse", 0, 0}
+type clickHouseConfig struct {
+	exiting              chan bool
+	wg                   *sync.WaitGroup
+	resultChannel        chan DNSResult
+	clickhouseAddress    string
+	clickhouseBatchSize  uint
+	clickhouseOutputType uint
+	clickhouseDebug      bool
+	clickhouseDelay      time.Duration
+	maskSize             int
+	packetLimit          int
+	saveFullQuery        bool
+	serverName           string
+	printStatsDelay      time.Duration
+}
 
+var chstats = outputStats{"Clickhouse", 0, 0}
 var uuidGen = fastuuid.MustNewGenerator()
 
-func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse.Clickhouse {
+func connectClickhouseRetry(chConfig clickHouseConfig) clickhouse.Clickhouse {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if *clickhouseOutputType == 0 {
+	if chConfig.clickhouseOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
 	for {
-		c, err := connectClickhouse(exiting, clickhouseHost)
+		c, err := connectClickhouse(chConfig)
 		if err == nil {
 			return c
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-exiting:
+		case <-chConfig.exiting:
 			// When exiting, return immediately
 			return nil
 		case <-tick.C:
@@ -44,10 +59,10 @@ func connectClickhouseRetry(exiting chan bool, clickhouseHost string) clickhouse
 	}
 }
 
-func connectClickhouse(exiting chan bool, clickhouseHost string) (clickhouse.Clickhouse, error) {
-	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v", clickhouseHost, *clickhouseDebug))
+func connectClickhouse(chConfig clickHouseConfig) (clickhouse.Clickhouse, error) {
+	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v", chConfig.clickhouseAddress, chConfig.clickhouseDebug))
 	if err != nil {
-		log.Info(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -61,30 +76,29 @@ func min(a, b int) int {
 	return b
 }
 
-func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup, clickhouseHost string, clickhouseBatchSize uint, batchDelay time.Duration, limit int, server string) {
-	wg.Add(1)
-	defer wg.Done()
-	serverByte := []byte(server)
+func clickhouseOutput(chConfig clickHouseConfig) {
+	chConfig.wg.Add(1)
+	defer chConfig.wg.Done()
 
-	connect := connectClickhouseRetry(exiting, clickhouseHost)
-	batch := make([]DNSResult, 0, clickhouseBatchSize)
+	connect := connectClickhouseRetry(chConfig)
+	batch := make([]DNSResult, 0, chConfig.clickhouseBatchSize)
 
-	ticker := time.Tick(batchDelay)
-	printStatsTicker := time.Tick(*printStatsDelay)
+	ticker := time.Tick(chConfig.clickhouseDelay)
+	printStatsTicker := time.Tick(chConfig.printStatsDelay)
 	for {
 		select {
-		case data := <-resultChannel:
-			if limit == 0 || len(batch) < limit {
+		case data := <-chConfig.resultChannel:
+			if chConfig.packetLimit == 0 || len(batch) < chConfig.packetLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker:
-			if err := clickhouseSendData(connect, batch, serverByte); err != nil {
+			if err := clickhouseSendData(connect, batch, chConfig); err != nil {
 				log.Info(err)
-				connect = connectClickhouseRetry(exiting, clickhouseHost)
+				connect = connectClickhouseRetry(chConfig)
 			} else {
-				batch = make([]DNSResult, 0, clickhouseBatchSize)
+				batch = make([]DNSResult, 0, chConfig.clickhouseBatchSize)
 			}
-		case <-exiting:
+		case <-chConfig.exiting:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", chstats)
@@ -92,7 +106,7 @@ func clickhouseOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.
 	}
 }
 
-func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, server []byte) error {
+func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConfig clickHouseConfig) error {
 	if len(batch) == 0 {
 		return nil
 	}
@@ -131,21 +145,21 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, server
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
 
-					if checkIfWeSkip(*clickhouseOutputType, dnsQuery.Name) {
+					if checkIfWeSkip(chConfig.clickhouseOutputType, dnsQuery.Name) {
 						chstats.Skipped++
 						continue
 					}
 					chstats.SentToOutput++
 
 					var fullQuery []byte
-					if *saveFullQuery {
+					if chConfig.saveFullQuery {
 						fullQuery, _ = json.Marshal(batch[k].DNS)
 					}
 
 					// getting variables ready
 					ip := batch[k].DstIP
 					if batch[k].IPVersion == 4 {
-						ip = ip.Mask(net.CIDRMask(*maskSize, 32))
+						ip = ip.Mask(net.CIDRMask(chConfig.maskSize, 32))
 					}
 					QR := uint8(0)
 					if batch[k].DNS.Response {
@@ -163,7 +177,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, server
 					//writing the vars into a SQL statement
 					b.WriteDate(0, batch[k].Timestamp)
 					b.WriteDateTime(1, batch[k].Timestamp)
-					b.WriteBytes(2, server)
+					b.WriteBytes(2, []byte(chConfig.serverName))
 					b.WriteUInt8(3, batch[k].IPVersion)
 					b.WriteUInt32(4, binary.BigEndian.Uint32(ip[:4]))
 					b.WriteFixedString(5, []byte(batch[k].Protocol))

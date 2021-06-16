@@ -754,7 +754,7 @@
           }
         ],
         "title": "IPv4 Packet Destination Prefix",
-        "type": "grafana-piechart-panel",
+        "type": "piechart",
         "valueName": "current"
       },
       {
@@ -819,7 +819,7 @@
           }
         ],
         "title": "IPv6 Packet Destination Top 20 Prefix",
-        "type": "grafana-piechart-panel",
+        "type": "piechart",
         "valueName": "current"
       },
       {

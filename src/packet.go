@@ -10,19 +10,6 @@ import (
 	mkdns "github.com/miekg/dns"
 )
 
-type packetEncoder struct {
-	port              uint16
-	input             <-chan gopacket.Packet
-	ip4Defrgger       chan<- ipv4ToDefrag
-	ip6Defrgger       chan<- ipv6FragmentInfo
-	ip4DefrggerReturn <-chan ipv4Defragged
-	ip6DefrggerReturn <-chan ipv6Defragged
-	tcpAssembly       []chan tcpPacket
-	tcpReturnChannel  <-chan tcpData
-	resultChannel     chan<- DNSResult
-	done              chan bool
-}
-
 func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.LayerType, udp *layers.UDP, tcp *layers.TCP, flow gopacket.Flow, timestamp time.Time, IPVersion uint8, SrcIP, DstIP net.IP) {
 	for _, layerType := range *foundLayerTypes {
 		switch layerType {

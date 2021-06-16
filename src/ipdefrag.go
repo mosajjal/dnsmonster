@@ -2,32 +2,10 @@ package main
 
 import (
 	"github.com/google/gopacket/ip4defrag"
-	"github.com/google/gopacket/layers"
 
 	// "github.com/mosajjal/dnsmonster/ip6defrag"
 	"time"
 )
-
-type ipv4ToDefrag struct {
-	ip        layers.IPv4
-	timestamp time.Time
-}
-
-type ipv4Defragged struct {
-	ip        layers.IPv4
-	timestamp time.Time
-}
-
-type ipv6FragmentInfo struct {
-	ip         layers.IPv6
-	ipFragment layers.IPv6Fragment
-	timestamp  time.Time
-}
-
-type ipv6Defragged struct {
-	ip        layers.IPv6
-	timestamp time.Time
-}
 
 func ipv4Defragger(ipInput <-chan ipv4ToDefrag, ipOut chan ipv4Defragged, gcTime time.Duration, done chan bool) {
 	ipv4Defragger := ip4defrag.NewIPv4Defragmenter()

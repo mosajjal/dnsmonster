@@ -16,22 +16,6 @@ import (
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
 )
 
-type clickHouseConfig struct {
-	exiting              chan bool
-	wg                   *sync.WaitGroup
-	resultChannel        chan DNSResult
-	clickhouseAddress    string
-	clickhouseBatchSize  uint
-	clickhouseOutputType uint
-	clickhouseDebug      bool
-	clickhouseDelay      time.Duration
-	maskSize             int
-	packetLimit          int
-	saveFullQuery        bool
-	serverName           string
-	printStatsDelay      time.Duration
-}
-
 var chstats = outputStats{"Clickhouse", 0, 0}
 var uuidGen = fastuuid.MustNewGenerator()
 
@@ -50,7 +34,7 @@ func connectClickhouseRetry(chConfig clickHouseConfig) clickhouse.Clickhouse {
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-chConfig.exiting:
+		case <-chConfig.general.exiting:
 			// When exiting, return immediately
 			return nil
 		case <-tick.C:
@@ -77,18 +61,18 @@ func min(a, b int) int {
 }
 
 func clickhouseOutput(chConfig clickHouseConfig) {
-	chConfig.wg.Add(1)
-	defer chConfig.wg.Done()
+	chConfig.general.wg.Add(1)
+	defer chConfig.general.wg.Done()
 
 	connect := connectClickhouseRetry(chConfig)
 	batch := make([]DNSResult, 0, chConfig.clickhouseBatchSize)
 
 	ticker := time.Tick(chConfig.clickhouseDelay)
-	printStatsTicker := time.Tick(chConfig.printStatsDelay)
+	printStatsTicker := time.Tick(chConfig.general.printStatsDelay)
 	for {
 		select {
 		case data := <-chConfig.resultChannel:
-			if chConfig.packetLimit == 0 || len(batch) < chConfig.packetLimit {
+			if chConfig.general.packetLimit == 0 || len(batch) < chConfig.general.packetLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker:
@@ -98,7 +82,7 @@ func clickhouseOutput(chConfig clickHouseConfig) {
 			} else {
 				batch = make([]DNSResult, 0, chConfig.clickhouseBatchSize)
 			}
-		case <-chConfig.exiting:
+		case <-chConfig.general.exiting:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", chstats)
@@ -152,14 +136,14 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 					chstats.SentToOutput++
 
 					var fullQuery []byte
-					if chConfig.saveFullQuery {
+					if chConfig.general.saveFullQuery {
 						fullQuery, _ = json.Marshal(batch[k].DNS)
 					}
 
 					// getting variables ready
 					ip := batch[k].DstIP
 					if batch[k].IPVersion == 4 {
-						ip = ip.Mask(net.CIDRMask(chConfig.maskSize, 32))
+						ip = ip.Mask(net.CIDRMask(chConfig.general.maskSize, 32))
 					}
 					QR := uint8(0)
 					if batch[k].DNS.Response {
@@ -177,7 +161,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 					//writing the vars into a SQL statement
 					b.WriteDate(0, batch[k].Timestamp)
 					b.WriteDateTime(1, batch[k].Timestamp)
-					b.WriteBytes(2, []byte(chConfig.serverName))
+					b.WriteBytes(2, []byte(chConfig.general.serverName))
 					b.WriteUInt8(3, batch[k].IPVersion)
 					b.WriteUInt32(4, binary.BigEndian.Uint32(ip[:4]))
 					b.WriteFixedString(5, []byte(batch[k].Protocol))

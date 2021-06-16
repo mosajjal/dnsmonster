@@ -356,7 +356,15 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-
+	generalConfig := generalConfig{
+		exiting,
+		&wg,
+		*maskSize,
+		*packetLimit,
+		*saveFullQuery,
+		*serverName,
+		*printStatsDelay,
+	}
 	log.Info("Creating the dispatch Channel")
 	go dispatchOutput(resultChannel, exiting, &wg)
 
@@ -371,19 +379,13 @@ func main() {
 	if *clickhouseOutputType > 0 {
 		log.Info("Creating Clickhouse Output Channel")
 		chConfig := clickHouseConfig{
-			exiting,
-			&wg,
 			clickhouseResultChannel,
 			*clickhouseAddress,
 			*clickhouseBatchSize,
 			*clickhouseOutputType,
 			*clickhouseDebug,
 			*clickhouseDelay,
-			*maskSize,
-			*packetLimit,
-			*saveFullQuery,
-			*serverName,
-			*printStatsDelay,
+			generalConfig,
 		}
 		go clickhouseOutput(chConfig)
 	}
@@ -394,19 +396,13 @@ func main() {
 	if *elasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")
 		esConfig := elasticConfig{
-			exiting,
-			&wg,
 			elasticResultChannel,
 			*elasticOutputEndpoint,
 			*elasticOutputIndex,
 			*elasticOutputType,
 			*elasticBatchSize,
 			*elasticBatchDelay,
-			*maskSize,
-			*packetLimit,
-			*saveFullQuery,
-			*serverName,
-			*printStatsDelay,
+			generalConfig,
 		}
 		go elasticOutput(esConfig)
 	}

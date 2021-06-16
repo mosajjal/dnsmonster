@@ -7,40 +7,10 @@ import (
 	"time"
 
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 	log "github.com/sirupsen/logrus"
 )
-
-type tcpPacket struct {
-	IPVersion uint8
-	tcp       layers.TCP
-	timestamp time.Time
-	flow      gopacket.Flow
-}
-
-type tcpData struct {
-	IPVersion uint8
-	data      []byte
-	SrcIP     net.IP
-	DstIP     net.IP
-	timestamp time.Time
-}
-
-type dnsStreamFactory struct {
-	tcpReturnChannel chan tcpData
-	IPVersion        uint8
-	currentTimestamp time.Time
-}
-
-type dnsStream struct {
-	Net              gopacket.Flow
-	reader           tcpreader.ReaderStream
-	tcpReturnChannel chan tcpData
-	IPVersion        uint8
-	timestamp        time.Time
-}
 
 func (ds *dnsStream) processStream() {
 	var data []byte

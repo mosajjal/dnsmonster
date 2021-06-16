@@ -4,29 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/olivere/elastic"
 )
-
-type elasticConfig struct {
-	exiting               chan bool
-	wg                    *sync.WaitGroup
-	resultChannel         chan DNSResult
-	elasticOutputEndpoint string
-	elasticOutputIndex    string
-	elasticOutputType     uint
-	elasticBatchSize      uint
-	elasticBatchDelay     time.Duration
-	maskSize              int
-	packetLimit           int
-	saveFullQuery         bool
-	serverName            string
-	printStatsDelay       time.Duration
-}
 
 // var elasticUuidGen = fastuuid.MustNewGenerator()
 var elasticstats = outputStats{"elastic", 0, 0}
@@ -47,7 +30,7 @@ func connectelasticRetry(esConfig elasticConfig) *elastic.Client {
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-esConfig.exiting:
+		case <-esConfig.general.exiting:
 			// When exiting, return immediately
 			return nil
 		case <-tick.C:
@@ -77,14 +60,14 @@ func connectelastic(esConfig elasticConfig) (*elastic.Client, error) {
 }
 
 func elasticOutput(esConfig elasticConfig) {
-	esConfig.wg.Add(1)
-	defer esConfig.wg.Done()
+	esConfig.general.wg.Add(1)
+	defer esConfig.general.wg.Done()
 
 	client := connectelasticRetry(esConfig)
 	batch := make([]DNSResult, 0, esConfig.elasticBatchSize)
 
 	ticker := time.Tick(esConfig.elasticBatchDelay)
-	printStatsTicker := time.Tick(esConfig.printStatsDelay)
+	printStatsTicker := time.Tick(esConfig.general.printStatsDelay)
 
 	// Use the IndexExists service to check if a specified index exists.
 	exists, err := client.IndexExists(esConfig.elasticOutputIndex).Do(ctx)
@@ -103,7 +86,7 @@ func elasticOutput(esConfig elasticConfig) {
 	for {
 		select {
 		case data := <-esConfig.resultChannel:
-			if esConfig.packetLimit == 0 || len(batch) < esConfig.packetLimit {
+			if esConfig.general.packetLimit == 0 || len(batch) < esConfig.general.packetLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker:
@@ -113,7 +96,7 @@ func elasticOutput(esConfig elasticConfig) {
 			} else {
 				batch = make([]DNSResult, 0, esConfig.elasticBatchSize)
 			}
-		case <-esConfig.exiting:
+		case <-esConfig.general.exiting:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", elasticstats)

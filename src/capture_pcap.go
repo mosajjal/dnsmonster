@@ -17,25 +17,6 @@ import (
 
 var pcapStats captureStats
 
-// CaptureOptions is a set of generated options variables to use within our capture routine
-type CaptureOptions struct {
-	DevName                      string
-	useAfpacket                  bool
-	PcapFile                     string
-	Filter                       string
-	Port                         uint16
-	GcTime                       time.Duration
-	ResultChannel                chan<- DNSResult
-	PacketHandlerCount           uint
-	PacketChannelSize            uint
-	TCPHandlerCount              uint
-	TCPAssemblyChannelSize       uint
-	TCPResultChannelSize         uint
-	IPDefraggerChannelSize       uint
-	IPDefraggerReturnChannelSize uint
-	Done                         chan bool
-}
-
 // DNSCapturer oobject is used to make our configuration portable within the entire code
 type DNSCapturer struct {
 	options    CaptureOptions

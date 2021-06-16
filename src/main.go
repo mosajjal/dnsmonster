@@ -55,10 +55,10 @@ var printStatsDelay = fs.Duration("printStatsDelay", time.Second*10, "Duration t
 var maskSize = fs.Int("maskSize", 32, "Mask source IPs by bits. 32 means all the bits of IP is saved in DB")
 var serverName = fs.String("serverName", "default", "Name of the server used to index the metrics.")
 var sampleRatio = fs.String("sampleRatio", "1:1", "Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets")
-var saveFullQuery = fs.Bool("saveFullQuery", false, "Save full packet query and response in JSON format")
+var saveFullQuery = fs.Bool("saveFullQuery", false, "Save full packet query and response in JSON format. Will respect maskSize")
 var packetHandlerCount = fs.Uint("packetHandlers", 1, "Number of routines used to handle received packets")
 var tcpHandlerCount = fs.Uint("tcpHandlers", 1, "Number of routines used to handle tcp assembly")
-var useAfpacket = fs.Bool("useAfpacket", false, "Use AFPacket for live captures")
+var useAfpacket = fs.Bool("useAfpacket", false, "Use AFPacket for live captures. Supported on Linux 3.0+ only")
 var afpacketBuffersizeMb = fs.Uint("afpacketBuffersizeMb", 64, "Afpacket Buffersize in MB")
 var packetChannelSize = fs.Uint("packetHandlerChannelSize", 100000, "Size of the packet handler channel")
 var tcpAssemblyChannelSize = fs.Uint("tcpAssemblyChannelSize", 1000, "Size of the tcp assembler")
@@ -369,8 +369,23 @@ func main() {
 		go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
 	if *clickhouseOutputType > 0 {
-		log.Info("Creating Stdout Output Channel")
-		go clickhouseOutput(clickhouseResultChannel, exiting, &wg, *clickhouseAddress, *clickhouseBatchSize, *clickhouseDelay, *packetLimit, *serverName)
+		log.Info("Creating Clickhouse Output Channel")
+		chConfig := clickHouseConfig{
+			exiting,
+			&wg,
+			clickhouseResultChannel,
+			*clickhouseAddress,
+			*clickhouseBatchSize,
+			*clickhouseOutputType,
+			*clickhouseDebug,
+			*clickhouseDelay,
+			*maskSize,
+			*packetLimit,
+			*saveFullQuery,
+			*serverName,
+			*printStatsDelay,
+		}
+		go clickhouseOutput(chConfig)
 	}
 	if *kafkaOutputType > 0 {
 		log.Info("Creating Kafka Output Channel")
@@ -378,7 +393,22 @@ func main() {
 	}
 	if *elasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")
-		go elasticOutput(elasticResultChannel, exiting, &wg, *elasticOutputEndpoint, *elasticOutputIndex, *elasticBatchSize, *elasticBatchDelay, *packetLimit)
+		esConfig := elasticConfig{
+			exiting,
+			&wg,
+			elasticResultChannel,
+			*elasticOutputEndpoint,
+			*elasticOutputIndex,
+			*elasticOutputType,
+			*elasticBatchSize,
+			*elasticBatchDelay,
+			*maskSize,
+			*packetLimit,
+			*saveFullQuery,
+			*serverName,
+			*printStatsDelay,
+		}
+		go elasticOutput(esConfig)
 	}
 	if *splunkOutputType > 0 {
 		log.Info("Creating Splunk Output Channel")

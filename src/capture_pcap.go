@@ -6,34 +6,14 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"net"
 	"os"
 	"os/signal"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	mkdns "github.com/miekg/dns"
 )
 
 var pcapStats captureStats
-
-// DNSCapturer oobject is used to make our configuration portable within the entire code
-type DNSCapturer struct {
-	options    CaptureOptions
-	processing chan gopacket.Packet
-}
-
-// DNSResult is the middleware that connects the packet encoder to Clickhouse.
-// For DNStap, this is probably going to be replaced with something else.
-type DNSResult struct {
-	Timestamp    time.Time
-	DNS          mkdns.Msg
-	IPVersion    uint8
-	SrcIP        net.IP
-	DstIP        net.IP
-	Protocol     string
-	PacketLength uint16
-}
 
 func initializeLivePcap(devName, filter string) *pcap.Handle {
 	// Open device

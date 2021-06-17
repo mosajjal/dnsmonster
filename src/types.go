@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"net"
 	"sync"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
+	mkdns "github.com/miekg/dns"
 )
 
 type generalConfig struct {
@@ -120,4 +122,60 @@ type dnsStream struct {
 	tcpReturnChannel chan tcpData
 	IPVersion        uint8
 	timestamp        time.Time
+}
+
+// DNSCapturer oobject is used to make our configuration portable within the entire code
+type DNSCapturer struct {
+	options    CaptureOptions
+	processing chan gopacket.Packet
+}
+
+// DNSResult is the middleware that connects the packet encoder to Clickhouse.
+// For DNStap, this is probably going to be replaced with something else.
+type DNSResult struct {
+	Timestamp    time.Time
+	DNS          mkdns.Msg
+	IPVersion    uint8
+	SrcIP        net.IP
+	DstIP        net.IP
+	Protocol     string
+	PacketLength uint16
+}
+
+type outputStats struct {
+	Name         string
+	SentToOutput int
+	Skipped      int
+}
+
+// captureStats is capturing statistics about our current live captures. At this point it's not accurate for PCAP files.
+type captureStats struct {
+	PacketsGot        int
+	PacketsLost       int
+	PacketLossPercent float32
+}
+
+// ipv6 is a struct to be used as a key.
+type ipv6 struct {
+	ip4 gopacket.Flow
+	id  uint32
+}
+
+// fragmentList holds a container/list used to contains IP
+// packets/fragments.  It stores internal counters to track the
+// maximum total of byte, and the current length it has received.
+// It also stores a flag to know if he has seen the last packet.
+type fragmentList struct {
+	List          list.List
+	Highest       uint16
+	Current       uint16
+	FinalReceived bool
+	LastSeen      time.Time
+}
+
+// IPv6Defragmenter is a struct which embedded a map of
+// all fragment/packet.
+type IPv6Defragmenter struct {
+	sync.RWMutex
+	ipFlows map[ipv6]*fragmentList
 }

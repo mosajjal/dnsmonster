@@ -2,19 +2,6 @@ package main
 
 import "strings"
 
-type outputStats struct {
-	Name         string
-	SentToOutput int
-	Skipped      int
-}
-
-// captureStats is capturing statistics about our current live captures. At this point it's not accurate for PCAP files.
-type captureStats struct {
-	PacketsGot        int
-	PacketsLost       int
-	PacketLossPercent float32
-}
-
 // checkSkipDomainList returns true if the domain exists in the domainList
 func checkSkipDomainList(domainName string, domainList [][]string) bool {
 	for _, item := range domainList {

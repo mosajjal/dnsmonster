@@ -2,14 +2,11 @@
 package main
 
 import (
-	"container/list"
 	"fmt"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 )
 
@@ -158,18 +155,6 @@ func (d *IPv6Defragmenter) securityChecks(ip *layers.IPv6Fragment) (bool, error)
 	return true, nil
 }
 
-// fragmentList holds a container/list used to contains IP
-// packets/fragments.  It stores internal counters to track the
-// maximum total of byte, and the current length it has received.
-// It also stores a flag to know if he has seen the last packet.
-type fragmentList struct {
-	List          list.List
-	Highest       uint16
-	Current       uint16
-	FinalReceived bool
-	LastSeen      time.Time
-}
-
 // insert insert an IPv6 fragment/packet into the Fragment List
 // It use the following strategy : we are inserting fragment based
 // on their offset, latest first. This is sometimes called BSD-Right.
@@ -273,25 +258,12 @@ func (f *fragmentList) build(in *layers.IPv6, fragment *layers.IPv6Fragment) (*l
 	return out, nil
 }
 
-// ipv6 is a struct to be used as a key.
-type ipv6 struct {
-	ip4 gopacket.Flow
-	id  uint32
-}
-
 // newIPv6 returns a new initialized IPv6 Flow
 func newIPv6(ip *layers.IPv6, frag *layers.IPv6Fragment) ipv6 {
 	return ipv6{
 		ip4: ip.NetworkFlow(),
 		id:  frag.Identification,
 	}
-}
-
-// IPv6Defragmenter is a struct which embedded a map of
-// all fragment/packet.
-type IPv6Defragmenter struct {
-	sync.RWMutex
-	ipFlows map[ipv6]*fragmentList
 }
 
 // NewIPv6Defragmenter returns a new IPv6Defragmenter

@@ -391,7 +391,16 @@ func main() {
 	}
 	if *kafkaOutputType > 0 {
 		log.Info("Creating Kafka Output Channel")
-		go kafkaOutput(kafkaResultChannel, exiting, &wg, *kafkaOutputBroker, *kafkaOutputTopic, *kafkaBatchSize, *kafkaBatchDelay, *packetLimit)
+		kafConfig := kafkaConfig{
+			kafkaResultChannel,
+			*kafkaOutputBroker,
+			*kafkaOutputTopic,
+			*kafkaOutputType,
+			*kafkaBatchSize,
+			*kafkaBatchDelay,
+			generalConfig,
+		}
+		go kafkaOutput(kafConfig)
 	}
 	if *elasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")

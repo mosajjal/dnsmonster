@@ -42,6 +42,16 @@ type elasticConfig struct {
 	general               generalConfig
 }
 
+type kafkaConfig struct {
+	resultChannel     chan DNSResult
+	kafkaOutputBroker string
+	kafkaOutputTopic  string
+	kafkaOutputType   uint
+	kafkaBatchSize    uint
+	kafkaBatchDelay   time.Duration
+	general           generalConfig
+}
+
 type packetEncoder struct {
 	port              uint16
 	input             <-chan gopacket.Packet

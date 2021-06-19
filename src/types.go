@@ -13,13 +13,14 @@ import (
 )
 
 type generalConfig struct {
-	exiting         chan bool
-	wg              *sync.WaitGroup
-	maskSize        int
-	packetLimit     int
-	saveFullQuery   bool
-	serverName      string
-	printStatsDelay time.Duration
+	exiting             chan bool
+	wg                  *sync.WaitGroup
+	maskSize            int
+	packetLimit         int
+	saveFullQuery       bool
+	serverName          string
+	printStatsDelay     time.Duration
+	skipTlsVerification bool
 }
 
 type clickHouseConfig struct {
@@ -50,6 +51,19 @@ type kafkaConfig struct {
 	kafkaBatchSize    uint
 	kafkaBatchDelay   time.Duration
 	general           generalConfig
+}
+
+type splunkConfig struct {
+	resultChannel          chan DNSResult
+	splunkOutputEndpoints  []string
+	splunkOutputToken      string
+	splunkOutputType       uint
+	splunkOutputIndex      string
+	splunkOutputSource     string
+	splunkOutputSourceType string
+	splunkBatchSize        uint
+	splunkBatchDelay       time.Duration
+	general                generalConfig
 }
 
 type packetEncoder struct {

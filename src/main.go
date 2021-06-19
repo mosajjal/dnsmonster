@@ -364,6 +364,7 @@ func main() {
 		*saveFullQuery,
 		*serverName,
 		*printStatsDelay,
+		*skipTlsVerification,
 	}
 	log.Info("Creating the dispatch Channel")
 	go dispatchOutput(resultChannel, exiting, &wg)
@@ -417,7 +418,19 @@ func main() {
 	}
 	if *splunkOutputType > 0 {
 		log.Info("Creating Splunk Output Channel")
-		go splunkOutput(splunkResultChannel, exiting, &wg, splunkOutputEndpoints, *splunkOutputToken, *splunkOutputIndex, *splunkBatchSize, *splunkBatchDelay, *packetLimit)
+		spConfig := splunkConfig{
+			splunkResultChannel,
+			splunkOutputEndpoints,
+			*splunkOutputToken,
+			*splunkOutputType,
+			*splunkOutputIndex,
+			*splunkOutputSource,
+			*splunkOutputSourceType,
+			*splunkBatchSize,
+			*splunkBatchDelay,
+			generalConfig,
+		}
+		go splunkOutput(spConfig)
 	}
 	if *memprofile != "" {
 		go func() {

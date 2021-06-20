@@ -48,7 +48,7 @@ var gcTime = fs.Duration("gcTime", 10*time.Second, "Garbage Collection interval 
 var clickhouseAddress = fs.String("clickhouseAddress", "localhost:9000", "Address of the clickhouse database to save the results")
 var clickhouseDelay = fs.Duration("clickhouseDelay", 1*time.Second, "Interval between sending results to ClickHouse")
 var clickhouseDebug = fs.Bool("clickhouseDebug", false, "Debug Clickhouse connection")
-var clickhouseOutputType = fs.Uint("clickhouseOutputType", 2, "What should be written to clickhouse. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
+var clickhouseOutputType = fs.Uint("clickhouseOutputType", 0, "What should be written to clickhouse. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
 var clickhouseBatchSize = fs.Uint("clickhouseBatchSize", 100000, "Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations")
 var captureStatsDelay = fs.Duration("captureStatsDelay", time.Second, "Duration to calculate interface stats")
 var printStatsDelay = fs.Duration("printStatsDelay", time.Second*10, "Duration to print capture and database stats")
@@ -64,7 +64,7 @@ var packetChannelSize = fs.Uint("packetHandlerChannelSize", 100000, "Size of the
 var tcpAssemblyChannelSize = fs.Uint("tcpAssemblyChannelSize", 1000, "Size of the tcp assembler")
 var tcpResultChannelSize = fs.Uint("tcpResultChannelSize", 1000, "Size of the tcp result channel")
 var resultChannelSize = fs.Uint("resultChannelSize", 100000, "Size of the result processor channel size")
-var logLevel = fs.Uint("Log output level", 3, "Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG")
+var logLevel = fs.Uint("logLevel", 3, "Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG")
 var defraggerChannelSize = fs.Uint("defraggerChannelSize", 500, "Size of the channel to send packets to be defragged")
 var defraggerChannelReturnSize = fs.Uint("defraggerChannelReturnSize", 500, "Size of the channel where the defragged packets are returned")
 var cpuprofile = fs.String("cpuprofile", "", "write cpu profile to file")
@@ -82,6 +82,8 @@ var dnstapPermission = fs.String("dnstapPermission", "755", "Set the dnstap sock
 var fileOutputType = fs.Uint("fileOutputType", 0, "What should be written to file. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
 var fileOutputPath = fs.String("fileOutputPath", "", "Path to output file. Used if fileOutputType is not none")
 var stdoutOutputType = fs.Uint("stdoutOutputType", 0, "What should be written to stdout. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
+var syslogOutputType = fs.Uint("syslogOutputType", 0, "What should be written to Syslog server. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
+var syslogOutputEndpoint = fs.String("syslogOutputEndpoint", "", "Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none")
 var kafkaOutputType = fs.Uint("kafkaOutputType", 0, "What should be written to kafka. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic")
 var kafkaOutputBroker = fs.String("kafkaOutputBroker", "", "kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none")
 var kafkaOutputTopic = fs.String("kafkaOutputTopic", "dnsmonster", "Kafka topic for logging")
@@ -322,6 +324,7 @@ var elasticResultChannel = make(chan DNSResult, *resultChannelSize)
 var splunkResultChannel = make(chan DNSResult, *resultChannelSize)
 var stdoutResultChannel = make(chan DNSResult, *resultChannelSize)
 var fileResultChannel = make(chan DNSResult, *resultChannelSize)
+var syslogResultChannel = make(chan DNSResult, *resultChannelSize)
 var resultChannel = make(chan DNSResult, *resultChannelSize)
 
 func main() {
@@ -371,11 +374,34 @@ func main() {
 
 	if *fileOutputType > 0 {
 		log.Info("Creating File Output Channel")
-		go fileOutput(fileResultChannel, exiting, &wg)
+		fConfig := fileConfig{
+			fileResultChannel,
+			*fileOutputPath,
+			*fileOutputType,
+			generalConfig,
+		}
+		go fileOutput(fConfig)
+		// go fileOutput(fileResultChannel, exiting, &wg)
 	}
 	if *stdoutOutputType > 0 {
 		log.Info("Creating stdout Output Channel")
-		go stdoutOutput(stdoutResultChannel, exiting, &wg)
+		stdConfig := stdoutConfig{
+			stdoutResultChannel,
+			*stdoutOutputType,
+			generalConfig,
+		}
+		go stdoutOutput(stdConfig)
+		// go stdoutOutput(stdoutResultChannel, exiting, &wg)
+	}
+	if *syslogOutputType > 0 {
+		log.Info("Creating syslog Output Channel")
+		sysConfig := syslogConfig{
+			syslogResultChannel,
+			*syslogOutputEndpoint,
+			*syslogOutputType,
+			generalConfig,
+		}
+		go syslogOutput(sysConfig)
 	}
 	if *clickhouseOutputType > 0 {
 		log.Info("Creating Clickhouse Output Channel")

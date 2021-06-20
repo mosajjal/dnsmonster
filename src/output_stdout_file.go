@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -13,17 +12,17 @@ import (
 var stdoutstats = outputStats{"Stdout", 0, 0}
 var fileoutstats = outputStats{"File", 0, 0}
 
-func stdoutOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup) {
-	wg.Add(1)
-	defer wg.Done()
-	printStatsTicker := time.Tick(*printStatsDelay)
+func stdoutOutput(stdConfig stdoutConfig) {
+	stdConfig.general.wg.Add(1)
+	defer stdConfig.general.wg.Done()
+	printStatsTicker := time.Tick(stdConfig.general.printStatsDelay)
 
 	for {
 		select {
 		case data := <-resultChannel:
 			for _, dnsQuery := range data.DNS.Question {
 
-				if checkIfWeSkip(*stdoutOutputType, dnsQuery.Name) {
+				if checkIfWeSkip(stdConfig.stdoutOutputType, dnsQuery.Name) {
 					stdoutstats.Skipped++
 					continue
 				}
@@ -32,7 +31,7 @@ func stdoutOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 				fullQuery, _ := json.Marshal(data)
 				fmt.Printf("%s\n", fullQuery)
 			}
-		case <-exiting:
+		case <-stdConfig.general.exiting:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", stdoutstats)
@@ -40,25 +39,25 @@ func stdoutOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wait
 	}
 }
 
-func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup) {
-	wg.Add(1)
-	defer wg.Done()
+func fileOutput(fConfig fileConfig) {
+	fConfig.general.wg.Add(1)
+	defer fConfig.general.wg.Done()
 	var fileObject *os.File
-	if *fileOutputType > 0 {
+	if fConfig.fileOutputType > 0 {
 		var err error
-		fileObject, err = os.OpenFile(*fileOutputPath,
+		fileObject, err = os.OpenFile(fConfig.fileOutputPath,
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		errorHandler(err)
 		defer fileObject.Close()
 	}
-	printStatsTicker := time.Tick(*printStatsDelay)
+	printStatsTicker := time.Tick(fConfig.general.printStatsDelay)
 
 	for {
 		select {
 		case data := <-resultChannel:
 			for _, dnsQuery := range data.DNS.Question {
 
-				if checkIfWeSkip(*fileOutputType, dnsQuery.Name) {
+				if checkIfWeSkip(fConfig.fileOutputType, dnsQuery.Name) {
 					fileoutstats.Skipped++
 					continue
 				}
@@ -68,7 +67,7 @@ func fileOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGr
 				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", fullQuery))
 				errorHandler(err)
 			}
-		case <-exiting:
+		case <-fConfig.general.exiting:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", fileoutstats)

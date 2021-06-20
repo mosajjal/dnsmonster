@@ -31,6 +31,9 @@ func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wa
 			if *fileOutputType > 0 {
 				fileResultChannel <- data
 			}
+			if *syslogOutputType > 0 {
+				syslogResultChannel <- data
+			}
 			if *clickhouseOutputType > 0 {
 				clickhouseResultChannel <- data
 			}

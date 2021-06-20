@@ -1,3 +1,4 @@
+logLevel=3
 afpacketBuffersizeMb=64
 allowDomainsFile=
 allowDomainsFileType=
@@ -54,6 +55,9 @@ splunkOutputSource=
 splunkOutputSourceType=
 splunkOutputToken=
 splunkOutputType=
+stdoutOutputType=0
+syslogOutputEndpoint=""
+syslogOutputType=0
 tcpAssemblyChannelSize=1000
 tcpHandlers=1
 tcpResultChannelSize=1000

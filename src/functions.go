@@ -1,6 +1,8 @@
 package main
 
-import "strings"
+import (
+	"strings"
+)
 
 // checkSkipDomainList returns true if the domain exists in the domainList
 func checkSkipDomainList(domainName string, domainList [][]string) bool {

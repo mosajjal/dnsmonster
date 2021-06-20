@@ -66,6 +66,26 @@ type splunkConfig struct {
 	general                generalConfig
 }
 
+type syslogConfig struct {
+	resultChannel        chan DNSResult
+	syslogOutputEndpoint string
+	syslogOutputType     uint
+	general              generalConfig
+}
+
+type fileConfig struct {
+	resultChannel  chan DNSResult
+	fileOutputPath string
+	fileOutputType uint
+	general        generalConfig
+}
+
+type stdoutConfig struct {
+	resultChannel    chan DNSResult
+	stdoutOutputType uint
+	general          generalConfig
+}
+
 type packetEncoder struct {
 	port              uint16
 	input             <-chan gopacket.Packet

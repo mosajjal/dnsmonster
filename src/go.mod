@@ -18,7 +18,9 @@ require (
 	github.com/rogpeppe/fastuuid v1.2.0
 	github.com/segmentio/kafka-go v0.4.8
 	github.com/sirupsen/logrus v1.8.1
+	github.com/stretchr/testify v1.7.0 // indirect
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	golang.org/x/sys v0.0.0-20201106081118-db71ae66460a // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

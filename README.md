@@ -126,6 +126,7 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ## Command line options
 ```
 Usage of dnsmonster:
+  -logLevel=3: Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG
   -afpacketBuffersizeMb=64: Afpacket Buffersize in MB
   -allowDomainsFile="": Allow Domains logic input file. Can accept a URL (http:// or https://) or path
   -allowDomainsFileType="csv": allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
@@ -158,7 +159,6 @@ Usage of dnsmonster:
   -kafkaOutputBroker="": kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none
   -kafkaOutputTopic="dnsmonster": Kafka topic for logging
   -kafkaOutputType=0: What should be written to kafka. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -loggerFilename=false: Show the file name in log outputs
   -maskSize=32: Mask source IPs by bits. 32 means all the bits of IP is saved in DB
   -memprofile="": write memory profile to file
   -packetHandlerChannelSize=100000: Size of the packet handler channel
@@ -169,7 +169,7 @@ Usage of dnsmonster:
   -printStatsDelay=10s: Duration to print capture and database stats
   -resultChannelSize=100000: Size of the result processor channel size
   -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
-  -saveFullQuery=false: Save full packet query and response in JSON format
+  -saveFullQuery=false: Save full packet query and response in JSON format. Will respect maskSize
   -serverName="default": Name of the server used to index the metrics.
   -skipDomainsFile="": Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path
   -skipDomainsFileType="csv": skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
@@ -177,17 +177,19 @@ Usage of dnsmonster:
   -skipTlsVerification=false: Skip TLS verification when making HTTPS connections
   -splunkBatchDelay=1s: Interval between sending results to HEC if Batch size is not filled
   -splunkBatchSize=1000: Send data to HEC in batch sizes
-  -splunkOutputEndpoint="": HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none
+  -splunkOutputEndpoint=: HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none
   -splunkOutputIndex="temp": Splunk Output Index
   -splunkOutputSource="dnsmonster": Splunk Output Source
   -splunkOutputSourceType="json": Splunk Output Sourcetype
   -splunkOutputToken="00000000-0000-0000-0000-000000000000": Splunk HEC Token
   -splunkOutputType=0: What should be written to HEC. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -stdoutOutputType=0: What should be written to stdout. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
+  -syslogOutputEndpoint="": Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none
+  -syslogOutputType=0: What should be written to Syslog server. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
   -tcpAssemblyChannelSize=1000: Size of the tcp assembler
   -tcpHandlers=1: Number of routines used to handle tcp assembly
   -tcpResultChannelSize=1000: Size of the tcp result channel
-  -useAfpacket=false: Use AFPacket for live captures
+  -useAfpacket=false: Use AFPacket for live captures. Supported on Linux 3.0+ only
   -version=false: show version and exit
 ```
 
@@ -294,13 +296,13 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
 - [x] Elasticsearch output support
 - [x] Splunk HEC output support
-- [ ] Syslog output support
+- [x] Syslog output support
+- [x] Grafana dashboard performance improvements
 - [ ] Splunk Dashboard
 - [ ] Kibana Dashbaord
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
 - [ ] Getting the data ready to be used for ML & Anomaly Detection
-- [ ] Grafana dashboard performance improvements
 - [ ] remove `libpcap` dependency and move to `pcapgo`
 - [ ] Clickhouse versioning and migration tool
 - [ ] `statsd` and `Prometheus` support 

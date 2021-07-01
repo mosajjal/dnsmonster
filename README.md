@@ -263,6 +263,7 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 * Splunk HEC
 * Stdout
 * File
+* Syslog
 
 # Build Manually
 

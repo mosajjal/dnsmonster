@@ -360,9 +360,10 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	// Set up our output channels
+	// Setup our output channels
 	setupOutputs(wg, exiting)
 
+	// Setup the memory profile if reuqested
 	if *memprofile != "" {
 		go func() {
 			time.Sleep(120 * time.Second)

@@ -15,7 +15,7 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 		*saveFullQuery,
 		*serverName,
 		*printStatsDelay,
-		*skipTlsVerification,
+		*skipTLSVerification,
 	}
 	log.Info("Creating the dispatch Channel")
 	go dispatchOutput(resultChannel, exiting, &wg)

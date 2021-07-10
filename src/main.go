@@ -6,8 +6,6 @@
 package main
 
 import (
-	"bufio"
-	"net/http"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -70,7 +68,7 @@ var defraggerChannelReturnSize = fs.Uint("defraggerChannelReturnSize", 500, "Siz
 var cpuprofile = fs.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = fs.String("memprofile", "", "write memory profile to file")
 var gomaxprocs = fs.Int("gomaxprocs", -1, "GOMAXPROCS variable")
-var skipTlsVerification = fs.Bool("skipTlsVerification", false, "Skip TLS verification when making HTTPS connections")
+var skipTLSVerification = fs.Bool("skipTLSVerification", false, "Skip TLS verification when making HTTPS connections")
 var packetLimit = fs.Int("packetLimit", 0, "Limit of packets logged to clickhouse every iteration. Default 0 (disabled)")
 var skipDomainsFile = fs.String("skipDomainsFile", "", "Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path")
 var skipDomainsRefreshInterval = fs.Duration("skipDomainsRefreshInterval", 60*time.Second, "Hot-Reload skipDomainsFile interval")
@@ -239,83 +237,6 @@ func checkFlags() {
 		log.Fatal("wrong -sampleRatio syntax")
 	}
 
-}
-
-func loadDomainsToList(Filename string) [][]string {
-	log.Info("Loading the domain from file/url to a list")
-	var lines [][]string
-	var scanner *bufio.Scanner
-	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
-		log.Info("domain list is a URL, trying to fetch")
-		client := http.Client{
-			CheckRedirect: func(r *http.Request, via []*http.Request) error {
-				r.URL.Opaque = r.URL.Path
-				return nil
-			},
-		}
-		resp, err := client.Get(Filename)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Info("(re)fetching URL: ", Filename)
-		defer resp.Body.Close()
-		scanner = bufio.NewScanner(resp.Body)
-
-	} else {
-		file, err := os.Open(Filename)
-		errorHandler(err)
-		log.Info("(re)loading File: ", Filename)
-		defer file.Close()
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		lines = append(lines, strings.Split(scanner.Text(), ","))
-	}
-	log.Infof("%s loaded with %d lines", Filename, len(lines))
-	return lines
-}
-
-func errorHandler(err error) {
-	if err != nil {
-		log.Fatal("fatal Error: ", err)
-	}
-}
-
-func loadDomainsToMap(Filename string) map[string]bool {
-	log.Info("Loading the domain from file/url to a hashmap")
-	lines := make(map[string]bool)
-	var scanner *bufio.Scanner
-	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
-		log.Info("domain list is a URL, trying to fetch")
-		client := http.Client{
-			CheckRedirect: func(r *http.Request, via []*http.Request) error {
-				r.URL.Opaque = r.URL.Path
-				return nil
-			},
-		}
-		resp, err := client.Get(Filename)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Info("(re)fetching URL: ", Filename)
-		defer resp.Body.Close()
-		scanner = bufio.NewScanner(resp.Body)
-
-	} else {
-		file, err := os.Open(Filename)
-		errorHandler(err)
-		log.Info("(re)loading File: ", Filename)
-		defer file.Close()
-		scanner = bufio.NewScanner(file)
-	}
-
-	for scanner.Scan() {
-		fqdn := strings.Split(scanner.Text(), ",")[0]
-		lines[fqdn] = true
-	}
-	log.Infof("%s loaded with %d lines", Filename, len(lines))
-	return lines
 }
 
 var clickhouseResultChannel = make(chan DNSResult, *resultChannelSize)

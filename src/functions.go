@@ -1,7 +1,12 @@
 package main
 
 import (
+	"bufio"
+	"net/http"
+	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // checkSkipDomainList returns true if the domain exists in the domainList
@@ -62,4 +67,81 @@ func checkIfWeSkip(outputType uint, query string) bool {
 		return true
 	}
 	return true
+}
+
+func loadDomainsToList(Filename string) [][]string {
+	log.Info("Loading the domain from file/url to a list")
+	var lines [][]string
+	var scanner *bufio.Scanner
+	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
+		log.Info("domain list is a URL, trying to fetch")
+		client := http.Client{
+			CheckRedirect: func(r *http.Request, via []*http.Request) error {
+				r.URL.Opaque = r.URL.Path
+				return nil
+			},
+		}
+		resp, err := client.Get(Filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Info("(re)fetching URL: ", Filename)
+		defer resp.Body.Close()
+		scanner = bufio.NewScanner(resp.Body)
+
+	} else {
+		file, err := os.Open(Filename)
+		errorHandler(err)
+		log.Info("(re)loading File: ", Filename)
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
+	}
+
+	for scanner.Scan() {
+		lines = append(lines, strings.Split(scanner.Text(), ","))
+	}
+	log.Infof("%s loaded with %d lines", Filename, len(lines))
+	return lines
+}
+
+func errorHandler(err error) {
+	if err != nil {
+		log.Fatal("fatal Error: ", err)
+	}
+}
+
+func loadDomainsToMap(Filename string) map[string]bool {
+	log.Info("Loading the domain from file/url to a hashmap")
+	lines := make(map[string]bool)
+	var scanner *bufio.Scanner
+	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
+		log.Info("domain list is a URL, trying to fetch")
+		client := http.Client{
+			CheckRedirect: func(r *http.Request, via []*http.Request) error {
+				r.URL.Opaque = r.URL.Path
+				return nil
+			},
+		}
+		resp, err := client.Get(Filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Info("(re)fetching URL: ", Filename)
+		defer resp.Body.Close()
+		scanner = bufio.NewScanner(resp.Body)
+
+	} else {
+		file, err := os.Open(Filename)
+		errorHandler(err)
+		log.Info("(re)loading File: ", Filename)
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
+	}
+
+	for scanner.Scan() {
+		fqdn := strings.Split(scanner.Text(), ",")[0]
+		lines[fqdn] = true
+	}
+	log.Infof("%s loaded with %d lines", Filename, len(lines))
+	return lines
 }

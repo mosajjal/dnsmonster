@@ -14,15 +14,15 @@ func checkSkipDomainList(domainName string, domainList [][]string) bool {
 	for _, item := range domainList {
 		if len(item) == 2 {
 			if item[1] == "suffix" {
-				if strings.HasSuffix(domainName, item[0]) {
+				if strings.HasSuffix(strings.ToLower(domainName), strings.ToLower(item[0])) {
 					return true
 				}
 			} else if item[1] == "fqdn" {
-				if domainName == item[0] {
+				if strings.ToLower(domainName) == strings.ToLower(item[0]) {
 					return true
 				}
 			} else if item[1] == "prefix" {
-				if strings.HasPrefix(domainName, item[0]) {
+				if strings.HasPrefix(strings.ToLower(domainName), strings.ToLower(item[0])) {
 					return true
 				}
 			}

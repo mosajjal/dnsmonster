@@ -66,7 +66,7 @@ func checkIfWeSkip(outputType uint, query string) bool {
 		}
 		return true
 	}
-	return true
+	return false
 }
 
 func loadDomainsToList(Filename string) [][]string {

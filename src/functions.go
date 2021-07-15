@@ -51,6 +51,7 @@ func checkIfWeSkip(outputType uint, query string) bool {
 		} else if checkSkipDomainList(query, skipDomainList) {
 			return true
 		}
+		return false
 	case 3:
 		if allowDomainMapBool {
 			if checkSkipDomainHash(query, allowDomainMap) {
@@ -59,6 +60,7 @@ func checkIfWeSkip(outputType uint, query string) bool {
 		} else if checkSkipDomainList(query, allowDomainList) {
 			return false
 		}
+		return true
 	// 4 means apply two logics, so we apply the two logics and && them together
 	case 4:
 		if !checkIfWeSkip(2, query) {

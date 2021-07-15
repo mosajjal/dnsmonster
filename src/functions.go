@@ -100,7 +100,8 @@ func loadDomainsToList(Filename string) [][]string {
 	}
 
 	for scanner.Scan() {
-		lines = append(lines, strings.Split(scanner.Text(), ","))
+		lowerCaseLine := strings.ToLower(scanner.Text())
+		lines = append(lines, strings.Split(lowerCaseLine, ","))
 	}
 	log.Infof("%s loaded with %d lines", Filename, len(lines))
 	return lines
@@ -141,7 +142,8 @@ func loadDomainsToMap(Filename string) map[string]bool {
 	}
 
 	for scanner.Scan() {
-		fqdn := strings.Split(scanner.Text(), ",")[0]
+		lowerCaseLine := strings.ToLower(scanner.Text())
+		fqdn := strings.Split(lowerCaseLine, ",")[0]
 		lines[fqdn] = true
 	}
 	log.Infof("%s loaded with %d lines", Filename, len(lines))

@@ -10,6 +10,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 	mkdns "github.com/miekg/dns"
+	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
 )
 
 type generalConfig struct {
@@ -222,4 +223,10 @@ type fragmentList struct {
 type IPv6Defragmenter struct {
 	sync.RWMutex
 	ipFlows map[ipv6]*fragmentList
+}
+
+type splunkConnection struct {
+	client    *splunk.Client
+	unhealthy uint
+	err       error
 }

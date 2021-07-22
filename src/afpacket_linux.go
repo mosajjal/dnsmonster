@@ -76,7 +76,7 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	handle := &afpacketHandle{}
 
 	frameSize, blockSize, numBlocks, err := afpacketComputeSize(
-		*afpacketBuffersizeMb,
+		captureOptions.AfpacketBuffersizeMb,
 		65536,
 		uint(os.Getpagesize()))
 	errorHandler(err)

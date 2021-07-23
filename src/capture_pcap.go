@@ -122,8 +122,8 @@ func (capturer *DNSCapturer) start() {
 	handleInterrupt(options.Done)
 
 	// Set up various tickers for different tasks
-	captureStatsTicker := time.Tick(*captureStatsDelay)
-	printStatsTicker := time.Tick(*printStatsDelay)
+	captureStatsTicker := time.Tick(generalOptions.CaptureStatsDelay)
+	printStatsTicker := time.Tick(generalOptions.PrintStatsDelay)
 
 	var ratioCnt = 0
 	var totalCnt = 0

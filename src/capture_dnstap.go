@@ -48,8 +48,8 @@ func handleDNSTapInterrupt(done chan bool) {
 	go func() {
 		for range c {
 			log.Infof("SIGINT received.. Cleaning up")
-			if strings.Contains(*dnstapSocket, "unix://") {
-				os.Remove(strings.Split(*dnstapSocket, "://")[1])
+			if strings.Contains(captureOptions.DnstapSocket, "unix://") {
+				os.Remove(strings.Split(captureOptions.DnstapSocket, "://")[1])
 			} else {
 				ln.Close()
 			}
@@ -85,7 +85,7 @@ func dnsTapMsgToDNSResult(msg []byte) DNSResult {
 
 func startDNSTap(resultChannel chan DNSResult) {
 	log.Info("Starting DNStap capture")
-	input := parseDnstapSocket(*dnstapSocket, *dnstapPermission)
+	input := parseDnstapSocket(captureOptions.DnstapSocket, captureOptions.DnstapPermission)
 
 	buf := make(chan []byte, 1024)
 
@@ -96,8 +96,8 @@ func startDNSTap(resultChannel chan DNSResult) {
 	handleDNSTapInterrupt(done)
 
 	// Set up various tickers for different tasks
-	captureStatsTicker := time.Tick(*captureStatsDelay)
-	printStatsTicker := time.Tick(*printStatsDelay)
+	captureStatsTicker := time.Tick(generalOptions.CaptureStatsDelay)
+	printStatsTicker := time.Tick(generalOptions.PrintStatsDelay)
 
 	for {
 

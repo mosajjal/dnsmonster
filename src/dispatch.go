@@ -10,55 +10,55 @@ func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wa
 	defer wg.Done()
 
 	// Set up various tickers for different tasks
-	skipDomainsFileTicker := time.NewTicker(*skipDomainsRefreshInterval)
+	skipDomainsFileTicker := time.NewTicker(generalOptions.SkipDomainsRefreshInterval)
 	skipDomainsFileTickerChan := skipDomainsFileTicker.C
-	if *skipDomainsFile == "" {
+	if generalOptions.SkipDomainsFile == "" {
 		skipDomainsFileTicker.Stop()
 	}
 
-	allowDomainsFileTicker := time.NewTicker(*allowDomainsRefreshInterval)
+	allowDomainsFileTicker := time.NewTicker(generalOptions.AllowDomainsRefreshInterval)
 	allowDomainsFileTickerChan := allowDomainsFileTicker.C
-	if *allowDomainsFile == "" {
+	if generalOptions.AllowDomainsFile == "" {
 		allowDomainsFileTicker.Stop()
 	}
 
 	for {
 		select {
 		case data := <-resultChannel:
-			if *stdoutOutputType > 0 {
+			if outputOptions.StdoutOutputType > 0 {
 				stdoutResultChannel <- data
 			}
-			if *fileOutputType > 0 {
+			if outputOptions.FileOutputType > 0 {
 				fileResultChannel <- data
 			}
-			if *syslogOutputType > 0 {
+			if outputOptions.SyslogOutputType > 0 {
 				syslogResultChannel <- data
 			}
-			if *clickhouseOutputType > 0 {
+			if outputOptions.ClickhouseOutputType > 0 {
 				clickhouseResultChannel <- data
 			}
-			if *kafkaOutputType > 0 {
+			if outputOptions.KafkaOutputType > 0 {
 				kafkaResultChannel <- data
 			}
-			if *elasticOutputType > 0 {
+			if outputOptions.ElasticOutputType > 0 {
 				elasticResultChannel <- data
 			}
-			if *splunkOutputType > 0 {
+			if outputOptions.SplunkOutputType > 0 {
 				splunkResultChannel <- data
 			}
 		case <-exiting:
 			return
 		case <-skipDomainsFileTickerChan:
 			if skipDomainMapBool {
-				skipDomainMap = loadDomainsToMap(*skipDomainsFile)
+				skipDomainMap = loadDomainsToMap(generalOptions.SkipDomainsFile)
 			} else {
-				skipDomainList = loadDomainsToList(*skipDomainsFile)
+				skipDomainList = loadDomainsToList(generalOptions.SkipDomainsFile)
 			}
 		case <-allowDomainsFileTickerChan:
 			if allowDomainMapBool {
-				allowDomainMap = loadDomainsToMap(*allowDomainsFile)
+				allowDomainMap = loadDomainsToMap(generalOptions.AllowDomainsFile)
 			} else {
-				allowDomainList = loadDomainsToList(*allowDomainsFile)
+				allowDomainList = loadDomainsToList(generalOptions.AllowDomainsFile)
 			}
 		}
 	}

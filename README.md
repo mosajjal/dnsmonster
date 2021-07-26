@@ -4,6 +4,8 @@
 ![License](https://img.shields.io/github/license/mosajjal/dnsmonster?style=flat-square)
 ![Open Issues](https://img.shields.io/github/issues/mosajjal/dnsmonster?style=flat-square)
 
+![Logo](static/dnsmonster-logo.svg)
+
 Table of Contents
 - [DNS Monster](#dns-monster)
 - [Main features](#main-features)

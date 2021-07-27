@@ -31,57 +31,57 @@ var allowDomainMap = make(map[string]bool)
 var skipDomainMapBool = false
 var allowDomainMapBool = false
 
-var clickhouseResultChannel = make(chan DNSResult, *resultChannelSize)
-var kafkaResultChannel = make(chan DNSResult, *resultChannelSize)
-var elasticResultChannel = make(chan DNSResult, *resultChannelSize)
-var splunkResultChannel = make(chan DNSResult, *resultChannelSize)
-var stdoutResultChannel = make(chan DNSResult, *resultChannelSize)
-var fileResultChannel = make(chan DNSResult, *resultChannelSize)
-var syslogResultChannel = make(chan DNSResult, *resultChannelSize)
-var resultChannel = make(chan DNSResult, *resultChannelSize)
+var clickhouseResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
+var kafkaResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
+var elasticResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
+var splunkResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
+var stdoutResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
+var fileResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
+var syslogResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
+var resultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
 
 func main() {
+	flagsProcess()
 	checkFlags()
-	runtime.GOMAXPROCS(*gomaxprocs)
-	if *cpuprofile != "" {
+	runtime.GOMAXPROCS(generalOptions.Gomaxprocs)
+	if generalOptions.Cpuprofile != "" {
 		log.Warn("Writing CPU profile")
-		f, err := os.Create(*cpuprofile)
+		f, err := os.Create(generalOptions.Cpuprofile)
 		errorHandler(err)
 		err = pprof.StartCPUProfile(f)
 		errorHandler(err)
 		defer pprof.StopCPUProfile()
 	}
 
+	// load the skipDomainFile if exists
+	if generalOptions.SkipDomainsFile != "" {
+		if skipDomainMapBool {
+			skipDomainMap = loadDomainsToMap(generalOptions.SkipDomainsFile)
+		} else {
+			skipDomainList = loadDomainsToList(generalOptions.SkipDomainsFile)
+		}
+	}
+	if generalOptions.AllowDomainsFile != "" {
+		if allowDomainMapBool {
+			allowDomainMap = loadDomainsToMap(generalOptions.AllowDomainsFile)
+		} else {
+			allowDomainList = loadDomainsToList(generalOptions.AllowDomainsFile)
+		}
+	}
+
 	// Setup output routine
 	exiting := make(chan bool)
-
-	// load the skipDomainFile if exists
-	if *skipDomainsFile != "" {
-		if skipDomainMapBool {
-			skipDomainMap = loadDomainsToMap(*skipDomainsFile)
-		} else {
-			skipDomainList = loadDomainsToList(*skipDomainsFile)
-		}
-	}
-	if *allowDomainsFile != "" {
-		if allowDomainMapBool {
-			allowDomainMap = loadDomainsToMap(*allowDomainsFile)
-		} else {
-			allowDomainList = loadDomainsToList(*allowDomainsFile)
-		}
-	}
-
 	var wg sync.WaitGroup
 
 	// Setup our output channels
 	setupOutputs(wg, exiting)
 
 	// Setup the memory profile if reuqested
-	if *memprofile != "" {
+	if generalOptions.Memprofile != "" {
 		go func() {
 			time.Sleep(120 * time.Second)
 			log.Warn("Writing memory profile")
-			f, err := os.Create(*memprofile)
+			f, err := os.Create(generalOptions.Memprofile)
 			errorHandler(err)
 			runtime.GC() // get up-to-date statistics
 
@@ -92,24 +92,44 @@ func main() {
 	}
 
 	// Start listening if we're using pcap or afpacket
-	if *dnstapSocket == "" {
+
+	if captureOptions.DnstapSocket == "" {
 		capturer := newDNSCapturer(CaptureOptions{
-			*devName,
-			*useAfpacket,
-			*pcapFile,
-			*filter,
-			uint16(*port),
-			*gcTime,
+			captureOptions.DevName,
+			captureOptions.UseAfpacket,
+			captureOptions.PcapFile,
+			captureOptions.Filter,
+			uint16(captureOptions.Port),
+			generalOptions.GcTime,
 			resultChannel,
-			*packetHandlerCount,
-			*packetChannelSize,
-			*tcpHandlerCount,
-			*tcpAssemblyChannelSize,
-			*tcpResultChannelSize,
-			*defraggerChannelSize,
-			*defraggerChannelReturnSize,
+			captureOptions.PacketHandlerCount,
+			captureOptions.PacketChannelSize,
+			generalOptions.TcpHandlerCount,
+			generalOptions.TcpAssemblyChannelSize,
+			generalOptions.TcpResultChannelSize,
+			generalOptions.DefraggerChannelSize,
+			generalOptions.DefraggerChannelReturnSize,
 			exiting,
 		})
+
+		// if *dnstapSocket == "" {
+		// 	capturer := newDNSCapturer(CaptureOptions{
+		// 		*devName,
+		// 		*useAfpacket,
+		// 		*pcapFile,
+		// 		*filter,
+		// 		uint16(*port),
+		// 		*gcTime,
+		// 		resultChannel,
+		// 		*packetHandlerCount,
+		// 		*packetChannelSize,
+		// 		*tcpHandlerCount,
+		// 		*tcpAssemblyChannelSize,
+		// 		*tcpResultChannelSize,
+		// 		*defraggerChannelSize,
+		// 		*defraggerChannelReturnSize,
+		// 		exiting,
+		// 	})
 		capturer.start()
 		// Wait for the output to finish
 		log.Info("Exiting")

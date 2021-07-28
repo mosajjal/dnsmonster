@@ -10,98 +10,98 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 	generalConfig := generalConfig{
 		exiting,
 		&wg,
-		*maskSize,
-		*packetLimit,
-		*saveFullQuery,
-		*serverName,
-		*printStatsDelay,
-		*skipTLSVerification,
+		generalOptions.MaskSize,
+		generalOptions.PacketLimit,
+		generalOptions.SaveFullQuery,
+		generalOptions.ServerName,
+		generalOptions.PrintStatsDelay,
+		generalOptions.SkipTLSVerification,
 	}
 	log.Info("Creating the dispatch Channel")
 	go dispatchOutput(resultChannel, exiting, &wg)
 
-	if *fileOutputType > 0 {
+	if outputOptions.FileOutputType > 0 {
 		log.Info("Creating File Output Channel")
 		fConfig := fileConfig{
 			fileResultChannel,
-			*fileOutputPath,
-			*fileOutputType,
+			string(outputOptions.FileOutputPath),
+			outputOptions.FileOutputType,
 			generalConfig,
 		}
 		go fileOutput(fConfig)
 		// go fileOutput(fileResultChannel, exiting, &wg)
 	}
-	if *stdoutOutputType > 0 {
+	if outputOptions.StdoutOutputType > 0 {
 		log.Info("Creating stdout Output Channel")
 		stdConfig := stdoutConfig{
 			stdoutResultChannel,
-			*stdoutOutputType,
+			outputOptions.StdoutOutputType,
 			generalConfig,
 		}
 		go stdoutOutput(stdConfig)
 		// go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
-	if *syslogOutputType > 0 {
+	if outputOptions.SyslogOutputType > 0 {
 		log.Info("Creating syslog Output Channel")
 		sysConfig := syslogConfig{
 			syslogResultChannel,
-			*syslogOutputEndpoint,
-			*syslogOutputType,
+			outputOptions.SyslogOutputEndpoint,
+			outputOptions.SyslogOutputType,
 			generalConfig,
 		}
 		go syslogOutput(sysConfig)
 	}
-	if *clickhouseOutputType > 0 {
+	if outputOptions.ClickhouseOutputType > 0 {
 		log.Info("Creating Clickhouse Output Channel")
 		chConfig := clickHouseConfig{
 			clickhouseResultChannel,
-			*clickhouseAddress,
-			*clickhouseBatchSize,
-			*clickhouseOutputType,
-			*clickhouseDebug,
-			*clickhouseDelay,
+			outputOptions.ClickhouseAddress,
+			outputOptions.ClickhouseBatchSize,
+			outputOptions.ClickhouseOutputType,
+			outputOptions.ClickhouseDebug,
+			outputOptions.ClickhouseDelay,
 			generalConfig,
 		}
 		go clickhouseOutput(chConfig)
 	}
-	if *kafkaOutputType > 0 {
+	if outputOptions.KafkaOutputType > 0 {
 		log.Info("Creating Kafka Output Channel")
 		kafConfig := kafkaConfig{
 			kafkaResultChannel,
-			*kafkaOutputBroker,
-			*kafkaOutputTopic,
-			*kafkaOutputType,
-			*kafkaBatchSize,
-			*kafkaBatchDelay,
+			outputOptions.KafkaOutputBroker,
+			outputOptions.KafkaOutputTopic,
+			outputOptions.KafkaOutputType,
+			outputOptions.KafkaBatchSize,
+			outputOptions.KafkaBatchDelay,
 			generalConfig,
 		}
 		go kafkaOutput(kafConfig)
 	}
-	if *elasticOutputType > 0 {
+	if outputOptions.ElasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")
 		esConfig := elasticConfig{
 			elasticResultChannel,
-			*elasticOutputEndpoint,
-			*elasticOutputIndex,
-			*elasticOutputType,
-			*elasticBatchSize,
-			*elasticBatchDelay,
+			outputOptions.ElasticOutputEndpoint,
+			outputOptions.ElasticOutputIndex,
+			outputOptions.ElasticOutputType,
+			outputOptions.ElasticBatchSize,
+			outputOptions.ElasticBatchDelay,
 			generalConfig,
 		}
 		go elasticOutput(esConfig)
 	}
-	if *splunkOutputType > 0 {
+	if outputOptions.SplunkOutputType > 0 {
 		log.Info("Creating Splunk Output Channel")
 		spConfig := splunkConfig{
 			splunkResultChannel,
-			splunkOutputEndpoints,
-			*splunkOutputToken,
-			*splunkOutputType,
-			*splunkOutputIndex,
-			*splunkOutputSource,
-			*splunkOutputSourceType,
-			*splunkBatchSize,
-			*splunkBatchDelay,
+			outputOptions.SplunkOutputEndpoints,
+			outputOptions.SplunkOutputToken,
+			outputOptions.SplunkOutputType,
+			outputOptions.SplunkOutputIndex,
+			outputOptions.SplunkOutputSource,
+			outputOptions.SplunkOutputSourceType,
+			outputOptions.SplunkBatchSize,
+			outputOptions.SplunkBatchDelay,
 			generalConfig,
 		}
 		go splunkOutput(spConfig)

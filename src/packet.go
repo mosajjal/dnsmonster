@@ -19,7 +19,7 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 				err := msg.Unpack(udp.Payload)
 				// Process if no error or truncated, as it will have most of the information it have available
 				if err == nil {
-					encoder.resultChannel <- DNSResult{timestamp, msg, IPVersion, SrcIP.Mask(net.CIDRMask(*maskSize, 32)), DstIP.Mask(net.CIDRMask(*maskSize, 32)), "udp", uint16(len(udp.Payload))}
+					encoder.resultChannel <- DNSResult{timestamp, msg, IPVersion, SrcIP.Mask(net.CIDRMask(generalOptions.MaskSize, 32)), DstIP.Mask(net.CIDRMask(generalOptions.MaskSize, 32)), "udp", uint16(len(udp.Payload))}
 				}
 			}
 		case layers.LayerTypeTCP:
@@ -66,7 +66,7 @@ func (encoder *packetEncoder) run() {
 		case data := <-encoder.tcpReturnChannel:
 			msg := mkdns.Msg{}
 			if err := msg.Unpack(data.data); err == nil {
-				encoder.resultChannel <- DNSResult{data.timestamp, msg, data.IPVersion, data.SrcIP.Mask(net.CIDRMask(*maskSize, 32)), data.DstIP.Mask(net.CIDRMask(*maskSize, 32)), "tcp", uint16(len(data.data))}
+				encoder.resultChannel <- DNSResult{data.timestamp, msg, data.IPVersion, data.SrcIP.Mask(net.CIDRMask(generalOptions.MaskSize, 32)), data.DstIP.Mask(net.CIDRMask(generalOptions.MaskSize, 32)), "tcp", uint16(len(data.data))}
 			}
 		case packet := <-encoder.ip4DefrggerReturn:
 			// Packet was defragged, parse the remaining data

@@ -1,131 +1,23 @@
-![Build Status](https://github.com/mosajjal/dnsmonster/workflows/Build%20Test/badge.svg?style=flat-square)
-![Go Version](https://img.shields.io/github/go-mod/go-version/mosajjal/dnsmonster/main?filename=src%2Fgo.mod&style=flat-square)
-![Latest Version](https://img.shields.io/github/v/tag/mosajjal/dnsmonster?label=latest&style=flat-square)
-![License](https://img.shields.io/github/license/mosajjal/dnsmonster?style=flat-square)
-![Open Issues](https://img.shields.io/github/issues/mosajjal/dnsmonster?style=flat-square)
-
-![Logo](static/dnsmonster-logo.svg)
-
 Table of Contents
-- [DNS Monster](#dns-monster)
-- [Main features](#main-features)
-- [Manual Installation](#manual-installation)
-  - [Linux](#linux)
-  - [Windows](#windows)
-- [Architecture](#architecture)
-  - [AIO Installation using Docker](#aio-installation-using-docker)
-    - [AIO Demo](#aio-demo)
-  - [Enterprise Deployment](#enterprise-deployment)
-    - [Set up a ClickHouse Cluster](#set-up-a-clickhouse-cluster)
-- [Configuration](#configuration)
-  - [Command line options](#command-line-options)
-  - [Environment variables](#environment-variables)
-  - [Configuration file](#configuration-file)
-  - [What's the retention policy](#whats-the-retention-policy)
-- [Sampling and Skipping](#sampling-and-skipping)
-  - [pre-process sampling](#pre-process-sampling)
-  - [skip domains](#skip-domains)
-  - [allow domains](#allow-domains)
-  - [SAMPLE in clickhouse SELECT queries](#sample-in-clickhouse-select-queries)
-- [Supported Outputs](#supported-outputs)
-- [Build Manually](#build-manually)
-  - [Static Build](#static-build)
-  - [pre-built Binary](#pre-built-binary)
-- [Roadmap](#roadmap)
-- [Related projects](#related-projects)
-
-# DNS Monster
-
 Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana: 
 `dnsmonster` implements a packet sniffer for DNS traffic. It can accept traffic from a `pcap` file, a live interface or a `dnstap` socket, 
 and can be used to index and store thousands of DNS queries per second (it has shown to be capable of indexing 200k+ DNS queries per second on a commodity computer). It aims to be scalable, simple and easy to use, and help
 security teams to understand the details about an enterprise's DNS traffic. `dnsmonster` does not look to follow DNS conversations, rather it aims to index DNS packets as soon as they come in. It also does not aim to breach
 the privacy of the end-users, with the ability to mask source IP from 1 to 32 bits, making the data potentially untraceable. [Blogpost](https://blog.n0p.me/dnsmonster/)
-
-
 IMPORTANT NOTE: The code before version 1.x is considered beta quality and is subject to breaking changes. Please check the release notes for each tag to see the list of breaking scenarios between each release, and how to mitigate potential data loss.
-
-![Inner logic of dnsmonster](static/dnsmonster-inner.svg)
-
-# Main features
-
-- Can use Linux's `afpacket` and zero-copy packet capture.
-- Supports BPF
-- Can fuzz source IP to enhance privacy
-- Can have a pre-processing sampling ratio
-- Can have a list of "skip" `fqdn`s to avoid writing some domains/suffix/prefix to storage, thus improving DB performance
-- Can have a list of "allow" domains to only log hits of certain domains in Clickhouse/Stdout/File
-- Modular output with different logic per output stream. Currently stdout/file/clickhouse
-- Hot-reload of skip and allow domain files
-- Automatic data retention policy using ClickHouse's TTL attribute
-- Built-in dashboard using Grafana
-- Can be shipped as a single, statically-linked binary
-- Ability to be configured using Env variables, command line options or configuration file
-- Ability to sample output metrics using ClickHouse's SAMPLE capability
-- High compression ratio thanks to ClickHouse's built-in LZ4 storage
-- Supports DNS Over TCP, Fragmented DNS (udp/tcp) and IPv6
-- Supports [dnstrap](https://github.com/dnstap/golang-dnstap) over Unix socket or TCP
-
-# Manual Installation
-
-## Linux
 For `afpacket` v3 support, you need to use kernel 3.x+. Any Linux distro since 5 years ago is shipped with a 3.x+ version so it should work out of the box. The release binary is shipped as a statically-linked binary and shouldn't need any dependencies and will work out of the box. If your distro is not running the pre-compiled version properly, please submit an issue with the details and build `dnsmonster` manually using this section [Build Manually](#build-manually).
-
-## Windows
 Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. I've tested it in a Windows 10 environment and it ran without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
-
-  - open cmd.exe (probably as Admin) and run the following: `getmac.exe`, you'll see a table with your interfaces' MAC address and a Transport Name column with something like this: `\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}`
-  - run `dnsmonster.exe` in `cmd.exe` like this:
-
 ```batch
 dnsmonster.exe \Device\NPF_{16000000-0000-0000-0000-145C4638064C}
 ```
-
 Note that you should change `\Tcpip` from `getmac.exe` to `\NPF` inside `dnsmonster.exe`.
-
 Since `afpacket` is a Linux feature and Windows is not supported, `useAfpacket` and its related options will not work and will cause unexpected behavior on Windows.
-
-# Architecture
-
-## AIO Installation using Docker
-
-![Basic AIO Diagram](static/dnsmonster-basic.svg)
-
 In the example diagram, the egress/ingress of the DNS server traffic is captured, after that, an optional layer of packet aggregation is added before hitting the DNSMonster Server. The outbound data going out of DNS Servers is quite useful to perform cache and performance analysis on the DNS fleet. If an aggregator is not available for you, you can have both TAPs connected directly to DNSMonster and have two DNSMonster Agents looking at the traffic. 
-
 running `./autobuild.sh` creates multiple containers:
-
-* multiple instances of `dnsmonster` to look at the traffic on any interface. Interface list will be prompted as part of `autobuild.sh`
-* an instance of `clickhouse` to collect `dnsmonster`'s output and saves all the logs/data to a data and logs directory. Both will be prompted as part of `autobuild.sh`
-* an instance of `grafana` looking at the `clickhouse` data with pre-built dashboard.
-
-
-### AIO Demo
-
 [![AIO Demo](static/aio_demo.svg)](static/aio_demo.svg)
-
-
-## Enterprise Deployment
-
-
-![Basic AIO Diagram](static/dnsmonster-enterprise.svg)
-
-### Set up a ClickHouse Cluster
-
 Clickhouse website provides an excellent tutorial on how to create a cluster with a "virtual" table, [reference](https://clickhouse.tech/docs/en/getting-started/tutorial/#cluster-deployment). Note that `DNS_LOG` has to be created virtually in this cluster in order to provide HA and load balancing across the nodes. 
-
 Configuration of Agent as well as Grafana is Coming soon!
-
-# Configuration
-
 DNSMonster can be configured using 3 different methods. Command line options, Environment variables and configuration file. Order of precedence:
-
-- Command line options
-- Environment variables
-- Configuration file
-- Default values
-
-## Command line options
 [//]: <> (start of command line options)
 ```
 

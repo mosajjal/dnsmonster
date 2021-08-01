@@ -126,6 +126,7 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 - Default values
 
 ## Command line options
+[//]: <> (start of command line options)
 ```
 Usage of dnsmonster:
   -logLevel=3: Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG
@@ -194,7 +195,7 @@ Usage of dnsmonster:
   -useAfpacket=false: Use AFPacket for live captures. Supported on Linux 3.0+ only
   -version=false: show version and exit
 ```
-
+[//]: <> (end of command line options)
 
 ## Environment variables
 all the flags can also be set via env variables. Keep in mind that the name of each parameter is always all upper case and the prefix for all the variables is "DNSMONSTER". Example:

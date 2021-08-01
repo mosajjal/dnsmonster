@@ -84,16 +84,12 @@ var outputOptions struct {
 
 func flagsProcess() {
 
-	var parser = flags.NewNamedParser(os.Args[0], flags.HelpFlag|flags.PassDoubleDash)
+	var parser = flags.NewNamedParser("dnsmonster", flags.HelpFlag|flags.PassDoubleDash|flags.PrintErrors)
 	iniParser := flags.NewIniParser(parser)
 	parser.AddGroup("general", "General Options", &generalOptions)
 	parser.AddGroup("capture", "Options specific to capture side", &captureOptions)
 	parser.AddGroup("output", "Options specific to output side", &outputOptions)
-	_, err := parser.Parse()
-
-	if err != nil {
-		errorHandler(err)
-	}
+	parser.Parse()
 
 	// check for config file option and parse it
 	if generalOptions.Config != "" {

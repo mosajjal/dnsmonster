@@ -39,12 +39,24 @@ jobs:
       run: ./dnsmonster --writeConfig=../config-sample.ini
       working-directory: "./src"
 
+    - name: update README command line options
+      run: |
+        START="$(($(grep -n "start of command line options" README.md | cut -f1 -d:)+2))"
+        END="$(($(grep -n "end of command line options" README.md | cut -f1 -d:)-2))"
+        USAGE=$(cat <<-END
+        $(.src/dnsmonster --help | sed -r 1d)
+        END
+        )
+        awk -v var="$USAGE" "NR==$START{print var} NR<$START || NR>$END" README.md > README.tmp
+        mv README.tmp README.md
+      working-directory: "."
+
     - name: Commit changes
       uses: EndBug/add-and-commit@v5
       with:
         author_name: Ali Mosajjal
         author_email: mosajjal@gmail.com
         message: "auto update sample ini"
-        add: "config-sample.ini"
+        add: "config-sample.ini README.md"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

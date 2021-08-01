@@ -128,72 +128,7 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ## Command line options
 [//]: <> (start of command line options)
 ```
-Usage of dnsmonster:
-  -logLevel=3: Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG
-  -afpacketBuffersizeMb=64: Afpacket Buffersize in MB
-  -allowDomainsFile="": Allow Domains logic input file. Can accept a URL (http:// or https://) or path
-  -allowDomainsFileType="csv": allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
-  -allowDomainsRefreshInterval=1m0s: Hot-Reload allowDomainsFile file interval
-  -captureStatsDelay=1s: Duration to calculate interface stats
-  -clickhouseAddress="localhost:9000": Address of the clickhouse database to save the results
-  -clickhouseBatchSize=100000: Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
-  -clickhouseDebug=false: Debug Clickhouse connection
-  -clickhouseDelay=1s: Interval between sending results to ClickHouse
-  -clickhouseOutputType=2: What should be written to clickhouse. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -config="": path to config file
-  -cpuprofile="": write cpu profile to file
-  -defraggerChannelReturnSize=500: Size of the channel where the defragged packets are returned
-  -defraggerChannelSize=500: Size of the channel to send packets to be defragged
-  -devName="": Device used to capture
-  -dnstapPermission="755": Set the dnstap socket permission, only applicable when unix:// is used
-  -dnstapSocket="": dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
-  -elasticBatchDelay=1s: Interval between sending results to Elastic if Batch size is not filled
-  -elasticBatchSize=1000: Send data to Elastic in batch sizes
-  -elasticOutputEndpoint="": elastic endpoint address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none
-  -elasticOutputIndex="default": elastic index
-  -elasticOutputType=0: What should be written to elastic. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -fileOutputPath="": Path to output file. Used if fileOutputType is not none
-  -fileOutputType=0: What should be written to file. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -filter="((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))": BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
-  -gcTime=10s: Garbage Collection interval for tcp assembly and ip defragmentation
-  -gomaxprocs=-1: GOMAXPROCS variable
-  -kafkaBatchDelay=1s: Interval between sending results to Kafka if Batch size is not filled
-  -kafkaBatchSize=1000: Minimun capacity of the cache array used to send data to Kafka
-  -kafkaOutputBroker="": kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none
-  -kafkaOutputTopic="dnsmonster": Kafka topic for logging
-  -kafkaOutputType=0: What should be written to kafka. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -maskSize=32: Mask source IPs by bits. 32 means all the bits of IP is saved in DB
-  -memprofile="": write memory profile to file
-  -packetHandlerChannelSize=100000: Size of the packet handler channel
-  -packetHandlers=1: Number of routines used to handle received packets
-  -packetLimit=0: Limit of packets logged to clickhouse every iteration. Default 0 (disabled)
-  -pcapFile="": Pcap filename to run
-  -port=53: Port selected to filter packets
-  -printStatsDelay=10s: Duration to print capture and database stats
-  -resultChannelSize=100000: Size of the result processor channel size
-  -sampleRatio="1:1": Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
-  -saveFullQuery=false: Save full packet query and response in JSON format. Will respect maskSize
-  -serverName="default": Name of the server used to index the metrics.
-  -skipDomainsFile="": Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path
-  -skipDomainsFileType="csv": skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
-  -skipDomainsRefreshInterval=1m0s: Hot-Reload skipDomainsFile interval
-  -skipTlsVerification=false: Skip TLS verification when making HTTPS connections
-  -splunkBatchDelay=1s: Interval between sending results to HEC if Batch size is not filled
-  -splunkBatchSize=1000: Send data to HEC in batch sizes
-  -splunkOutputEndpoint=: HEC endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none
-  -splunkOutputIndex="temp": Splunk Output Index
-  -splunkOutputSource="dnsmonster": Splunk Output Source
-  -splunkOutputSourceType="json": Splunk Output Sourcetype
-  -splunkOutputToken="00000000-0000-0000-0000-000000000000": Splunk HEC Token
-  -splunkOutputType=0: What should be written to HEC. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -stdoutOutputType=0: What should be written to stdout. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -syslogOutputEndpoint="": Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none
-  -syslogOutputType=0: What should be written to Syslog server. options: 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic
-  -tcpAssemblyChannelSize=1000: Size of the tcp assembler
-  -tcpHandlers=1: Number of routines used to handle tcp assembly
-  -tcpResultChannelSize=1000: Size of the tcp result channel
-  -useAfpacket=false: Use AFPacket for live captures. Supported on Linux 3.0+ only
-  -version=false: show version and exit
+
 ```
 [//]: <> (end of command line options)
 

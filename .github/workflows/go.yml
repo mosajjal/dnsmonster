@@ -23,8 +23,8 @@ jobs:
 
     - name: Get dependencies
       run: |
-        go get -v
-        sudo apt install -y libpcap0.8-dev
+        sudo apt install -y libpcap0.8-dev  
+        go get -v 
       working-directory: "./src"
 
     - name: Build

@@ -16,7 +16,7 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.13
+        go-version: ^1.16
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
@@ -37,3 +37,17 @@ jobs:
     - name: Test
       run: go test -v .
       working-directory: "./src"
+
+    - name: generate sample config file 
+      run: ./dnsmonster --writeConfig=../config-sample.ini
+      working-directory: "./src"
+
+    - name: Commit changes
+      uses: EndBug/add-and-commit@v5
+      with:
+        author_name: Ali Mosajjal
+        author_email: mosajjal@gmail.com
+        message: "auto update sample ini"
+        add: "config-sample.ini"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -78,7 +78,7 @@ func connectSplunk(spConfig splunkConfig, splunkEndpoint string) splunkConnectio
 		unhealthy += 1
 	}
 	myConn := splunkConnection{client, unhealthy, err}
-	log.Warnf("new splunk connection %s", myConn)
+	log.Warnf("new splunk connection %v", myConn)
 	return myConn
 }
 

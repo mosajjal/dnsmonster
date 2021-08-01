@@ -128,7 +128,299 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ## Command line options
 [//]: <> (start of command line options)
 ```
+  dnsmonster [OPTIONS]
 
+general:
+      --config=                          path to config file
+                                         [$DNSMONSTER_CONFIG]
+      --writeConfig=                     generate a config file based on
+                                         current inputs (flags, input config
+                                         file and environment variables) and
+                                         write to provided path
+                                         [$DNSMONSTER_WRITECONFIG]
+      --gcTime=                          Garbage Collection interval for tcp
+                                         assembly and ip defragmentation
+                                         (default: 10s) [$DNSMONSTER_GCTIME]
+      --captureStatsDelay=               Duration to calculate interface stats
+                                         (default: 1s)
+                                         [$DNSMONSTER_CAPTURESTATSDELAY]
+      --printStatsDelay=                 Duration to print capture and database
+                                         stats (default: 10s)
+                                         [$DNSMONSTER_PRINTSTATSDELAY]
+      --maskSize=                        Mask source IPs by bits. 32 means all
+                                         the bits of IP is saved in DB
+                                         (default: 32) [$DNSMONSTER_MASKSIZE]
+      --serverName=                      Name of the server used to index the
+                                         metrics. (default: default)
+                                         [$DNSMONSTER_SERVERNAME]
+      --tcpAssemblyChannelSize=          Size of the tcp assembler (default:
+                                         1000)
+                                         [$DNSMONSTER_TCPASSEMBLYCHANNELSIZE]
+      --tcpResultChannelSize=            Size of the tcp result channel
+                                         (default: 1000)
+                                         [$DNSMONSTER_TCPRESULTCHANNELSIZE]
+      --tcpHandlerCount=                 Number of routines used to handle tcp
+                                         assembly (default: 1)
+                                         [$DNSMONSTER_TCPHANDLERCOUNT]
+      --resultChannelSize=               Size of the result processor channel
+                                         size (default: 100000)
+                                         [$DNSMONSTER_RESULTCHANNELSIZE]
+      --logLevel=[0|1|2|3|4]             Set debug Log level, 0:PANIC, 1:ERROR,
+                                         2:WARN, 3:INFO, 4:DEBUG (default: 3)
+                                         [$DNSMONSTER_LOGLEVEL]
+      --defraggerChannelSize=            Size of the channel to send packets to
+                                         be defragged (default: 500)
+                                         [$DNSMONSTER_DEFRAGGERCHANNELSIZE]
+      --defraggerChannelReturnSize=      Size of the channel where the
+                                         defragged packets are returned
+                                         (default: 500)
+                                         [$DNSMONSTER_DEFRAGGERCHANNELRETURNSIZ-
+
+                                         E]
+      --cpuprofile=                      write cpu profile to file
+                                         [$DNSMONSTER_CPUPROFILE]
+      --memprofile=                      write memory profile to file
+                                         [$DNSMONSTER_MEMPROFILE]
+      --gomaxprocs=                      GOMAXPROCS variable (default: -1)
+                                         [$DNSMONSTER_GOMAXPROCS]
+      --packetLimit=                     Limit of packets logged to clickhouse
+                                         every iteration. Default 0 (disabled)
+                                         (default: 0) [$DNSMONSTER_PACKETLIMIT]
+      --skipDomainsFile=                 Skip outputing domains matching items
+                                         in the CSV file path. Can accept a URL
+                                         (http:// or https://) or path
+                                         [$DNSMONSTER_SKIPDOMAINSFILE]
+      --skipDomainsRefreshInterval=      Hot-Reload skipDomainsFile interval
+                                         (default: 60s)
+                                         [$DNSMONSTER_SKIPDOMAINSREFRESHINTERVA-
+
+                                         L]
+      --skipDomainsFileType=             skipDomainsFile type. Options: csv and
+                                         hashtable. Hashtable is ONLY fqdn, csv
+                                         can support fqdn, prefix and suffix
+                                         logic but it's much slower (default:
+                                         csv) [$DNSMONSTER_SKIPDOMAINSFILETYPE]
+      --allowDomainsFile=                Allow Domains logic input file. Can
+                                         accept a URL (http:// or https://) or
+                                         path [$DNSMONSTER_ALLOWDOMAINSFILE]
+      --allowDomainsRefreshInterval=     Hot-Reload allowDomainsFile file
+                                         interval (default: 60s)
+                                         [$DNSMONSTER_ALLOWDOMAINSREFRESHINTERV-
+
+                                         AL]
+      --allowDomainsFileType=            allowDomainsFile type. Options: csv
+                                         and hashtable. Hashtable is ONLY fqdn,
+                                         csv can support fqdn, prefix and
+                                         suffix logic but it's much slower
+                                         (default: csv)
+                                         [$DNSMONSTER_ALLOWDOMAINSFILETYPE]
+      --skipTLSVerification              Skip TLS verification when making
+                                         HTTPS connections
+                                         [$DNSMONSTER_SKIPTLSVERIFICATION]
+      --saveFullQuery                    Save full packet query and response in
+                                         JSON format.
+                                         [$DNSMONSTER_SAVEFULLQUERY]
+      --version                          show version and quit.
+                                         [$DNSMONSTER_VERSION]
+
+capture:
+      --devName=                         Device used to capture
+                                         [$DNSMONSTER_DEVNAME]
+      --pcapFile=                        Pcap filename to run
+                                         [$DNSMONSTER_PCAPFILE]
+      --dnstapSocket=                    dnstrap socket path. Example:
+                                         unix:///tmp/dnstap.sock,
+                                         tcp://127.0.0.1:8080
+                                         [$DNSMONSTER_DNSTAPSOCKET]
+      --port=                            Port selected to filter packets
+                                         (default: 53) [$DNSMONSTER_PORT]
+      --sampleRatio=                     Capture Sampling by a:b. eg
+                                         sampleRatio of 1:100 will process 1
+                                         percent of the incoming packets
+                                         (default: 1:1)
+                                         [$DNSMONSTER_SAMPLERATIO]
+      --dnstapPermission=                Set the dnstap socket permission, only
+                                         applicable when unix:// is used
+                                         (default: 755)
+                                         [$DNSMONSTER_DNSTAPPERMISSION]
+      --packetHandlerCount=              Number of routines used to handle
+                                         received packets (default: 1)
+                                         [$DNSMONSTER_PACKETHANDLERCOUNT]
+      --packetChannelSize=               Size of the packet handler channel
+                                         (default: 100000)
+                                         [$DNSMONSTER_PACKETCHANNELSIZE]
+      --afpacketBuffersizeMb=            Afpacket Buffersize in MB (default:
+                                         64) [$DNSMONSTER_AFPACKETBUFFERSIZEMB]
+      --filter=                          BPF filter applied to the packet
+                                         stream. If port is selected, the
+                                         packets will not be defragged.
+                                         (default: ((ip and (ip[9] == 6 or
+                                         ip[9] == 17)) or (ip6 and (ip6[6] ==
+                                         17 or ip6[6] == 6 or ip6[6] == 44))))
+                                         [$DNSMONSTER_FILTER]
+      --useAfpacket                      Use AFPacket for live captures.
+                                         Supported on Linux 3.0+ only
+                                         [$DNSMONSTER_USEAFPACKET]
+
+output:
+      --clickhouseAddress=               Address of the clickhouse database to
+                                         save the results (default:
+                                         localhost:9000)
+                                         [$DNSMONSTER_CLICKHOUSEADDRESS]
+      --clickhouseDelay=                 Interval between sending results to
+                                         ClickHouse (default: 1s)
+                                         [$DNSMONSTER_CLICKHOUSEDELAY]
+      --clickhouseDebug                  Debug Clickhouse connection
+                                         [$DNSMONSTER_CLICKHOUSEDEBUG]
+      --clickhouseOutputType=[0|1|2|3|4] What should be written to clickhouse.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any output
+                                         filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_CLICKHOUSEOUTPUTTYPE]
+      --clickhouseBatchSize=             Minimun capacity of the cache array
+                                         used to send data to clickhouse. Set
+                                         close to the queries per second
+                                         received to prevent allocations
+                                         (default: 100000)
+                                         [$DNSMONSTER_CLICKHOUSEBATCHSIZE]
+      --fileOutputType=[0|1|2|3|4]       What should be written to file.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any output
+                                         filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_FILEOUTPUTTYPE]
+      --fileOutputPath=                  Path to output file. Used if
+                                         fileOutputType is not none
+                                         [$DNSMONSTER_FILEOUTPUTPATH]
+      --stdoutOutputType=[0|1|2|3|4]     What should be written to stdout.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any output
+                                         filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_STDOUTOUTPUTTYPE]
+      --syslogOutputType=[0|1|2|3|4]     What should be written to Syslog
+                                         server. options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any output
+                                         filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_SYSLOGOUTPUTTYPE]
+      --syslogOutputEndpoint=            Syslog endpoint address, example:
+                                         udp://127.0.0.1:514,
+                                         tcp://127.0.0.1:514. Used if
+                                         syslogOutputType is not none
+                                         [$DNSMONSTER_SYSLOGOUTPUTENDPOINT]
+      --kafkaOutputType=[0|1|2|3|4]      What should be written to kafka.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any output
+                                         filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_KAFKAOUTPUTTYPE]
+      --kafkaOutputBroker=               kafka broker address, example:
+                                         127.0.0.1:9092. Used if
+                                         kafkaOutputType is not none
+                                         [$DNSMONSTER_KAFKAOUTPUTBROKER]
+      --kafkaOutputTopic=                Kafka topic for logging (default:
+                                         dnsmonster)
+                                         [$DNSMONSTER_KAFKAOUTPUTTOPIC]
+      --kafkaBatchSize=                  Minimun capacity of the cache array
+                                         used to send data to Kafka (default:
+                                         1000) [$DNSMONSTER_KAFKABATCHSIZE]
+      --kafkaBatchDelay=                 Interval between sending results to
+                                         Kafka if Batch size is not filled
+                                         (default: 1s)
+                                         [$DNSMONSTER_KAFKABATCHDELAY]
+      --elasticOutputType=[0|1|2|3|4]    What should be written to elastic.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any output
+                                         filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_ELASTICOUTPUTTYPE]
+      --elasticOutputEndpoint=           elastic endpoint address, example:
+                                         http://127.0.0.1:9200. Used if
+                                         elasticOutputType is not none
+                                         [$DNSMONSTER_ELASTICOUTPUTENDPOINT]
+      --elasticOutputIndex=              elastic index (default: default)
+                                         [$DNSMONSTER_ELASTICOUTPUTINDEX]
+      --elasticBatchSize=                Send data to Elastic in batch sizes
+                                         (default: 1000)
+                                         [$DNSMONSTER_ELASTICBATCHSIZE]
+      --elasticBatchDelay=               Interval between sending results to
+                                         Elastic if Batch size is not filled
+                                         (default: 1s)
+                                         [$DNSMONSTER_ELASTICBATCHDELAY]
+      --splunkOutputType=[0|1|2|3|4]     What should be written to HEC. options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any output
+                                         filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_SPLUNKOUTPUTTYPE]
+      --splunkOutputEndpoints=           splunk endpoint address, example:
+                                         http://127.0.0.1:8088. Used if
+                                         splunkOutputType is not none
+                                         [$DNSMONSTER_SPLUNKOUTPUTENDPOINTS]
+      --splunkOutputToken=               Splunk HEC Token (default:
+                                         00000000-0000-0000-0000-000000000000)
+                                         [$DNSMONSTER_SPLUNKOUTPUTTOKEN]
+      --splunkOutputIndex=               Splunk Output Index (default: temp)
+                                         [$DNSMONSTER_SPLUNKOUTPUTINDEX]
+      --splunkOutputSource=              Splunk Output Source (default:
+                                         dnsmonster)
+                                         [$DNSMONSTER_SPLUNKOUTPUTSOURCE]
+      --splunkOutputSourceType=          Splunk Output Sourcetype (default:
+                                         json)
+                                         [$DNSMONSTER_SPLUNKOUTPUTSOURCETYPE]
+      --splunkBatchSize=                 Send data to HEC in batch sizes
+                                         (default: 1000)
+                                         [$DNSMONSTER_SPLUNKBATCHSIZE]
+      --splunkBatchDelay=                Interval between sending results to
+                                         HEC if Batch size is not filled
+                                         (default: 1s)
+                                         [$DNSMONSTER_SPLUNKBATCHDELAY]
+
+Help Options:
+  -h, --help                             Show this help message
 ```
 [//]: <> (end of command line options)
 

@@ -47,7 +47,7 @@ jobs:
         $(.src/dnsmonster --help | sed -r 1d)
         END
         )
-        awk -v var="$USAGE" 'NR=='$START'{print var} NR<$START || NR>'$END README.md > README.tmp
+        awk -v var="$USAGE" 'NR=='$START'{print var} NR<'$START' || NR>'$END README.md > README.tmp
         mv README.tmp README.md
       working-directory: "."
 

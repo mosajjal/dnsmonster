@@ -43,6 +43,7 @@ jobs:
       run: |
         START="$(($(grep -n "start of command line options" README.md | cut -f1 -d:)+2))"
         END="$(($(grep -n "end of command line options" README.md | cut -f1 -d:)-2))"
+        stty cols 120
         USAGE=$(cat <<-END
         $(./src/dnsmonster --help | sed -r 1d)
         END

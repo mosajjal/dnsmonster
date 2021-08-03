@@ -44,14 +44,12 @@ jobs:
         START="$(($(grep -n "start of command line options" README.md | cut -f1 -d:)+2))"
         END="$(($(grep -n "end of command line options" README.md | cut -f1 -d:)-2))"
         USAGE=$(cat <<-END
-        $(./src/dnsmonster --help | sed -r 1d)
+        $(COLUMNS=120 ./src/dnsmonster --help | sed -r 1d)
         END
         )
         awk -v var="$USAGE" 'NR=='$START'{print var} NR<'$START' || NR>'$END README.md > README.tmp
         mv README.tmp README.md
       working-directory: "."
-      environment:
-        COLUMNS: 120
 
     - name: Commit changes
       uses: EndBug/add-and-commit@v5

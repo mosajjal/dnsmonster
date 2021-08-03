@@ -22,8 +22,8 @@ var captureOptions struct {
 }
 
 var generalOptions struct {
-	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                no-ini:"true"                           description:"path to config file"`
-	WriteConfig                 flags.Filename `long:"writeConfig"                 env:"DNSMONSTER_WRITECONFIG"                 default:""                no-ini:"true"                           description:"generate a config file based on current inputs (flags, input config file and environment variables) and write to provided path"`
+	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
+	WriteConfig                 flags.Filename `long:"writeConfig"                 env:"DNSMONSTER_WRITECONFIG"                 default:""                            no-ini:"true"               description:"generate a config file based on current inputs (flags, input config file and environment variables) and write to provided path"`
 	GcTime                      time.Duration  `long:"gcTime"                      env:"DNSMONSTER_GCTIME"                      default:"10s"                                                     description:"Garbage Collection interval for tcp assembly and ip defragmentation"`
 	CaptureStatsDelay           time.Duration  `long:"captureStatsDelay"           env:"DNSMONSTER_CAPTURESTATSDELAY"           default:"1s"                                                      description:"Duration to calculate interface stats"`
 	PrintStatsDelay             time.Duration  `long:"printStatsDelay"             env:"DNSMONSTER_PRINTSTATSDELAY"             default:"10s"                                                     description:"Duration to print capture and database stats"`
@@ -48,7 +48,7 @@ var generalOptions struct {
 	AllowDomainsFileType        string         `long:"allowDomainsFileType"        env:"DNSMONSTER_ALLOWDOMAINSFILETYPE"        default:"csv"                                                     description:"allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower"`
 	SkipTLSVerification         bool           `long:"skipTLSVerification"         env:"DNSMONSTER_SKIPTLSVERIFICATION"         description:"Skip TLS verification when making HTTPS connections"`
 	SaveFullQuery               bool           `long:"saveFullQuery"               env:"DNSMONSTER_SAVEFULLQUERY"               description:"Save full packet query and response in JSON format."`
-	Version                     bool           `long:"version"                     env:"DNSMONSTER_VERSION"                     description:"show version and quit."`
+	Version                     bool           `long:"version"                     env:"DNSMONSTER_VERSION"                     description:"show version and quit."  no-ini:"true" `
 }
 
 var outputOptions struct {

@@ -515,7 +515,7 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Configuration file option
 - [x] Exclude FQDNs from being indexed
 - [x] FQDN whitelisting to only log certain domains
-- [x] [dnstrap](https://github.com/dnstap/golang-dnstap) support
+- [x] [dnstap](https://github.com/dnstap/golang-dnstap) support
 - [x] Kafka output support
 - [x] Ability to load `allowDomains` and `skipDomains` from HTTP(S) endpoints
 - [x] Elasticsearch output support

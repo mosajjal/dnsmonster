@@ -275,8 +275,7 @@ output:
       --clickhouseOutputType=[0|1|2|3|4] What should be written to clickhouse.
                                          options:
                                          ;	0: Disable Output
-                                         ;	1: Enable Output without any output
-                                         filters
+                                         ;	1: Enable Output without any filters
                                          ;	2: Enable Output and apply
                                          skipdomains logic
                                          ;	3: Enable Output and apply
@@ -293,8 +292,7 @@ output:
       --fileOutputType=[0|1|2|3|4]       What should be written to file.
                                          options:
                                          ;	0: Disable Output
-                                         ;	1: Enable Output without any output
-                                         filters
+                                         ;	1: Enable Output without any filters
                                          ;	2: Enable Output and apply
                                          skipdomains logic
                                          ;	3: Enable Output and apply
@@ -308,8 +306,7 @@ output:
       --stdoutOutputType=[0|1|2|3|4]     What should be written to stdout.
                                          options:
                                          ;	0: Disable Output
-                                         ;	1: Enable Output without any output
-                                         filters
+                                         ;	1: Enable Output without any filters
                                          ;	2: Enable Output and apply
                                          skipdomains logic
                                          ;	3: Enable Output and apply
@@ -320,8 +317,7 @@ output:
       --syslogOutputType=[0|1|2|3|4]     What should be written to Syslog
                                          server. options:
                                          ;	0: Disable Output
-                                         ;	1: Enable Output without any output
-                                         filters
+                                         ;	1: Enable Output without any filters
                                          ;	2: Enable Output and apply
                                          skipdomains logic
                                          ;	3: Enable Output and apply
@@ -337,8 +333,7 @@ output:
       --kafkaOutputType=[0|1|2|3|4]      What should be written to kafka.
                                          options:
                                          ;	0: Disable Output
-                                         ;	1: Enable Output without any output
-                                         filters
+                                         ;	1: Enable Output without any filters
                                          ;	2: Enable Output and apply
                                          skipdomains logic
                                          ;	3: Enable Output and apply
@@ -363,8 +358,7 @@ output:
       --elasticOutputType=[0|1|2|3|4]    What should be written to elastic.
                                          options:
                                          ;	0: Disable Output
-                                         ;	1: Enable Output without any output
-                                         filters
+                                         ;	1: Enable Output without any filters
                                          ;	2: Enable Output and apply
                                          skipdomains logic
                                          ;	3: Enable Output and apply
@@ -387,8 +381,7 @@ output:
                                          [$DNSMONSTER_ELASTICBATCHDELAY]
       --splunkOutputType=[0|1|2|3|4]     What should be written to HEC. options:
                                          ;	0: Disable Output
-                                         ;	1: Enable Output without any output
-                                         filters
+                                         ;	1: Enable Output without any filters
                                          ;	2: Enable Output and apply
                                          skipdomains logic
                                          ;	3: Enable Output and apply

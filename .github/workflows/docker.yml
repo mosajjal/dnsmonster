@@ -26,6 +26,6 @@ jobs:
           context: .
           file: ./Dockerfile
           tags: ${{ env.REGISTRY }}/mosajjal/dnsmonster:latest
-      - run: docker tag ${{ env.REGISTRY }}/mosajjal/dnsmonster:latest ${{ env.REGISTRY }}/mosajjal/dnsmonster:${{ github.ref }}
-      - run: docker push ${{ env.REGISTRY }}/mosajjal/dnsmonster:latest
-      - run: docker push ${{ env.REGISTRY }}/mosajjal/dnsmonster:${{ github.ref }}
+      - run: docker tag ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/dnsmonster:latest ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/dnsmonster:${GITHUB_REF##*/}
+      - run: docker push ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/dnsmonster:latest
+      - run: docker push ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/dnsmonster:${GITHUB_REF##*/}

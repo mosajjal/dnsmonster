@@ -128,16 +128,11 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ## Command line options
 [//]: <> (start of command line options)
 ```
-  dnsmonster [OPTIONS]
+  dnsmonster
 
 general:
       --config=                          path to config file
                                          [$DNSMONSTER_CONFIG]
-      --writeConfig=                     generate a config file based on
-                                         current inputs (flags, input config
-                                         file and environment variables) and
-                                         write to provided path
-                                         [$DNSMONSTER_WRITECONFIG]
       --gcTime=                          Garbage Collection interval for tcp
                                          assembly and ip defragmentation
                                          (default: 10s) [$DNSMONSTER_GCTIME]
@@ -222,6 +217,16 @@ general:
                                          [$DNSMONSTER_SAVEFULLQUERY]
       --version                          show version and quit.
                                          [$DNSMONSTER_VERSION]
+
+help:
+  -h, --help                             Print this help to stdout
+      --manPage                          Print Manpage for dnsmonster to stdout
+      --bashCompletion                   Print bash completion script to stdout
+      --fishCompletion                   Print fish completion script to stdout
+      --writeConfig=                     generate a config file based on
+                                         current inputs (flags, input config
+                                         file and environment variables) and
+                                         write to provided path
 
 capture:
       --devName=                         Device used to capture
@@ -411,9 +416,6 @@ output:
                                          HEC if Batch size is not filled
                                          (default: 1s)
                                          [$DNSMONSTER_SPLUNKBATCHDELAY]
-
-Help Options:
-  -h, --help                             Show this help message
 ```
 [//]: <> (end of command line options)
 

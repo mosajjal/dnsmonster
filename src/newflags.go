@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -23,7 +24,6 @@ var captureOptions struct {
 
 var generalOptions struct {
 	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
-	WriteConfig                 flags.Filename `long:"writeConfig"                 env:"DNSMONSTER_WRITECONFIG"                 default:""                            no-ini:"true"               description:"generate a config file based on current inputs (flags, input config file and environment variables) and write to provided path"`
 	GcTime                      time.Duration  `long:"gcTime"                      env:"DNSMONSTER_GCTIME"                      default:"10s"                                                     description:"Garbage Collection interval for tcp assembly and ip defragmentation"`
 	CaptureStatsDelay           time.Duration  `long:"captureStatsDelay"           env:"DNSMONSTER_CAPTURESTATSDELAY"           default:"1s"                                                      description:"Duration to calculate interface stats"`
 	PrintStatsDelay             time.Duration  `long:"printStatsDelay"             env:"DNSMONSTER_PRINTSTATSDELAY"             default:"10s"                                                     description:"Duration to print capture and database stats"`
@@ -82,14 +82,50 @@ var outputOptions struct {
 	SplunkBatchDelay       time.Duration  `long:"splunkBatchDelay"       env:"DNSMONSTER_SPLUNKBATCHDELAY"       default:"1s"                                   description:"Interval between sending results to HEC if Batch size is not filled"`
 }
 
+var helpOptions struct {
+	Help           bool `long:"help"  short:"h" no-ini:"true"      description:"Print this help to stdout"`
+	ManPage        bool `long:"manPage"         no-ini:"true"      description:"Print Manpage for dnsmonster to stdout"`
+	BashCompletion bool `long:"bashCompletion"  no-ini:"true"      description:"Print bash completion script to stdout"`
+	FishCompletion bool `long:"fishCompletion"  no-ini:"true"      description:"Print fish completion script to stdout"`
+	// SystemdService bool           `long:"systemdService"  no-ini:"true"      description:"Print a sample systemd service to stdout"`
+	WriteConfig flags.Filename `long:"writeConfig"     no-ini:"true"      description:"generate a config file based on current inputs (flags, input config file and environment variables) and write to provided path" default:""`
+}
+
 func flagsProcess() {
 
-	var parser = flags.NewNamedParser("dnsmonster", flags.HelpFlag|flags.PassDoubleDash|flags.PrintErrors)
+	var parser = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
 	iniParser := flags.NewIniParser(parser)
 	parser.AddGroup("general", "General Options", &generalOptions)
+	parser.AddGroup("help", "Help Options", &helpOptions)
 	parser.AddGroup("capture", "Options specific to capture side", &captureOptions)
 	parser.AddGroup("output", "Options specific to output side", &outputOptions)
 	parser.Parse()
+
+	// process help options first
+	if helpOptions.Help {
+		parser.WriteHelp(os.Stdout)
+		os.Exit(0)
+	}
+	if helpOptions.ManPage {
+		parser.WriteManPage(os.Stdout)
+		os.Exit(0)
+	}
+	if helpOptions.BashCompletion {
+		fmt.Print(BASH_COMPLETION_TEMPLATE)
+		os.Exit(0)
+	}
+	if helpOptions.FishCompletion {
+		for _, g := range parser.Groups() {
+			for _, arg := range g.Options() {
+				fmt.Printf("complete -f -c dnsmonster -o -%s -d %#v\n", arg.LongName, arg.Description)
+			}
+		}
+		os.Exit(0)
+	}
+	if helpOptions.WriteConfig != "" {
+		iniParser.WriteFile(string(helpOptions.WriteConfig), flags.IniIncludeDefaults|flags.IniIncludeComments)
+		os.Exit(0)
+	}
 
 	// check for config file option and parse it
 	if generalOptions.Config != "" {
@@ -99,12 +135,6 @@ func flagsProcess() {
 		}
 		//  re-parse the argument from command line to give them priority
 		parser.Parse()
-	}
-
-	// option to spit out a config file based on the parsed options
-	if generalOptions.WriteConfig != "" {
-		iniParser.WriteFile(string(generalOptions.WriteConfig), flags.IniIncludeDefaults|flags.IniIncludeComments)
-		os.Exit(0)
 	}
 
 }

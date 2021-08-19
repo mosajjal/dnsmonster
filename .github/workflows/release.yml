@@ -47,17 +47,7 @@ jobs:
         Maintainer: Ali Mosajjal <hi@n0p.me>
         Description: Passive DNS monitoring framework.
         EOF
-        dpkg-deb --build --root-owner-group $DIR
-
-    - name: Upload Deb to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/dnsmonster_${GITHUB_REF##*/}-1_amd64.deb
-        asset_name: dnsmonster_${GITHUB_REF##*/}-1_amd64.deb
-        tag: ${{ github.ref }}
-        overwrite: true
-        body: ""
+        dpkg-deb --build --root-owner-group $DIR /tmp/dnsmonster-latest.deb
 
     - name: Upload Linux binary to release
       uses: svenstaro/upload-release-action@v2
@@ -79,3 +69,12 @@ jobs:
         overwrite: true
         body: ""
 
+    - name: Upload Deb to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: /tmp/dnsmonster-latest.deb
+        asset_name: dnsmonster-latest.deb
+        tag: ${{ github.ref }}
+        overwrite: true
+        body: ""

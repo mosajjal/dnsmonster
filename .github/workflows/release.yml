@@ -53,8 +53,8 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/dnsmonster_${GITHUB_REF#refs/*/}-1_amd64.deb
-        asset_name: dnsmonster_${GITHUB_REF#refs/*/}-1_amd64.deb
+        file: /tmp/dnsmonster_${GITHUB_REF##*/}-1_amd64.deb
+        asset_name: dnsmonster_${GITHUB_REF##*/}-1_amd64.deb
         tag: ${{ github.ref }}
         overwrite: true
         body: ""

@@ -146,7 +146,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 						ipTemp := batch[k].DstIP.Mask(net.CIDRMask(chConfig.general.maskSize, 32))
 						ip = binary.BigEndian.Uint32(ipTemp[:4])
 					} else {
-						ip = binary.BigEndian.Uint32(batch[k].DstIP[:4]) //ipv6 with no mask but only 32 bits
+						ip = binary.BigEndian.Uint32(batch[k].DstIP) //ipv6 with no mask but only 32 bits
 					}
 
 					QR := uint8(0)

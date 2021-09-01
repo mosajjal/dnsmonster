@@ -40,10 +40,11 @@ func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 		bpfIns = append(bpfIns, bpfIns2)
 	}
 	log.Infof("Filter: %s", filter)
-	if h.TPacket.SetBPF(bpfIns); err != nil {
-		return err
+	err = h.TPacket.SetBPF(bpfIns)
+	if err != nil {
+		errorHandler(err)
 	}
-	return h.TPacket.SetBPF(bpfIns)
+	return err
 }
 
 func (h *afpacketHandle) Close() {

@@ -17,7 +17,7 @@ var pcapStats captureStats
 
 func initializeLivePcap(devName, filter string) *pcap.Handle {
 	// Open device
-	handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
+	handle, err := pcap.OpenLive(devName, 65536, true, time.Second*30)
 	errorHandler(err)
 
 	// Set Filter

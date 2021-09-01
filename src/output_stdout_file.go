@@ -19,7 +19,7 @@ func stdoutOutput(stdConfig stdoutConfig) {
 
 	for {
 		select {
-		case data := <-resultChannel:
+		case data := <-stdConfig.resultChannel:
 			for _, dnsQuery := range data.DNS.Question {
 
 				if checkIfWeSkip(stdConfig.stdoutOutputType, dnsQuery.Name) {
@@ -54,7 +54,7 @@ func fileOutput(fConfig fileConfig) {
 
 	for {
 		select {
-		case data := <-resultChannel:
+		case data := <-fConfig.resultChannel:
 			for _, dnsQuery := range data.DNS.Question {
 
 				if checkIfWeSkip(fConfig.fileOutputType, dnsQuery.Name) {

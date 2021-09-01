@@ -3,6 +3,8 @@ package main
 import (
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup) {
@@ -19,7 +21,10 @@ func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wa
 	allowDomainsFileTicker := time.NewTicker(generalOptions.AllowDomainsRefreshInterval)
 	allowDomainsFileTickerChan := allowDomainsFileTicker.C
 	if generalOptions.AllowDomainsFile == "" {
+		log.Infof("skipping allowDomains refresh since it's empty")
 		allowDomainsFileTicker.Stop()
+	} else {
+		log.Infof("allowDomains refresh interval is %s", generalOptions.AllowDomainsRefreshInterval)
 	}
 
 	for {
@@ -49,12 +54,14 @@ func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.Wa
 		case <-exiting:
 			return
 		case <-skipDomainsFileTickerChan:
+			log.Infof("reached skipDomains tick")
 			if skipDomainMapBool {
 				skipDomainMap = loadDomainsToMap(generalOptions.SkipDomainsFile)
 			} else {
 				skipDomainList = loadDomainsToList(generalOptions.SkipDomainsFile)
 			}
 		case <-allowDomainsFileTickerChan:
+			log.Infof("reached allowDomains tick")
 			if allowDomainMapBool {
 				allowDomainMap = loadDomainsToMap(generalOptions.AllowDomainsFile)
 			} else {

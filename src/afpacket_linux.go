@@ -39,6 +39,7 @@ func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 		}
 		bpfIns = append(bpfIns, bpfIns2)
 	}
+	log.Infof("Filter: %s", filter)
 	if h.TPacket.SetBPF(bpfIns); err != nil {
 		return err
 	}
@@ -91,7 +92,7 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	errorHandler(err)
 
 	handle.SetBPFFilter(filter, 1024)
-
+	log.Infof("Opened: %s", devName)
 	return handle
 }
 

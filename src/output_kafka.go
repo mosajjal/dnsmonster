@@ -61,7 +61,7 @@ func kafkaOutput(kafConfig kafkaConfig) {
 
 	for {
 		select {
-		case data := <-resultChannel:
+		case data := <-kafConfig.resultChannel:
 			if kafConfig.general.packetLimit == 0 || len(batch) < kafConfig.general.packetLimit {
 				batch = append(batch, data)
 			}

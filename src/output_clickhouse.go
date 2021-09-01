@@ -141,10 +141,14 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 					}
 
 					// getting variables ready
-					ip := batch[k].DstIP
+					var ip uint32
 					if batch[k].IPVersion == 4 {
-						ip = ip.Mask(net.CIDRMask(chConfig.general.maskSize, 32))
+						ipTemp := batch[k].DstIP.Mask(net.CIDRMask(chConfig.general.maskSize, 32))
+						ip = binary.BigEndian.Uint32(ipTemp[:4])
+					} else {
+						ip = binary.BigEndian.Uint32(batch[k].DstIP[:4]) //ipv6 with no mask but only 32 bits
 					}
+
 					QR := uint8(0)
 					if batch[k].DNS.Response {
 						QR = 1
@@ -163,7 +167,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 					b.WriteDateTime(1, batch[k].Timestamp)
 					b.WriteBytes(2, []byte(chConfig.general.serverName))
 					b.WriteUInt8(3, batch[k].IPVersion)
-					b.WriteUInt32(4, binary.BigEndian.Uint32(ip[:4]))
+					b.WriteUInt32(4, ip) //TODO: fix this for ipv6
 					b.WriteFixedString(5, []byte(batch[k].Protocol))
 					b.WriteUInt8(6, QR)
 					b.WriteUInt8(7, uint8(batch[k].DNS.Opcode))

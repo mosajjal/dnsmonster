@@ -109,7 +109,7 @@ func splunkOutput(spConfig splunkConfig) {
 
 	for {
 		select {
-		case data := <-resultChannel:
+		case data := <-spConfig.resultChannel:
 			if spConfig.general.packetLimit == 0 || len(batch) < spConfig.general.packetLimit {
 				batch = append(batch, data)
 			}

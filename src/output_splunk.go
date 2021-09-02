@@ -68,9 +68,9 @@ func connectSplunk(spConfig splunkConfig, splunkEndpoint string) splunkConnectio
 		httpClient,
 		splunkURL,
 		spConfig.splunkOutputToken,
-		"",
-		"",
-		"",
+		spConfig.splunkOutputSource,
+		spConfig.splunkOutputSourceType,
+		spConfig.splunkOutputIndex,
 	)
 	err := client.CheckHealth()
 	unhealthy := uint(0)

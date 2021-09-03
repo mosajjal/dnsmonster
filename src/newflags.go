@@ -20,6 +20,7 @@ var captureOptions struct {
 	AfpacketBuffersizeMb uint   `long:"afpacketBuffersizeMb" env:"DNSMONSTER_AFPACKETBUFFERSIZEMB" default:"64"                                                                                                description:"Afpacket Buffersize in MB"`
 	Filter               string `long:"filter"               env:"DNSMONSTER_FILTER"               default:"((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))" description:"BPF filter applied to the packet stream. If port is selected, the packets will not be defragged."`
 	UseAfpacket          bool   `long:"useAfpacket"          env:"DNSMONSTER_USEAFPACKET"          description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
+	NoEthernetframe      bool   `long:"noEtherframe"         env:"DNSMONSTER_NOETHERFRAME"         description:"The PCAP capture does not contain ethernet frames"`
 }
 
 var generalOptions struct {

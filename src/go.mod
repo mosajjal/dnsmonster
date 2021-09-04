@@ -5,7 +5,7 @@ go 1.16
 require github.com/google/gopacket v1.1.19
 
 require (
-	github.com/ClickHouse/clickhouse-go v1.4.3
+	github.com/ClickHouse/clickhouse-go v1.4.7
 	github.com/dnstap/golang-dnstap v0.3.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/golang/protobuf v1.5.2

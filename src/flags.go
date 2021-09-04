@@ -165,8 +165,11 @@ func checkFlags() {
 	if captureOptions.Port > 65535 {
 		log.Fatal("--port must be between 1 and 65535")
 	}
-	if generalOptions.MaskSize > 32 || generalOptions.MaskSize < 0 {
-		log.Fatal("--maskSize must be between 0 and 32")
+	if generalOptions.MaskSize4 > 32 || generalOptions.MaskSize4 < 0 {
+		log.Fatal("--maskSize4 must be between 0 and 32")
+	}
+	if generalOptions.MaskSize6 > 128 || generalOptions.MaskSize4 < 0 {
+		log.Fatal("--maskSize6 must be between 0 and 128")
 	}
 	if captureOptions.DevName == "" && captureOptions.PcapFile == "" && captureOptions.DnstapSocket == "" {
 		log.Fatal("one of --devName, --pcapFile or --dnstapSocket is required")

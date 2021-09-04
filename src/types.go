@@ -16,22 +16,23 @@ import (
 type generalConfig struct {
 	exiting             chan bool
 	wg                  *sync.WaitGroup
-	maskSize            int
+	maskSize4           int
+	maskSize6           int
 	packetLimit         int
-	saveFullQuery       bool
 	serverName          string
 	printStatsDelay     time.Duration
 	skipTlsVerification bool
 }
 
 type clickHouseConfig struct {
-	resultChannel        chan DNSResult
-	clickhouseAddress    string
-	clickhouseBatchSize  uint
-	clickhouseOutputType uint
-	clickhouseDebug      bool
-	clickhouseDelay      time.Duration
-	general              generalConfig
+	resultChannel           chan DNSResult
+	clickhouseAddress       string
+	clickhouseBatchSize     uint
+	clickhouseOutputType    uint
+	clickhouseSaveFullQuery bool
+	clickhouseDebug         bool
+	clickhouseDelay         time.Duration
+	general                 generalConfig
 }
 
 type elasticConfig struct {

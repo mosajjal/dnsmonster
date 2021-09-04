@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"net"
 	"sync"
 	"time"
 
@@ -103,7 +102,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 		return err
 	}
 
-	_, err = connect.Prepare("INSERT INTO DNS_LOG (DnsDate, timestamp, Server, IPVersion, IPPrefix, Protocol, QR, OpCode, Class, Type, ResponseCode, Question, Size, Edns0Present, DoBit,FullQuery, ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	_, err = connect.Prepare("INSERT INTO DNS_LOG (DnsDate, timestamp, Server, IPVersion, SrcIP, DstIP, Protocol, QR, OpCode, Class, Type, ResponseCode, Question, Size, Edns0Present, DoBit,FullQuery, ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
@@ -136,19 +135,18 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 					chstats.SentToOutput++
 
 					var fullQuery []byte
-					if chConfig.general.saveFullQuery {
+					if chConfig.clickhouseSaveFullQuery {
 						fullQuery, _ = json.Marshal(batch[k].DNS)
 					}
+					var SrcIP, DstIP uint64
 
-					// getting variables ready
-					var ip uint32
 					if batch[k].IPVersion == 4 {
-						ipTemp := batch[k].DstIP.Mask(net.CIDRMask(chConfig.general.maskSize, 32))
-						ip = binary.BigEndian.Uint32(ipTemp[:4])
+						SrcIP = uint64(binary.BigEndian.Uint32(batch[k].SrcIP))
+						DstIP = uint64(binary.BigEndian.Uint32(batch[k].DstIP))
 					} else {
-						ip = 0 //ipv6 with no mask but only 32 bits
+						SrcIP = binary.BigEndian.Uint64(batch[k].SrcIP[8:]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+						DstIP = binary.BigEndian.Uint64(batch[k].DstIP[8:])
 					}
-
 					QR := uint8(0)
 					if batch[k].DNS.Response {
 						QR = 1
@@ -167,25 +165,25 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 					b.WriteDateTime(1, batch[k].Timestamp)
 					b.WriteBytes(2, []byte(chConfig.general.serverName))
 					b.WriteUInt8(3, batch[k].IPVersion)
-					b.WriteUInt32(4, ip) //TODO: fix this for ipv6
-					b.WriteFixedString(5, []byte(batch[k].Protocol))
-					b.WriteUInt8(6, QR)
-					b.WriteUInt8(7, uint8(batch[k].DNS.Opcode))
-					b.WriteUInt16(8, uint16(dnsQuery.Qclass))
-					b.WriteUInt16(9, uint16(dnsQuery.Qtype))
-					b.WriteUInt8(10, uint8(batch[k].DNS.Rcode))
-					b.WriteString(11, string(dnsQuery.Name))
-					b.WriteUInt16(12, batch[k].PacketLength)
-					b.WriteUInt8(13, edns)
-					b.WriteUInt8(14, doBit)
+					b.WriteUInt64(4, SrcIP)
+					b.WriteUInt64(5, DstIP)
+					b.WriteFixedString(6, []byte(batch[k].Protocol))
+					b.WriteUInt8(7, QR)
+					b.WriteUInt8(8, uint8(batch[k].DNS.Opcode))
+					b.WriteUInt16(9, uint16(dnsQuery.Qclass))
+					b.WriteUInt16(10, uint16(dnsQuery.Qtype))
+					b.WriteUInt8(11, uint8(batch[k].DNS.Rcode))
+					b.WriteString(12, string(dnsQuery.Name))
+					b.WriteUInt16(13, batch[k].PacketLength)
+					b.WriteUInt8(14, edns)
+					b.WriteUInt8(15, doBit)
 
-					b.WriteFixedString(15, fullQuery)
-					// b.WriteFixedString(15, uuid.NewV4().Bytes())
+					b.WriteFixedString(16, fullQuery)
 					myUUID := uuidGen.Next()
-					b.WriteFixedString(16, myUUID[:16])
-					// b.WriteArray(15, uuidGen.Next())
+					b.WriteFixedString(17, myUUID[:16])
 				}
 			}
+			log.Warnf("%#v", b)
 			if err := connect.WriteBlock(b); err != nil {
 				return
 			}

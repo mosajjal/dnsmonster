@@ -142,9 +142,12 @@ general:
       --printStatsDelay=                 Duration to print capture and database
                                          stats (default: 10s)
                                          [$DNSMONSTER_PRINTSTATSDELAY]
-      --maskSize=                        Mask source IPs by bits. 32 means all
-                                         the bits of IP is saved in DB
-                                         (default: 32) [$DNSMONSTER_MASKSIZE]
+      --maskSize4=                       Mask IPv4s by bits. 32 means all the
+                                         bits of IP is saved in DB (default:
+                                         32) [$DNSMONSTER_MASKSIZE4]
+      --maskSize6=                       Mask IPv6s by bits. 32 means all the
+                                         bits of IP is saved in DB (default:
+                                         128) [$DNSMONSTER_MASKSIZE6]
       --serverName=                      Name of the server used to index the
                                          metrics. (default: default)
                                          [$DNSMONSTER_SERVERNAME]
@@ -212,9 +215,6 @@ general:
       --skipTLSVerification              Skip TLS verification when making
                                          HTTPS connections
                                          [$DNSMONSTER_SKIPTLSVERIFICATION]
-      --saveFullQuery                    Save full packet query and response in
-                                         JSON format.
-                                         [$DNSMONSTER_SAVEFULLQUERY]
       --version                          show version and quit.
                                          [$DNSMONSTER_VERSION]
 
@@ -277,6 +277,9 @@ output:
                                          [$DNSMONSTER_CLICKHOUSEDELAY]
       --clickhouseDebug                  Debug Clickhouse connection
                                          [$DNSMONSTER_CLICKHOUSEDEBUG]
+      --clickhousesaveFullQuery          Save full packet query and response in
+                                         JSON format.
+                                         [$DNSMONSTER_CLICKHOUSESAVEFULLQUERY]
       --clickhouseOutputType=[0|1|2|3|4] What should be written to clickhouse.
                                          options:
                                          ;	0: Disable Output

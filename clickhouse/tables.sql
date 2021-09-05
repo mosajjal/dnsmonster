@@ -66,10 +66,6 @@ ENGINE=AggregatingMergeTree(DnsDate, (timestamp, Server), 8192) AS
   SELECT DnsDate, timestamp, Server, sumState(Edns0Present) as EdnsCount, sumState(DoBit) as DoBitCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
 
 
--- View wih query OpCode
-CREATE MATERIALIZED VIEW IF NOT EXISELECT DnsDate, timestamp, Server, sumState(Size) AS TotalSize, avgState(Size) AS AverageSize FROM DNS_LOG GROUP BY Server, DnsDate, timestamp;
-
-
 -- View with edns information
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_EDNS
 ENGINE=AggregatingMergeTree(DnsDate, (timestamp, Server), 8192) AS

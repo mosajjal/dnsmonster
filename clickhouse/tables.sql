@@ -66,60 +66,8 @@ ENGINE=AggregatingMergeTree(DnsDate, (timestamp, Server), 8192) AS
   SELECT DnsDate, timestamp, Server, sumState(Edns0Present) as EdnsCount, sumState(DoBit) as DoBitCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
 
 
--- View with edns information
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_EDNS
-ENGINE=AggregatingMergeTree(DnsDate, (timestamp, Server), 8192) AS
-  SELECT DnsDate, timestamp, Server, sumState(Edns0Present) as EdnsCount, sumState(DoBit) as DoBitCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
-
-
 -- View wih query OpCode
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_OPCODE
-ENGINE=SummingMergeTree
-  PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, OpCode)
-  ORDER BY  (timestamp, Server, OpCode)
-  SAMPLE BY OpCode
-  TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
-  AS SELECT DnsDate, timestamp, Server, OpCode, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp, OpCode;
-
-
--- View with Query Types
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_TYPE
-ENGINE=SummingMergeTree 
-  PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, Type)
-  ORDER BY  (timestamp, Server, Type)
-  SAMPLE BY Type
-  TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
-  AS   SELECT DnsDate, timestamp, Server, Type, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp, Type;
-
--- View with Query Class
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_CLASS
-ENGINE=SummingMergeTree
-  PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, Class)
-  ORDER BY  (timestamp, Server, Class)
-  SAMPLE BY Class
-  TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
-  AS SELECT DnsDate, timestamp, Server, Class, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp, Class;  
-
--- View with query responses
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_RESPONSECODE
-ENGINE=SummingMergeTree
-  PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, ResponseCode)
-  ORDER BY  (timestamp, Server, ResponseCode)
-  SAMPLE BY ResponseCode
-  TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
-  AS SELECT DnsDate, timestamp, Server, ResponseCode, count(*) as c FROM DNS_LOG WHERE QR=1 GROUP BY Server, DnsDate, timestamp, ResponseCode;    
-
-
--- View with Source IP Prefix
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_SRCIP_MASK
 ENGINE=SummingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
   PRIMARY KEY  (timestamp, Server, OpCode)

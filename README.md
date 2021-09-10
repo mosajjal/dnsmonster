@@ -266,6 +266,9 @@ capture:
       --useAfpacket                      Use AFPacket for live captures.
                                          Supported on Linux 3.0+ only
                                          [$DNSMONSTER_USEAFPACKET]
+      --noEtherframe                     The PCAP capture does not contain
+                                         ethernet frames
+                                         [$DNSMONSTER_NOETHERFRAME]
 
 output:
       --clickhouseAddress=               Address of the clickhouse database to

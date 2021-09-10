@@ -85,6 +85,7 @@ func newDNSCapturer(options CaptureOptions) DNSCapturer {
 		tcpReturnChannel,
 		options.ResultChannel,
 		options.Done,
+		options.NoEthernetframe,
 	}
 	var wg sync.WaitGroup
 	for i := uint(0); i < options.PacketHandlerCount; i++ {

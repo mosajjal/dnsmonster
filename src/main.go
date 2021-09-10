@@ -110,6 +110,7 @@ func main() {
 			generalOptions.DefraggerChannelSize,
 			generalOptions.DefraggerChannelReturnSize,
 			exiting,
+			captureOptions.NoEthernetframe,
 		})
 
 		// if *dnstapSocket == "" {

@@ -99,6 +99,7 @@ type packetEncoder struct {
 	tcpReturnChannel  <-chan tcpData
 	resultChannel     chan<- DNSResult
 	done              chan bool
+	NoEthernetframe   bool
 }
 
 // CaptureOptions is a set of generated options variables to use within our capture routine
@@ -118,6 +119,7 @@ type CaptureOptions struct {
 	IPDefraggerChannelSize       uint
 	IPDefraggerReturnChannelSize uint
 	Done                         chan bool
+	NoEthernetframe              bool
 }
 
 type ipv4ToDefrag struct {
@@ -230,4 +232,12 @@ type splunkConnection struct {
 	client    *splunk.Client
 	unhealthy uint
 	err       error
+}
+
+// Register a new Layer to detect IPv4 and IPv6 packets without an ethernet frame.
+var LayerTypeDetectIP = gopacket.RegisterLayerType(250, gopacket.LayerTypeMetadata{Name: "DetectIP", Decoder: nil})
+
+type DetectIP struct {
+	layers.BaseLayer
+	family layers.EthernetType
 }

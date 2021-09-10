@@ -43,21 +43,30 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 }
 
 func (encoder *packetEncoder) run() {
+	var detectIP DetectIP
 	var ethLayer layers.Ethernet
 	var ip4 layers.IPv4
 	var ip6 layers.IPv6
 	var vlan layers.Dot1Q
 	var udp layers.UDP
 	var tcp layers.TCP
-	parser := gopacket.NewDecodingLayerParser(
-		layers.LayerTypeEthernet,
+
+	startLayer := layers.LayerTypeEthernet
+	decodeLayers := []gopacket.DecodingLayer{
 		&ethLayer,
 		&vlan,
 		&ip4,
 		&ip6,
 		&udp,
 		&tcp,
-	)
+	}
+	// Use the IP Family detector when no ethernet frame is present.
+	if encoder.NoEthernetframe {
+		decodeLayers[0] = &detectIP
+		startLayer = LayerTypeDetectIP
+	}
+
+	parser := gopacket.NewDecodingLayerParser(startLayer, decodeLayers...)
 	parserOnlyUDP := gopacket.NewDecodingLayerParser(
 		layers.LayerTypeUDP,
 		&udp,

@@ -280,7 +280,7 @@ output:
                                          [$DNSMONSTER_CLICKHOUSEDELAY]
       --clickhouseDebug                  Debug Clickhouse connection
                                          [$DNSMONSTER_CLICKHOUSEDEBUG]
-      --clickhousesaveFullQuery          Save full packet query and response in
+      --clickhouseSaveFullQuery          Save full packet query and response in
                                          JSON format.
                                          [$DNSMONSTER_CLICKHOUSESAVEFULLQUERY]
       --clickhouseOutputType=[0|1|2|3|4] What should be written to clickhouse.

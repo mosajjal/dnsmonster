@@ -183,7 +183,6 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 					b.WriteFixedString(17, myUUID[:16])
 				}
 			}
-			log.Warnf("%#v", b)
 			if err := connect.WriteBlock(b); err != nil {
 				return
 			}

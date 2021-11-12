@@ -17,7 +17,7 @@ var pcapStats captureStats
 
 func initializeLivePcap(devName, filter string) *pcap.Handle {
 	// Open device
-	handle, err := pcap.OpenLive(devName, 65536, true, time.Second*30)
+	handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
 	errorHandler(err)
 
 	// Set Filter
@@ -87,6 +87,7 @@ func newDNSCapturer(options CaptureOptions) DNSCapturer {
 		options.Done,
 		options.NoEthernetframe,
 	}
+	// todo: use the global wg for this
 	var wg sync.WaitGroup
 	for i := uint(0); i < options.PacketHandlerCount; i++ {
 		wg.Add(1)

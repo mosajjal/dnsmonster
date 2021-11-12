@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"sync"
 	"time"
 
 	"github.com/rogpeppe/fastuuid"
@@ -115,15 +114,14 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 	blocks := []*data.Block{block}
 
 	count := len(blocks)
-	var wg sync.WaitGroup
-	wg.Add(len(blocks))
+	chConfig.general.wg.Add(len(blocks))
 	for i := range blocks {
 		b := blocks[i]
 		start := i * (len(batch)) / count
 		end := min((i+1)*(len(batch))/count, len(batch))
 
 		go func() {
-			defer wg.Done()
+			defer chConfig.general.wg.Done()
 			b.Reserve()
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
@@ -189,7 +187,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConf
 		}()
 	}
 
-	wg.Wait()
+	chConfig.general.wg.Wait()
 	if err := connect.Commit(); err != nil {
 		return err
 	}

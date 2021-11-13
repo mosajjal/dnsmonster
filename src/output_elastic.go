@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/olivere/elastic"
@@ -64,7 +65,7 @@ func elasticOutput(esConfig elasticConfig) {
 	defer esConfig.general.wg.Done()
 
 	client := connectelasticRetry(esConfig)
-	batch := make([]DNSResult, 0, esConfig.elasticBatchSize)
+	batch := make([]types.DNSResult, 0, esConfig.elasticBatchSize)
 
 	ticker := time.Tick(esConfig.elasticBatchDelay)
 	printStatsTicker := time.Tick(esConfig.general.printStatsDelay)
@@ -94,7 +95,7 @@ func elasticOutput(esConfig elasticConfig) {
 				log.Info(err)
 				client = connectelasticRetry(esConfig)
 			} else {
-				batch = make([]DNSResult, 0, esConfig.elasticBatchSize)
+				batch = make([]types.DNSResult, 0, esConfig.elasticBatchSize)
 			}
 		case <-esConfig.general.exiting:
 			return
@@ -104,7 +105,7 @@ func elasticOutput(esConfig elasticConfig) {
 	}
 }
 
-func elasticSendData(client *elastic.Client, batch []DNSResult, esConfig elasticConfig) error {
+func elasticSendData(client *elastic.Client, batch []types.DNSResult, esConfig elasticConfig) error {
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
 			if checkIfWeSkip(esConfig.elasticOutputType, dnsQuery.Name) {

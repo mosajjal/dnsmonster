@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
+	"github.com/mosajjal/dnsmonster/types"
 )
 
 var splunkStats = outputStats{"splunk", 0, 0}
@@ -102,7 +103,7 @@ func splunkOutput(spConfig splunkConfig) {
 	log.Infof("Connecting to Splunk endpoints")
 	connectMultiSplunkRetry(spConfig)
 
-	batch := make([]DNSResult, 0, spConfig.splunkBatchSize)
+	batch := make([]types.DNSResult, 0, spConfig.splunkBatchSize)
 	rand.Seed(time.Now().Unix())
 	ticker := time.Tick(spConfig.splunkBatchDelay)
 	printStatsTicker := time.Tick(spConfig.general.printStatsDelay)
@@ -124,7 +125,7 @@ func splunkOutput(spConfig splunkConfig) {
 					splunkConnectionList[healthyId] = conn
 					splunkStats.Skipped += len(batch)
 				} else {
-					batch = make([]DNSResult, 0, spConfig.splunkBatchSize)
+					batch = make([]types.DNSResult, 0, spConfig.splunkBatchSize)
 				}
 			} else {
 				log.Warn("Splunk Connection not found")
@@ -138,7 +139,7 @@ func splunkOutput(spConfig splunkConfig) {
 	}
 }
 
-func splunkSendData(client *splunk.Client, batch []DNSResult, spConfig splunkConfig) error {
+func splunkSendData(client *splunk.Client, batch []types.DNSResult, spConfig splunkConfig) error {
 	var events []*splunk.Event
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {

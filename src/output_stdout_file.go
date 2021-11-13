@@ -12,9 +12,7 @@ import (
 var stdoutstats = outputStats{"Stdout", 0, 0}
 var fileoutstats = outputStats{"File", 0, 0}
 
-func stdoutOutput(stdConfig stdoutConfig) {
-	stdConfig.general.wg.Add(1)
-	defer stdConfig.general.wg.Done()
+func stdoutOutputWorker(stdConfig stdoutConfig) {
 	printStatsTicker := time.Tick(stdConfig.general.printStatsDelay)
 
 	for {
@@ -36,6 +34,14 @@ func stdoutOutput(stdConfig stdoutConfig) {
 		case <-printStatsTicker:
 			log.Infof("output: %+v", stdoutstats)
 		}
+	}
+}
+
+func stdoutOutput(stdConfig stdoutConfig) {
+	stdConfig.general.wg.Add(1)
+	defer stdConfig.general.wg.Done()
+	for i := 0; i < 8; i++ {
+		go stdoutOutputWorker(stdConfig)
 	}
 }
 

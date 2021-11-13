@@ -9,8 +9,8 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	mkdns "github.com/miekg/dns"
 	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
+	"github.com/mosajjal/dnsmonster/types"
 )
 
 type generalConfig struct {
@@ -25,7 +25,7 @@ type generalConfig struct {
 }
 
 type clickHouseConfig struct {
-	resultChannel           chan DNSResult
+	resultChannel           chan types.DNSResult
 	clickhouseAddress       string
 	clickhouseBatchSize     uint
 	clickhouseOutputType    uint
@@ -36,7 +36,7 @@ type clickHouseConfig struct {
 }
 
 type elasticConfig struct {
-	resultChannel         chan DNSResult
+	resultChannel         chan types.DNSResult
 	elasticOutputEndpoint string
 	elasticOutputIndex    string
 	elasticOutputType     uint
@@ -46,7 +46,7 @@ type elasticConfig struct {
 }
 
 type kafkaConfig struct {
-	resultChannel     chan DNSResult
+	resultChannel     chan types.DNSResult
 	kafkaOutputBroker string
 	kafkaOutputTopic  string
 	kafkaOutputType   uint
@@ -56,7 +56,7 @@ type kafkaConfig struct {
 }
 
 type splunkConfig struct {
-	resultChannel          chan DNSResult
+	resultChannel          chan types.DNSResult
 	splunkOutputEndpoints  []string
 	splunkOutputToken      string
 	splunkOutputType       uint
@@ -69,21 +69,21 @@ type splunkConfig struct {
 }
 
 type syslogConfig struct {
-	resultChannel        chan DNSResult
+	resultChannel        chan types.DNSResult
 	syslogOutputEndpoint string
 	syslogOutputType     uint
 	general              generalConfig
 }
 
 type fileConfig struct {
-	resultChannel  chan DNSResult
+	resultChannel  chan types.DNSResult
 	fileOutputPath string
 	fileOutputType uint
 	general        generalConfig
 }
 
 type stdoutConfig struct {
-	resultChannel    chan DNSResult
+	resultChannel    chan types.DNSResult
 	stdoutOutputType uint
 	general          generalConfig
 }
@@ -97,7 +97,7 @@ type packetEncoder struct {
 	ip6DefrggerReturn <-chan ipv6Defragged
 	tcpAssembly       []chan tcpPacket
 	tcpReturnChannel  <-chan tcpData
-	resultChannel     chan<- DNSResult
+	resultChannel     chan<- types.DNSResult
 	done              chan bool
 	NoEthernetframe   bool
 }
@@ -110,7 +110,7 @@ type CaptureOptions struct {
 	Filter                       string
 	Port                         uint16
 	GcTime                       time.Duration
-	ResultChannel                chan<- DNSResult
+	ResultChannel                chan<- types.DNSResult
 	PacketHandlerCount           uint
 	PacketChannelSize            uint
 	TCPHandlerCount              uint
@@ -176,18 +176,6 @@ type dnsStream struct {
 type DNSCapturer struct {
 	options    CaptureOptions
 	processing chan gopacket.Packet
-}
-
-// DNSResult is the middleware that connects the packet encoder to Clickhouse.
-// For DNStap, this is probably going to be replaced with something else.
-type DNSResult struct {
-	Timestamp    time.Time
-	DNS          mkdns.Msg
-	IPVersion    uint8
-	SrcIP        net.IP
-	DstIP        net.IP
-	Protocol     string
-	PacketLength uint16
 }
 
 type outputStats struct {

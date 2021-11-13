@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rogpeppe/fastuuid"
@@ -54,7 +55,7 @@ func kafkaOutput(kafConfig kafkaConfig) {
 	defer kafConfig.general.wg.Done()
 
 	connect := connectKafkaRetry(kafConfig)
-	batch := make([]DNSResult, 0, kafConfig.kafkaBatchSize)
+	batch := make([]types.DNSResult, 0, kafConfig.kafkaBatchSize)
 
 	ticker := time.Tick(kafConfig.kafkaBatchDelay)
 	printStatsTicker := time.Tick(kafConfig.general.printStatsDelay)
@@ -70,7 +71,7 @@ func kafkaOutput(kafConfig kafkaConfig) {
 				log.Info(err)
 				connect = connectKafkaRetry(kafConfig)
 			} else {
-				batch = make([]DNSResult, 0, kafConfig.kafkaBatchDelay)
+				batch = make([]types.DNSResult, 0, kafConfig.kafkaBatchDelay)
 			}
 		case <-kafConfig.general.exiting:
 			return
@@ -80,7 +81,7 @@ func kafkaOutput(kafConfig kafkaConfig) {
 	}
 }
 
-func kafkaSendData(connect *kafka.Conn, batch []DNSResult, kafConfig kafkaConfig) error {
+func kafkaSendData(connect *kafka.Conn, batch []types.DNSResult, kafConfig kafkaConfig) error {
 	var msg []kafka.Message
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {

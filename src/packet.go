@@ -8,6 +8,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	mkdns "github.com/miekg/dns"
+	"github.com/mosajjal/dnsmonster/types"
 )
 
 func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.LayerType, udp *layers.UDP, tcp *layers.TCP, flow gopacket.Flow, timestamp time.Time, IPVersion uint8, SrcIP, DstIP net.IP) {
@@ -25,7 +26,7 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 						MaskSize = generalOptions.MaskSize6
 						BitSize = 8 * net.IPv6len
 					}
-					encoder.resultChannel <- DNSResult{timestamp, msg, IPVersion, SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)), DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), "udp", uint16(len(udp.Payload))}
+					encoder.resultChannel <- types.DNSResult{timestamp, msg, IPVersion, SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)), DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), "udp", uint16(len(udp.Payload))}
 				}
 			}
 		case layers.LayerTypeTCP:
@@ -87,7 +88,7 @@ func (encoder *packetEncoder) run() {
 					MaskSize = generalOptions.MaskSize6
 					BitSize = 8 * net.IPv6len
 				}
-				encoder.resultChannel <- DNSResult{data.timestamp, msg, data.IPVersion, data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)), data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), "tcp", uint16(len(data.data))}
+				encoder.resultChannel <- types.DNSResult{data.timestamp, msg, data.IPVersion, data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)), data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), "tcp", uint16(len(data.data))}
 			}
 		case packet := <-encoder.ip4DefrggerReturn:
 			// Packet was defragged, parse the remaining data

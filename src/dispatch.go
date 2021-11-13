@@ -4,10 +4,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
-func dispatchOutput(resultChannel chan DNSResult, exiting chan bool, wg *sync.WaitGroup) {
+func dispatchOutput(resultChannel chan types.DNSResult, exiting chan bool, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
 

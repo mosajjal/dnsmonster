@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 
 	dnstap "github.com/dnstap/golang-dnstap"
@@ -59,13 +60,13 @@ func handleDNSTapInterrupt(done chan bool) {
 	}()
 }
 
-func dnsTapMsgToDNSResult(msg []byte) DNSResult {
+func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
 	dnstapObject := &dnstap.Dnstap{}
 
 	proto.Unmarshal(msg, dnstapObject)
 
 	// var myDNSrow DNSRow
-	var myDNSResult DNSResult
+	var myDNSResult types.DNSResult
 
 	if dnstapObject.Message.GetQueryMessage() != nil {
 		myDNSResult.DNS.Unpack(dnstapObject.Message.GetQueryMessage())
@@ -83,7 +84,7 @@ func dnsTapMsgToDNSResult(msg []byte) DNSResult {
 	return myDNSResult
 }
 
-func startDNSTap(resultChannel chan DNSResult) {
+func startDNSTap(resultChannel chan types.DNSResult) {
 	log.Info("Starting DNStap capture")
 	input := parseDnstapSocket(captureOptions.DnstapSocket, captureOptions.DnstapPermission)
 

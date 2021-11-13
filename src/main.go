@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -31,14 +32,14 @@ var allowDomainMap = make(map[string]bool)
 var skipDomainMapBool = false
 var allowDomainMapBool = false
 
-var clickhouseResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
-var kafkaResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
-var elasticResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
-var splunkResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
-var stdoutResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
-var fileResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
-var syslogResultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
-var resultChannel = make(chan DNSResult, generalOptions.ResultChannelSize)
+var clickhouseResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
+var kafkaResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
+var elasticResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
+var splunkResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
+var stdoutResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
+var fileResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
+var syslogResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
+var resultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
 
 func main() {
 	flagsProcess()

@@ -7,6 +7,7 @@ import (
 
 	"time"
 
+	"github.com/mosajjal/dnsmonster/types"
 	"github.com/rogpeppe/fastuuid"
 	log "github.com/sirupsen/logrus"
 
@@ -63,7 +64,7 @@ func clickhouseOutput(chConfig clickHouseConfig) {
 	defer chConfig.general.wg.Done()
 
 	connect := connectClickhouseRetry(chConfig)
-	batch := make([]DNSResult, 0, chConfig.clickhouseBatchSize)
+	batch := make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)
 
 	ticker := time.Tick(chConfig.clickhouseDelay)
 	printStatsTicker := time.Tick(chConfig.general.printStatsDelay)
@@ -78,7 +79,7 @@ func clickhouseOutput(chConfig clickHouseConfig) {
 				log.Info(err)
 				connect = connectClickhouseRetry(chConfig)
 			} else {
-				batch = make([]DNSResult, 0, chConfig.clickhouseBatchSize)
+				batch = make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)
 			}
 		case <-chConfig.general.exiting:
 			return
@@ -88,7 +89,7 @@ func clickhouseOutput(chConfig clickHouseConfig) {
 	}
 }
 
-func clickhouseSendData(connect clickhouse.Clickhouse, batch []DNSResult, chConfig clickHouseConfig) error {
+func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, chConfig clickHouseConfig) error {
 	if len(batch) == 0 {
 		return nil
 	}

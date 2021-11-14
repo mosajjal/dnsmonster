@@ -152,10 +152,10 @@ general:
                                          metrics. (default: default)
                                          [$DNSMONSTER_SERVERNAME]
       --tcpAssemblyChannelSize=          Size of the tcp assembler (default:
-                                         1000)
+                                         10000)
                                          [$DNSMONSTER_TCPASSEMBLYCHANNELSIZE]
       --tcpResultChannelSize=            Size of the tcp result channel
-                                         (default: 1000)
+                                         (default: 10000)
                                          [$DNSMONSTER_TCPRESULTCHANNELSIZE]
       --tcpHandlerCount=                 Number of routines used to handle tcp
                                          assembly (default: 1)
@@ -167,11 +167,11 @@ general:
                                          2:WARN, 3:INFO, 4:DEBUG (default: 3)
                                          [$DNSMONSTER_LOGLEVEL]
       --defraggerChannelSize=            Size of the channel to send packets to
-                                         be defragged (default: 500)
+                                         be defragged (default: 10000)
                                          [$DNSMONSTER_DEFRAGGERCHANNELSIZE]
       --defraggerChannelReturnSize=      Size of the channel where the
                                          defragged packets are returned
-                                         (default: 500)
+                                         (default: 10000)
                                          [$DNSMONSTER_DEFRAGGERCHANNELRETURNSIZ-
 
                                          E]
@@ -249,10 +249,10 @@ capture:
                                          (default: 755)
                                          [$DNSMONSTER_DNSTAPPERMISSION]
       --packetHandlerCount=              Number of routines used to handle
-                                         received packets (default: 1)
+                                         received packets (default: 2)
                                          [$DNSMONSTER_PACKETHANDLERCOUNT]
       --packetChannelSize=               Size of the packet handler channel
-                                         (default: 100000)
+                                         (default: 1000)
                                          [$DNSMONSTER_PACKETCHANNELSIZE]
       --afpacketBuffersizeMb=            Afpacket Buffersize in MB (default:
                                          64) [$DNSMONSTER_AFPACKETBUFFERSIZEMB]

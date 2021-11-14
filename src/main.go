@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,12 +47,8 @@ func main() {
 	checkFlags()
 	runtime.GOMAXPROCS(generalOptions.Gomaxprocs)
 	if generalOptions.Cpuprofile != "" {
-		log.Warn("Writing CPU profile")
-		f, err := os.Create(generalOptions.Cpuprofile)
-		errorHandler(err)
-		err = pprof.StartCPUProfile(f)
-		errorHandler(err)
-		defer pprof.StopCPUProfile()
+
+		defer profile.Start(profile.CPUProfile).Stop()
 	}
 
 	// load the skipDomainFile if exists
@@ -110,6 +107,7 @@ func main() {
 			generalOptions.TcpResultChannelSize,
 			generalOptions.DefraggerChannelSize,
 			generalOptions.DefraggerChannelReturnSize,
+			&wg,
 			exiting,
 			captureOptions.NoEthernetframe,
 		})

@@ -43,8 +43,7 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 
 }
 
-func (encoder *packetEncoder) run() {
-	var detectIP DetectIP
+func (encoder *packetEncoder) inputHandlerWorker(p chan gopacket.Packet) {
 	var ethLayer layers.Ethernet
 	var ip4 layers.IPv4
 	var ip6 layers.IPv6
@@ -61,13 +60,61 @@ func (encoder *packetEncoder) run() {
 		&udp,
 		&tcp,
 	}
-	// Use the IP Family detector when no ethernet frame is present.
-	if encoder.NoEthernetframe {
-		decodeLayers[0] = &detectIP
-		startLayer = LayerTypeDetectIP
+	parser := gopacket.NewDecodingLayerParser(startLayer, decodeLayers...)
+	foundLayerTypes := []gopacket.LayerType{}
+	for {
+		select {
+		case packet := <-p:
+			timestamp := packet.Metadata().Timestamp
+			if timestamp.IsZero() {
+				timestamp = time.Now()
+			}
+			_ = parser.DecodeLayers(packet.Data(), &foundLayerTypes)
+			// first parse the ip layer, so we can find fragmented packets
+			for _, layerType := range foundLayerTypes {
+				switch layerType {
+				case layers.LayerTypeIPv4:
+					// Check for fragmentation
+					if ip4.Flags&layers.IPv4DontFragment == 0 && (ip4.Flags&layers.IPv4MoreFragments != 0 || ip4.FragOffset != 0) {
+						// Packet is fragmented, send it to the defragger
+						encoder.ip4Defrgger <- ipv4ToDefrag{
+							ip4,
+							timestamp,
+						}
+						break
+					}
+					// log.Infof("packet %v coming to %p\n", timestamp, &encoder)
+					encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), timestamp, 4, ip4.SrcIP, ip4.DstIP)
+					continue
+				case layers.LayerTypeIPv6:
+					// Store the packet metadata
+					if ip6.NextHeader == layers.IPProtocolIPv6Fragment {
+						// TODO: Move the parsing to DecodingLayer when gopacket support it
+						if frag := packet.Layer(layers.LayerTypeIPv6Fragment).(*layers.IPv6Fragment); frag != nil {
+							encoder.ip6Defrgger <- ipv6FragmentInfo{
+								ip6,
+								*frag,
+								timestamp,
+							}
+						}
+					} else {
+						encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip6.NetworkFlow(), timestamp, 6, ip6.SrcIP, ip6.DstIP)
+					}
+				}
+			}
+			break
+		}
 	}
 
-	parser := gopacket.NewDecodingLayerParser(startLayer, decodeLayers...)
+}
+
+func (encoder *packetEncoder) run() {
+
+	var ip4 layers.IPv4
+
+	var udp layers.UDP
+	var tcp layers.TCP
+
 	parserOnlyUDP := gopacket.NewDecodingLayerParser(
 		layers.LayerTypeUDP,
 		&udp,
@@ -77,6 +124,13 @@ func (encoder *packetEncoder) run() {
 		&tcp,
 	)
 	foundLayerTypes := []gopacket.LayerType{}
+
+	var handlerChanList []chan gopacket.Packet
+	for i := 0; i < int(encoder.handlerCount); i++ {
+		handlerChanList = append(handlerChanList, make(chan gopacket.Packet, 10000)) //todo: parameter for size of this channel needs to be defined
+		go encoder.inputHandlerWorker(handlerChanList[i])
+	}
+
 	for {
 		select {
 		case data := <-encoder.tcpReturnChannel:
@@ -113,48 +167,9 @@ func (encoder *packetEncoder) run() {
 			}
 			encoder.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
 		case packet := <-encoder.input:
-			{
-				timestamp := packet.Metadata().Timestamp
-				if timestamp.IsZero() {
-					timestamp = time.Now()
-				}
-				_ = parser.DecodeLayers(packet.Data(), &foundLayerTypes)
-				// first parse the ip layer, so we can find fragmented packets
-				for _, layerType := range foundLayerTypes {
-					switch layerType {
-					case layers.LayerTypeIPv4:
-						// Check for fragmentation
-						if ip4.Flags&layers.IPv4DontFragment == 0 && (ip4.Flags&layers.IPv4MoreFragments != 0 || ip4.FragOffset != 0) {
-							// Packet is fragmented, send it to the defragger
-							encoder.ip4Defrgger <- ipv4ToDefrag{
-								ip4,
-								timestamp,
-							}
-							break
-						}
-						// log.Infof("packet %v coming to %p\n", timestamp, &encoder)
-						encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), timestamp, 4, ip4.SrcIP, ip4.DstIP)
-						break
-					case layers.LayerTypeIPv6:
-						// Store the packet metadata
-						if ip6.NextHeader == layers.IPProtocolIPv6Fragment {
-							// TODO: Move the parsing to DecodingLayer when gopacket support it
-							if frag := packet.Layer(layers.LayerTypeIPv6Fragment).(*layers.IPv6Fragment); frag != nil {
-								encoder.ip6Defrgger <- ipv6FragmentInfo{
-									ip6,
-									*frag,
-									timestamp,
-								}
-							}
-						} else {
-							encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip6.NetworkFlow(), timestamp, 6, ip6.SrcIP, ip6.DstIP)
-						}
-					}
-				}
-				break
-			}
+			handlerChanList[packet.TransportLayer().TransportFlow().FastHash()%uint64(encoder.handlerCount)] <- packet
 		case <-encoder.done:
-			break
+			continue
 		}
 	}
 }

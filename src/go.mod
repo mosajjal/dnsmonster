@@ -15,6 +15,7 @@ require (
 	github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.7
 	github.com/olivere/elastic v6.2.35+incompatible
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/profile v1.6.0
 	github.com/rogpeppe/fastuuid v1.2.0
 	github.com/segmentio/kafka-go v0.4.8
 	github.com/sirupsen/logrus v1.8.1

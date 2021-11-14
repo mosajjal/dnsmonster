@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -73,7 +72,6 @@ func newDNSCapturer(options CaptureOptions) DNSCapturer {
 
 	go ipv4Defragger(ip4DefraggerChannel, ip4DefraggerReturn, options.GcTime, options.Done)
 	go ipv6Defragger(ip6DefraggerChannel, ip6DefraggerReturn, options.GcTime, options.Done)
-
 	encoder := packetEncoder{
 		options.Port,
 		processingChannel,
@@ -84,15 +82,14 @@ func newDNSCapturer(options CaptureOptions) DNSCapturer {
 		tcpChannels,
 		tcpReturnChannel,
 		options.ResultChannel,
+		options.PacketHandlerCount,
 		options.Done,
 		options.NoEthernetframe,
 	}
+	go encoder.run()
+	options.Wg.Add(1)
 	// todo: use the global wg for this
-	var wg sync.WaitGroup
-	for i := uint(0); i < options.PacketHandlerCount; i++ {
-		wg.Add(1)
-		go encoder.run()
-	}
+
 	return DNSCapturer{options, processingChannel}
 }
 

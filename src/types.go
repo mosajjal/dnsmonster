@@ -98,6 +98,7 @@ type packetEncoder struct {
 	tcpAssembly       []chan tcpPacket
 	tcpReturnChannel  <-chan tcpData
 	resultChannel     chan<- types.DNSResult
+	handlerCount      uint
 	done              chan bool
 	NoEthernetframe   bool
 }
@@ -118,6 +119,7 @@ type CaptureOptions struct {
 	TCPResultChannelSize         uint
 	IPDefraggerChannelSize       uint
 	IPDefraggerReturnChannelSize uint
+	Wg                           *sync.WaitGroup
 	Done                         chan bool
 	NoEthernetframe              bool
 }

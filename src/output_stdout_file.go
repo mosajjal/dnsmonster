@@ -38,9 +38,9 @@ func stdoutOutputWorker(stdConfig stdoutConfig) {
 }
 
 func stdoutOutput(stdConfig stdoutConfig) {
-	stdConfig.general.wg.Add(1)
-	defer stdConfig.general.wg.Done()
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 1; i++ {
+		stdConfig.general.wg.Add(1)
+		defer stdConfig.general.wg.Done()
 		go stdoutOutputWorker(stdConfig)
 	}
 }

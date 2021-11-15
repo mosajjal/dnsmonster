@@ -36,7 +36,7 @@ func connectSplunkRetry(spConfig splunkConfig, splunkEndpoint string) splunkConn
 	for {
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-spConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			// When exiting, return immediately
 			return conn
 		case <-tick.C:
@@ -97,9 +97,6 @@ func selectHealthyConnection() string {
 
 func splunkOutput(spConfig splunkConfig) {
 
-	spConfig.general.wg.Add(1)
-	defer spConfig.general.wg.Done()
-
 	log.Infof("Connecting to Splunk endpoints")
 	connectMultiSplunkRetry(spConfig)
 
@@ -131,7 +128,7 @@ func splunkOutput(spConfig splunkConfig) {
 				log.Warn("Splunk Connection not found")
 				splunkStats.Skipped += len(batch)
 			}
-		case <-spConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", splunkStats)

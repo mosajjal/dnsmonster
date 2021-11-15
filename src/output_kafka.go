@@ -31,7 +31,7 @@ func connectKafkaRetry(kafConfig kafkaConfig) *kafka.Conn {
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-kafConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			// When exiting, return immediately
 			return nil
 		case <-tick.C:
@@ -51,8 +51,6 @@ func connectKafka(kafConfig kafkaConfig) (*kafka.Conn, error) {
 }
 
 func kafkaOutput(kafConfig kafkaConfig) {
-	kafConfig.general.wg.Add(1)
-	defer kafConfig.general.wg.Done()
 
 	connect := connectKafkaRetry(kafConfig)
 	batch := make([]types.DNSResult, 0, kafConfig.kafkaBatchSize)
@@ -73,7 +71,7 @@ func kafkaOutput(kafConfig kafkaConfig) {
 			} else {
 				batch = make([]types.DNSResult, 0, kafConfig.kafkaBatchDelay)
 			}
-		case <-kafConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", kafkastats)

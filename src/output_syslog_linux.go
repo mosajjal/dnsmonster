@@ -7,6 +7,7 @@ import (
 
 	syslog "log/syslog"
 
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,7 +30,7 @@ func connectSyslogRetry(sysConfig syslogConfig) *syslog.Writer {
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-sysConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			// When exiting, return immediately
 			return nil
 		case <-tick.C:
@@ -49,8 +50,6 @@ func connectSyslog(sysConfig syslogConfig) (*syslog.Writer, error) {
 }
 
 func syslogOutput(sysConfig syslogConfig) {
-	sysConfig.general.wg.Add(1)
-	defer sysConfig.general.wg.Done()
 
 	writer := connectSyslogRetry(sysConfig)
 
@@ -78,7 +77,7 @@ func syslogOutput(sysConfig syslogConfig) {
 				// we should skip to the next data since we've already saved all the questions. Multi-Question DNS queries are not common
 				continue
 			}
-		case <-sysConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", syslogstats)

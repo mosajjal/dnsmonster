@@ -2,6 +2,7 @@ package types
 
 import (
 	"net"
+	"sync"
 	"time"
 
 	mkdns "github.com/miekg/dns"
@@ -18,3 +19,7 @@ type DNSResult struct {
 	Protocol     string
 	PacketLength uint16
 }
+
+// Setup output routine
+var GlobalExitChannel = make(chan bool)
+var GlobalWaitingGroup sync.WaitGroup

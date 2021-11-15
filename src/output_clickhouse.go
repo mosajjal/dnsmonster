@@ -33,7 +33,7 @@ func connectClickhouseRetry(chConfig clickHouseConfig) clickhouse.Clickhouse {
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-chConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			// When exiting, return immediately
 			return nil
 		case <-tick.C:
@@ -60,8 +60,6 @@ func min(a, b int) int {
 }
 
 func clickhouseOutput(chConfig clickHouseConfig) {
-	chConfig.general.wg.Add(1)
-	defer chConfig.general.wg.Done()
 
 	connect := connectClickhouseRetry(chConfig)
 	batch := make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)
@@ -81,7 +79,7 @@ func clickhouseOutput(chConfig clickHouseConfig) {
 			} else {
 				batch = make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)
 			}
-		case <-chConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", chstats)
@@ -115,14 +113,11 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 	blocks := []*data.Block{block}
 
 	count := len(blocks)
-	chConfig.general.wg.Add(len(blocks))
 	for i := range blocks {
 		b := blocks[i]
 		start := i * (len(batch)) / count
 		end := min((i+1)*(len(batch))/count, len(batch))
-
 		go func() {
-			defer chConfig.general.wg.Done()
 			b.Reserve()
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
@@ -186,9 +181,11 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 				return
 			}
 		}()
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 	}
 
-	chConfig.general.wg.Wait()
+	// chConfig.general.wg.Wait()
 	if err := connect.Commit(); err != nil {
 		return err
 	}

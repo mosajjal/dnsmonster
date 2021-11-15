@@ -126,7 +126,10 @@ func (encoder *packetEncoder) run() {
 	for i := 0; i < int(encoder.handlerCount); i++ {
 		log.Infof("Creating handler #%d\n", i)
 		handlerChanList = append(handlerChanList, make(chan gopacket.Packet, 10000)) //todo: parameter for size of this channel needs to be defined
+		//todo: add the wg
 		go encoder.inputHandlerWorker(handlerChanList[i])
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 	}
 
 	for {
@@ -166,8 +169,8 @@ func (encoder *packetEncoder) run() {
 			encoder.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
 		case packet := <-encoder.input:
 			handlerChanList[packet.NetworkLayer().NetworkFlow().FastHash()%uint64(encoder.handlerCount)] <- packet
-		case <-encoder.done:
-			continue
+		case <-types.GlobalExitChannel:
+			return
 		}
 	}
 }

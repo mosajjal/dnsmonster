@@ -9,7 +9,6 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
-	"sync"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
@@ -67,12 +66,8 @@ func main() {
 		}
 	}
 
-	// Setup output routine
-	exiting := make(chan bool)
-	var wg sync.WaitGroup
-
 	// Setup our output channels
-	setupOutputs(wg, exiting)
+	setupOutputs()
 
 	// Setup the memory profile if reuqested
 	if generalOptions.Memprofile != "" {
@@ -107,8 +102,6 @@ func main() {
 			generalOptions.TcpResultChannelSize,
 			generalOptions.DefraggerChannelSize,
 			generalOptions.DefraggerChannelReturnSize,
-			&wg,
-			exiting,
 			captureOptions.NoEthernetframe,
 		})
 
@@ -133,7 +126,7 @@ func main() {
 		capturer.start()
 		// Wait for the output to finish
 		log.Info("Exiting")
-		wg.Wait()
+		types.GlobalWaitingGroup.Wait()
 	} else {
 		startDNSTap(resultChannel)
 	}

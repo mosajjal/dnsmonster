@@ -2,6 +2,9 @@ package main
 
 import (
 	"encoding/hex"
+	"fmt"
+	"os"
+	"runtime/trace"
 	"testing"
 
 	"github.com/google/gopacket"
@@ -40,16 +43,15 @@ func DummySink() {
 		select {
 		case <-testResultChannel:
 			cnt++
-			if cnt%1000000 == 0 {
-				println(cnt)
-			}
 		}
 	}
 }
 
-var encoderList []packetEncoder
-
-func benchmarkUdpPacketProcessingWorker(i uint, b *testing.B) {
+func benchmarkUdpPacketProcessingWorker(workers uint, b *testing.B) {
+	fmt.Println("Benchmarking UDP Packet Processing Worker")
+	file, _ := os.Create("trace.out")
+	trace.Start(file)
+	defer trace.Stop()
 	e := packetEncoder{
 		53,
 		testInputChannel,
@@ -60,11 +62,10 @@ func benchmarkUdpPacketProcessingWorker(i uint, b *testing.B) {
 		testTcpChannels,
 		testReturnChannel,
 		testResultChannel,
-		i,
+		workers,
 		testDoneChannel,
 		false,
 	}
-	encoderList = append(encoderList, e)
 	go e.run()
 	testTcpChannels = append(testTcpChannels, make(chan tcpPacket, TCPAssemblyChannelSize))
 	go DummySink()
@@ -74,9 +75,10 @@ func benchmarkUdpPacketProcessingWorker(i uint, b *testing.B) {
 	}
 }
 
-func BenchmarkUdpPacketProcessingWorker1(b *testing.B)  { benchmarkUdpPacketProcessingWorker(1, b) }
-func BenchmarkUdpPacketProcessingWorker2(b *testing.B)  { benchmarkUdpPacketProcessingWorker(2, b) }
-func BenchmarkUdpPacketProcessingWorker4(b *testing.B)  { benchmarkUdpPacketProcessingWorker(4, b) }
-func BenchmarkUdpPacketProcessingWorker6(b *testing.B)  { benchmarkUdpPacketProcessingWorker(6, b) }
-func BenchmarkUdpPacketProcessingWorker8(b *testing.B)  { benchmarkUdpPacketProcessingWorker(8, b) }
-func BenchmarkUdpPacketProcessingWorker16(b *testing.B) { benchmarkUdpPacketProcessingWorker(16, b) }
+func BenchmarkUdpPacketProcessingWorker1(b *testing.B) { benchmarkUdpPacketProcessingWorker(1, b) }
+
+// func BenchmarkUdpPacketProcessingWorker2(b *testing.B)  { benchmarkUdpPacketProcessingWorker(2, b) }
+// func BenchmarkUdpPacketProcessingWorker4(b *testing.B)  { benchmarkUdpPacketProcessingWorker(4, b) }
+// func BenchmarkUdpPacketProcessingWorker6(b *testing.B)  { benchmarkUdpPacketProcessingWorker(6, b) }
+// func BenchmarkUdpPacketProcessingWorker8(b *testing.B)  { benchmarkUdpPacketProcessingWorker(8, b) }
+// func BenchmarkUdpPacketProcessingWorker16(b *testing.B) { benchmarkUdpPacketProcessingWorker(16, b) }

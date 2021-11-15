@@ -300,6 +300,9 @@ output:
                                          received to prevent allocations
                                          (default: 100000)
                                          [$DNSMONSTER_CLICKHOUSEBATCHSIZE]
+      --clickhouseWorkers=               Number of Clickhouse output Workers
+                                         (default: 1)
+                                         [$DNSMONSTER_CLICKHOUSEWORKERS]
       --fileOutputType=[0|1|2|3|4]       What should be written to file.
                                          options:
                                          ;	0: Disable Output

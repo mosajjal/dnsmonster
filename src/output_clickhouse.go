@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"time"
 
@@ -74,7 +75,7 @@ func clickhouseOutput(chConfig clickHouseConfig) {
 			}
 		case <-ticker:
 			if err := clickhouseSendData(connect, batch, chConfig); err != nil {
-				log.Info(err)
+				log.Warnf("Error sending data to clickhouse: %#v, %v", batch, err) //todo: remove batch from this print
 				connect = connectClickhouseRetry(chConfig)
 			} else {
 				batch = make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)
@@ -97,6 +98,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 	}
 	_, err := connect.Begin()
 	if err != nil {
+		log.Warnf("Error starting transaction: %v", err)
 		return err
 	}
 
@@ -107,17 +109,26 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 
 	block, err := connect.Block()
 	if err != nil {
+		log.Warnf("Error getting block: %v", err)
 		return err
 	}
 
 	blocks := []*data.Block{block}
 
+	var clickhouseWaitGroup sync.WaitGroup
+
+	for i := 0; i < len(blocks); i++ {
+		clickhouseWaitGroup.Add(1)
+	}
+
 	count := len(blocks)
 	for i := range blocks {
+
 		b := blocks[i]
 		start := i * (len(batch)) / count
 		end := min((i+1)*(len(batch))/count, len(batch))
 		go func() {
+			defer clickhouseWaitGroup.Done()
 			b.Reserve()
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
@@ -130,7 +141,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 
 					var fullQuery []byte
 					if chConfig.clickhouseSaveFullQuery {
-						fullQuery, _ = json.Marshal(batch[k].DNS)
+						fullQuery, _ = json.Marshal(batch[k].DNS) //todo: check this
 					}
 					var SrcIP, DstIP uint64
 
@@ -178,15 +189,14 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 				}
 			}
 			if err := connect.WriteBlock(b); err != nil {
+				log.Warnf("Error writing block: %s", err)
 				return
 			}
 		}()
-		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
 	}
-
-	// chConfig.general.wg.Wait()
+	clickhouseWaitGroup.Wait() //todo: do I need to have s separate waitgroup for CH?
 	if err := connect.Commit(); err != nil {
+		log.Warnf("Error writing block: %s", err)
 		return err
 	}
 

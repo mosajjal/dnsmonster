@@ -67,6 +67,7 @@ func setupOutputs() {
 			outputOptions.ClickhouseDebug,
 			outputOptions.ClickhouseDelay,
 			outputOptions.ClickhouseWorkers,
+			outputOptions.ClickhouseWorkerChannelSize,
 			generalConfig,
 		}
 		go clickhouseOutput(chConfig)

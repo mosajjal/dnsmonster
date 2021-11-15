@@ -23,15 +23,16 @@ type generalConfig struct {
 }
 
 type clickHouseConfig struct {
-	resultChannel           chan types.DNSResult
-	clickhouseAddress       string
-	clickhouseBatchSize     uint
-	clickhouseOutputType    uint
-	clickhouseSaveFullQuery bool
-	clickhouseDebug         bool
-	clickhouseDelay         time.Duration
-	clickhouseWorkers       uint
-	general                 generalConfig
+	resultChannel               chan types.DNSResult
+	clickhouseAddress           string
+	clickhouseBatchSize         uint
+	clickhouseOutputType        uint
+	clickhouseSaveFullQuery     bool
+	clickhouseDebug             bool
+	clickhouseDelay             time.Duration
+	clickhouseWorkers           uint
+	clickhouseWorkerChannelSize uint
+	general                     generalConfig
 }
 
 type elasticConfig struct {

@@ -61,22 +61,37 @@ func min(a, b int) int {
 }
 
 func clickhouseOutput(chConfig clickHouseConfig) {
+	printStatsTicker := time.Tick(chConfig.general.printStatsDelay)
+	var workerChannelList []chan types.DNSResult
 	for i := 0; i < int(chConfig.clickhouseWorkers); i++ {
-		go clickhouseOutputWorker(chConfig)
+		workerChannelList = append(workerChannelList, make(chan types.DNSResult, chConfig.clickhouseWorkerChannelSize))
+		go clickhouseOutputWorker(chConfig, workerChannelList[i]) //todo: fan out
 		types.GlobalWaitingGroup.Add(1)
+	}
+	var cnt uint
+	for {
+		cnt++
+		select {
+		case data := <-chConfig.resultChannel:
+			//fantout is a round-robin logic
+			workerChannelList[cnt%chConfig.clickhouseWorkers] <- data
+		case <-types.GlobalExitChannel:
+			return
+		case <-printStatsTicker:
+			log.Infof("output: %+v", chstats)
+		}
 	}
 }
 
-func clickhouseOutputWorker(chConfig clickHouseConfig) {
+func clickhouseOutputWorker(chConfig clickHouseConfig, workerchannel chan types.DNSResult) {
 
 	connect := connectClickhouseRetry(chConfig)
 	batch := make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)
 
 	ticker := time.Tick(chConfig.clickhouseDelay)
-	printStatsTicker := time.Tick(chConfig.general.printStatsDelay)
 	for {
 		select {
-		case data := <-chConfig.resultChannel:
+		case data := <-workerchannel:
 			if chConfig.general.packetLimit == 0 || len(batch) < chConfig.general.packetLimit {
 				batch = append(batch, data)
 			}
@@ -89,8 +104,7 @@ func clickhouseOutputWorker(chConfig clickHouseConfig) {
 			}
 		case <-types.GlobalExitChannel:
 			return
-		case <-printStatsTicker:
-			log.Infof("output: %+v", chstats)
+
 		}
 	}
 }

@@ -14,8 +14,6 @@ import (
 )
 
 type generalConfig struct {
-	exiting             chan bool
-	wg                  *sync.WaitGroup
 	maskSize4           int
 	maskSize6           int
 	packetLimit         int
@@ -99,7 +97,6 @@ type packetEncoder struct {
 	tcpReturnChannel  <-chan tcpData
 	resultChannel     chan<- types.DNSResult
 	handlerCount      uint
-	done              chan bool
 	NoEthernetframe   bool
 }
 
@@ -119,8 +116,6 @@ type CaptureOptions struct {
 	TCPResultChannelSize         uint
 	IPDefraggerChannelSize       uint
 	IPDefraggerReturnChannelSize uint
-	Wg                           *sync.WaitGroup
-	Done                         chan bool
 	NoEthernetframe              bool
 }
 

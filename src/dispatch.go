@@ -1,16 +1,13 @@
 package main
 
 import (
-	"sync"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
-func dispatchOutput(resultChannel chan types.DNSResult, exiting chan bool, wg *sync.WaitGroup) {
-	wg.Add(1)
-	defer wg.Done()
+func dispatchOutput(resultChannel chan types.DNSResult) {
 
 	// Set up various tickers for different tasks
 	skipDomainsFileTicker := time.NewTicker(generalOptions.SkipDomainsRefreshInterval)
@@ -52,7 +49,7 @@ func dispatchOutput(resultChannel chan types.DNSResult, exiting chan bool, wg *s
 			if outputOptions.SplunkOutputType > 0 {
 				splunkResultChannel <- data
 			}
-		case <-exiting:
+		case <-types.GlobalExitChannel:
 			return
 		case <-skipDomainsFileTickerChan:
 			log.Infof("reached skipDomains tick")

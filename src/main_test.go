@@ -63,7 +63,6 @@ func benchmarkUdpPacketProcessingWorker(workers uint, b *testing.B) {
 		testReturnChannel,
 		testResultChannel,
 		workers,
-		testDoneChannel,
 		false,
 	}
 	go e.run()

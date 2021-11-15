@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,7 +30,7 @@ func stdoutOutputWorker(stdConfig stdoutConfig) {
 				fullQuery, _ := json.Marshal(data)
 				fmt.Printf("%s\n", fullQuery)
 			}
-		case <-stdConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", stdoutstats)
@@ -39,15 +40,13 @@ func stdoutOutputWorker(stdConfig stdoutConfig) {
 
 func stdoutOutput(stdConfig stdoutConfig) {
 	for i := 0; i < 1; i++ {
-		stdConfig.general.wg.Add(1)
-		defer stdConfig.general.wg.Done()
 		go stdoutOutputWorker(stdConfig)
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 	}
 }
 
 func fileOutput(fConfig fileConfig) {
-	fConfig.general.wg.Add(1)
-	defer fConfig.general.wg.Done()
 	var fileObject *os.File
 	if fConfig.fileOutputType > 0 {
 		var err error
@@ -73,7 +72,7 @@ func fileOutput(fConfig fileConfig) {
 				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", fullQuery))
 				errorHandler(err)
 			}
-		case <-fConfig.general.exiting:
+		case <-types.GlobalExitChannel:
 			return
 		case <-printStatsTicker:
 			log.Infof("output: %+v", fileoutstats)

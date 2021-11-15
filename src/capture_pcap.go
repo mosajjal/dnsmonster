@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 
 	"os"
@@ -67,11 +68,11 @@ func newDNSCapturer(options CaptureOptions) DNSCapturer {
 
 	for i := uint(0); i < options.TCPHandlerCount; i++ {
 		tcpChannels = append(tcpChannels, make(chan tcpPacket, options.TCPAssemblyChannelSize))
-		go tcpAssembler(tcpChannels[i], tcpReturnChannel, options.GcTime, options.Done)
+		go tcpAssembler(tcpChannels[i], tcpReturnChannel, options.GcTime)
 	}
 
-	go ipv4Defragger(ip4DefraggerChannel, ip4DefraggerReturn, options.GcTime, options.Done)
-	go ipv6Defragger(ip6DefraggerChannel, ip6DefraggerReturn, options.GcTime, options.Done)
+	go ipv4Defragger(ip4DefraggerChannel, ip4DefraggerReturn, options.GcTime)
+	go ipv6Defragger(ip6DefraggerChannel, ip6DefraggerReturn, options.GcTime)
 	encoder := packetEncoder{
 		options.Port,
 		processingChannel,
@@ -83,11 +84,11 @@ func newDNSCapturer(options CaptureOptions) DNSCapturer {
 		tcpReturnChannel,
 		options.ResultChannel,
 		options.PacketHandlerCount,
-		options.Done,
 		options.NoEthernetframe,
 	}
 	go encoder.run()
-	options.Wg.Add(1)
+	types.GlobalWaitingGroup.Add(1)
+	defer types.GlobalWaitingGroup.Done()
 	// todo: use the global wg for this
 
 	return DNSCapturer{options, processingChannel}
@@ -118,7 +119,7 @@ func (capturer *DNSCapturer) start() {
 	packetSource.NoCopy = true
 
 	// Setup SIGINT handling
-	handleInterrupt(options.Done)
+	handleInterrupt(types.GlobalExitChannel)
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.Tick(generalOptions.CaptureStatsDelay)
@@ -133,7 +134,7 @@ func (capturer *DNSCapturer) start() {
 			if packet == nil {
 				log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 10 seconds waiting for processing to finish")
 				time.Sleep(time.Second * 10)
-				close(options.Done)
+				close(types.GlobalExitChannel)
 				return
 			}
 			if ratioCnt%ratioB < ratioA {
@@ -143,11 +144,11 @@ func (capturer *DNSCapturer) start() {
 				select {
 				case capturer.processing <- packet:
 					totalCnt++
-				case <-options.Done:
+				case <-types.GlobalExitChannel:
 					return
 				}
 			}
-		case <-options.Done:
+		case <-types.GlobalExitChannel:
 			return
 		case <-captureStatsTicker:
 			if handle != nil {

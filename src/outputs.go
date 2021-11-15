@@ -1,15 +1,12 @@
 package main
 
 import (
-	"sync"
-
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
-func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
+func setupOutputs() {
 	generalConfig := generalConfig{
-		exiting,
-		&wg,
 		generalOptions.MaskSize4,
 		generalOptions.MaskSize6,
 		generalOptions.PacketLimit,
@@ -18,7 +15,9 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 		generalOptions.SkipTLSVerification,
 	}
 	log.Info("Creating the dispatch Channel")
-	go dispatchOutput(resultChannel, exiting, &wg)
+	go dispatchOutput(resultChannel)
+	types.GlobalWaitingGroup.Add(1)
+	defer types.GlobalWaitingGroup.Done()
 
 	if outputOptions.FileOutputType > 0 {
 		log.Info("Creating File Output Channel")
@@ -29,6 +28,8 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 			generalConfig,
 		}
 		go fileOutput(fConfig)
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 		// go fileOutput(fileResultChannel, exiting, &wg)
 	}
 	if outputOptions.StdoutOutputType > 0 {
@@ -39,6 +40,8 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 			generalConfig,
 		}
 		go stdoutOutput(stdConfig)
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 		// go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
 	if outputOptions.SyslogOutputType > 0 {
@@ -50,6 +53,8 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 			generalConfig,
 		}
 		go syslogOutput(sysConfig)
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 	}
 	if outputOptions.ClickhouseOutputType > 0 {
 		log.Info("Creating Clickhouse Output Channel")
@@ -64,6 +69,8 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 			generalConfig,
 		}
 		go clickhouseOutput(chConfig)
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 	}
 	if outputOptions.KafkaOutputType > 0 {
 		log.Info("Creating Kafka Output Channel")
@@ -77,6 +84,8 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 			generalConfig,
 		}
 		go kafkaOutput(kafConfig)
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 	}
 	if outputOptions.ElasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")
@@ -90,6 +99,8 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 			generalConfig,
 		}
 		go elasticOutput(esConfig)
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 	}
 	if outputOptions.SplunkOutputType > 0 {
 		log.Info("Creating Splunk Output Channel")
@@ -106,5 +117,7 @@ func setupOutputs(wg sync.WaitGroup, exiting chan bool) {
 			generalConfig,
 		}
 		go splunkOutput(spConfig)
+		types.GlobalWaitingGroup.Add(1)
+		defer types.GlobalWaitingGroup.Done()
 	}
 }

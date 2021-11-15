@@ -9,6 +9,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,7 +64,7 @@ func (stream *dnsStreamFactory) New(net, transport gopacket.Flow) tcpassembly.St
 	return &dstream.reader
 }
 
-func tcpAssembler(tcpchannel chan tcpPacket, tcpReturnChannel chan tcpData, gcTime time.Duration, done chan bool) {
+func tcpAssembler(tcpchannel chan tcpPacket, tcpReturnChannel chan tcpData, gcTime time.Duration) {
 	//TCP reassembly init
 	streamFactoryV4 := &dnsStreamFactory{
 		tcpReturnChannel: tcpReturnChannel,
@@ -100,7 +101,7 @@ func tcpAssembler(tcpchannel chan tcpPacket, tcpReturnChannel chan tcpData, gcTi
 				assemblerV4.FlushOlderThan(time.Now().Add(gcTime * -1))
 				assemblerV6.FlushOlderThan(time.Now().Add(gcTime * -1))
 			}
-		case <-done:
+		case <-types.GlobalExitChannel:
 			return
 		}
 	}

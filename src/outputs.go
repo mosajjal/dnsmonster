@@ -66,6 +66,7 @@ func setupOutputs() {
 			outputOptions.ClickhouseSaveFullQuery,
 			outputOptions.ClickhouseDebug,
 			outputOptions.ClickhouseDelay,
+			outputOptions.ClickhouseWorkers,
 			generalConfig,
 		}
 		go clickhouseOutput(chConfig)

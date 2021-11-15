@@ -30,6 +30,7 @@ type clickHouseConfig struct {
 	clickhouseSaveFullQuery bool
 	clickhouseDebug         bool
 	clickhouseDelay         time.Duration
+	clickhouseWorkers       uint
 	general                 generalConfig
 }
 

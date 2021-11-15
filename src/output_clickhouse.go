@@ -61,6 +61,13 @@ func min(a, b int) int {
 }
 
 func clickhouseOutput(chConfig clickHouseConfig) {
+	for i := 0; i < int(chConfig.clickhouseWorkers); i++ {
+		go clickhouseOutputWorker(chConfig)
+		types.GlobalWaitingGroup.Add(1)
+	}
+}
+
+func clickhouseOutputWorker(chConfig clickHouseConfig) {
 
 	connect := connectClickhouseRetry(chConfig)
 	batch := make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)

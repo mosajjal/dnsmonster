@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -162,7 +161,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 
 					var fullQuery []byte
 					if chConfig.clickhouseSaveFullQuery {
-						fullQuery, _ = json.Marshal(batch[k].DNS) //todo: check this
+						fullQuery = []byte(batch[k].String()) //todo: check this
 					}
 					var SrcIP, DstIP uint64
 

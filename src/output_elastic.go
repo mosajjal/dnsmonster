@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -112,13 +111,11 @@ func elasticSendData(client *elastic.Client, batch []types.DNSResult, esConfig e
 			elasticstats.SentToOutput++
 
 			// batch[i].UUID = elasticUuidGen.Hex128()
-			fullQuery, err := json.Marshal(batch[i])
-			errorHandler(err)
 
-			_, err = client.Index().
+			_, err := client.Index().
 				Index(esConfig.elasticOutputIndex).
 				Type("_doc").
-				BodyString(string(fullQuery)).
+				BodyString(string(batch[i].String())).
 				Do(ctx)
 
 			errorHandler(err)

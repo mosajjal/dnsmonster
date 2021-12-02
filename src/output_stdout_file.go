@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -27,8 +26,7 @@ func stdoutOutputWorker(stdConfig stdoutConfig) {
 				}
 				stdoutstats.SentToOutput++
 
-				fullQuery, _ := json.Marshal(data)
-				fmt.Printf("%s\n", fullQuery)
+				fmt.Printf("%s\n", data.String())
 			}
 		case <-types.GlobalExitChannel:
 			return
@@ -39,7 +37,7 @@ func stdoutOutputWorker(stdConfig stdoutConfig) {
 }
 
 func stdoutOutput(stdConfig stdoutConfig) {
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 8; i++ {
 		go stdoutOutputWorker(stdConfig)
 		types.GlobalWaitingGroup.Add(1)
 		defer types.GlobalWaitingGroup.Done()
@@ -68,8 +66,7 @@ func fileOutput(fConfig fileConfig) {
 				}
 				fileoutstats.SentToOutput++
 
-				fullQuery, _ := json.Marshal(data)
-				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", fullQuery))
+				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
 				errorHandler(err)
 			}
 		case <-types.GlobalExitChannel:

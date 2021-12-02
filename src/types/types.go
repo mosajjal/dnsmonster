@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bytedance/sonic"
 	mkdns "github.com/miekg/dns"
 )
 
@@ -18,6 +19,11 @@ type DNSResult struct {
 	DstIP        net.IP
 	Protocol     string
 	PacketLength uint16
+}
+
+func (d *DNSResult) String() string {
+	res, _ := sonic.Marshal(d)
+	return string(res)
 }
 
 // Setup output routine

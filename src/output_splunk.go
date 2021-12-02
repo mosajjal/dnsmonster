@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -145,11 +144,9 @@ func splunkSendData(client *splunk.Client, batch []types.DNSResult, spConfig spl
 				continue
 			}
 			splunkStats.SentToOutput++
-			fullQuery, err := json.Marshal(batch[i])
-			errorHandler(err)
 			events = append(
 				events,
-				client.NewEventWithTime(batch[i].Timestamp, string(fullQuery), spConfig.splunkOutputSource, spConfig.splunkOutputSourceType, spConfig.splunkOutputIndex),
+				client.NewEventWithTime(batch[i].Timestamp, batch[i].String(), spConfig.splunkOutputSource, spConfig.splunkOutputSourceType, spConfig.splunkOutputIndex),
 			)
 		}
 	}

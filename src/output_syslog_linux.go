@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/url"
 	"time"
 
@@ -66,10 +65,7 @@ func syslogOutput(sysConfig syslogConfig) {
 				}
 				syslogstats.SentToOutput++
 
-				fullQuery, _ := json.Marshal(data)
-				fullQueryString := string(fullQuery)
-
-				err := writer.Alert(fullQueryString)
+				err := writer.Alert(data.String())
 				// don't exit on connection failure, try to connect again if need be
 				if err != nil {
 					log.Info(err)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -90,12 +89,10 @@ func kafkaSendData(connect *kafka.Conn, batch []types.DNSResult, kafConfig kafka
 			kafkastats.SentToOutput++
 
 			myUUID := kafkaUuidGen.Hex128()
-			fullQuery, err := json.Marshal(batch[i])
-			errorHandler(err)
 
 			msg = append(msg, kafka.Message{
 				Key:   []byte(myUUID),
-				Value: []byte(fmt.Sprintf("%s\n", fullQuery)),
+				Value: []byte(fmt.Sprintf("%s\n", batch[i].String())),
 			})
 
 		}

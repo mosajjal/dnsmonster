@@ -6,6 +6,7 @@ require github.com/google/gopacket v1.1.19
 
 require (
 	github.com/ClickHouse/clickhouse-go v1.5.1
+	github.com/bytedance/sonic v1.0.0-rc.3
 	github.com/dnstap/golang-dnstap v0.3.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/golang/protobuf v1.5.2
@@ -19,7 +20,6 @@ require (
 	github.com/rogpeppe/fastuuid v1.2.0
 	github.com/segmentio/kafka-go v0.4.8
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect

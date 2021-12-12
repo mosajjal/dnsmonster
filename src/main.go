@@ -105,24 +105,6 @@ func main() {
 			captureOptions.NoEthernetframe,
 		})
 
-		// if *dnstapSocket == "" {
-		// 	capturer := newDNSCapturer(CaptureOptions{
-		// 		*devName,
-		// 		*useAfpacket,
-		// 		*pcapFile,
-		// 		*filter,
-		// 		uint16(*port),
-		// 		*gcTime,
-		// 		resultChannel,
-		// 		*packetHandlerCount,
-		// 		*packetChannelSize,
-		// 		*tcpHandlerCount,
-		// 		*tcpAssemblyChannelSize,
-		// 		*tcpResultChannelSize,
-		// 		*defraggerChannelSize,
-		// 		*defraggerChannelReturnSize,
-		// 		exiting,
-		// 	})
 		capturer.start()
 		// Wait for the output to finish
 		log.Info("Exiting")

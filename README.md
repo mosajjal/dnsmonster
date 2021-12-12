@@ -374,7 +374,7 @@ output:
                                          Kafka if Batch size is not filled
                                          (default: 1s)
                                          [$DNSMONSTER_KAFKABATCHDELAY]
-      --elasticOutputType=[0|0|0|0|0]    What should be written to elastic.
+      --elasticOutputType=[0|1|2|3|4]    What should be written to elastic.
                                          options:
                                          ;	0: Disable Output
                                          ;	1: Enable Output without any filters
@@ -398,7 +398,7 @@ output:
                                          Elastic if Batch size is not filled
                                          (default: 1s)
                                          [$DNSMONSTER_ELASTICBATCHDELAY]
-      --splunkOutputType=[0|0|0|0|0]     What should be written to HEC. options:
+      --splunkOutputType=[0|1|2|3|4]     What should be written to HEC. options:
                                          ;	0: Disable Output
                                          ;	1: Enable Output without any filters
                                          ;	2: Enable Output and apply

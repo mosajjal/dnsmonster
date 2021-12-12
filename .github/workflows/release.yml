@@ -17,7 +17,6 @@ jobs:
         docker build -t myrepo:latest -f Dockerfile-release .
         id=$(docker create myrepo:latest)
         docker cp $id:/tmp/dnsmonster-linux-amd64.bin /tmp/dnsmonster-linux-amd64.bin
-        docker cp $id:/tmp/dnsmonster-windows-amd64.exe /tmp/dnsmonster-windows-amd64.exe
         docker cp $id:/tmp/dnsmonster-latest.rpm /tmp/dnsmonster-latest.rpm
         docker cp $id:/tmp/dnsmonster-latest.deb /tmp/dnsmonster-latest.deb
         strip --strip-all /tmp/dnsmonster-linux-amd64.bin
@@ -29,16 +28,6 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: /tmp/dnsmonster-linux-amd64.bin.tar.gz
         asset_name: dnsmonster-musl-static-stripped-amd64.tar.gz
-        tag: ${{ github.ref }}
-        overwrite: true
-        body: ""
-
-    - name: Upload windows binary to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/dnsmonster-windows-amd64.exe
-        asset_name: dnsmonster-windows-amd64.exe
         tag: ${{ github.ref }}
         overwrite: true
         body: ""

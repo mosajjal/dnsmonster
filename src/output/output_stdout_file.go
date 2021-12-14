@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"fmt"
@@ -6,21 +6,22 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 )
 
-var stdoutstats = outputStats{"Stdout", 0, 0}
-var fileoutstats = outputStats{"File", 0, 0}
+var stdoutstats = types.OutputStats{"Stdout", 0, 0}
+var fileoutstats = types.OutputStats{"File", 0, 0}
 
-func stdoutOutputWorker(stdConfig stdoutConfig) {
-	printStatsTicker := time.Tick(stdConfig.general.printStatsDelay)
+func stdoutOutputWorker(stdConfig types.StdoutConfig) {
+	printStatsTicker := time.Tick(stdConfig.General.PrintStatsDelay)
 
 	for {
 		select {
-		case data := <-stdConfig.resultChannel:
+		case data := <-stdConfig.ResultChannel:
 			for _, dnsQuery := range data.DNS.Question {
 
-				if checkIfWeSkip(stdConfig.stdoutOutputType, dnsQuery.Name) {
+				if util.CheckIfWeSkip(stdConfig.StdoutOutputType, dnsQuery.Name) {
 					stdoutstats.Skipped++
 					continue
 				}
@@ -36,7 +37,7 @@ func stdoutOutputWorker(stdConfig stdoutConfig) {
 	}
 }
 
-func stdoutOutput(stdConfig stdoutConfig) {
+func StdoutOutput(stdConfig types.StdoutConfig) {
 	for i := 0; i < 8; i++ {
 		go stdoutOutputWorker(stdConfig)
 		types.GlobalWaitingGroup.Add(1)
@@ -44,30 +45,30 @@ func stdoutOutput(stdConfig stdoutConfig) {
 	}
 }
 
-func fileOutput(fConfig fileConfig) {
+func FileOutput(fConfig types.FileConfig) {
 	var fileObject *os.File
-	if fConfig.fileOutputType > 0 {
+	if fConfig.FileOutputType > 0 {
 		var err error
-		fileObject, err = os.OpenFile(fConfig.fileOutputPath,
+		fileObject, err = os.OpenFile(fConfig.FileOutputPath,
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		errorHandler(err)
+		util.ErrorHandler(err)
 		defer fileObject.Close()
 	}
-	printStatsTicker := time.Tick(fConfig.general.printStatsDelay)
+	printStatsTicker := time.Tick(fConfig.General.PrintStatsDelay)
 
 	for {
 		select {
-		case data := <-fConfig.resultChannel:
+		case data := <-fConfig.ResultChannel:
 			for _, dnsQuery := range data.DNS.Question {
 
-				if checkIfWeSkip(fConfig.fileOutputType, dnsQuery.Name) {
+				if util.CheckIfWeSkip(fConfig.FileOutputType, dnsQuery.Name) {
 					fileoutstats.Skipped++
 					continue
 				}
 				fileoutstats.SentToOutput++
 
 				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
-				errorHandler(err)
+				util.ErrorHandler(err)
 			}
 		case <-types.GlobalExitChannel:
 			return

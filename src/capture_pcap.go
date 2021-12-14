@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 
 	"os"
@@ -18,26 +19,26 @@ var pcapStats captureStats
 func initializeLivePcap(devName, filter string) *pcap.Handle {
 	// Open device
 	handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
-	errorHandler(err)
+	util.ErrorHandler(err)
 
 	// Set Filter
 	log.Infof("Using Device: %s", devName)
 	log.Infof("Filter: %s", filter)
 	err = handle.SetBPFFilter(filter)
-	errorHandler(err)
+	util.ErrorHandler(err)
 
 	return handle
 }
 
 func initializeOfflinePcap(fileName, filter string) *pcap.Handle {
 	handle, err := pcap.OpenOffline(fileName)
-	errorHandler(err)
+	util.ErrorHandler(err)
 
 	// Set Filter
 	log.Infof("Using File: %s", fileName)
 	log.Infof("Filter: %s", filter)
 	err = handle.SetBPFFilter(filter)
-	errorHandler(err)
+	util.ErrorHandler(err)
 	return handle
 }
 
@@ -122,8 +123,8 @@ func (capturer *DNSCapturer) start() {
 	handleInterrupt(types.GlobalExitChannel)
 
 	// Set up various tickers for different tasks
-	captureStatsTicker := time.Tick(generalOptions.CaptureStatsDelay)
-	printStatsTicker := time.Tick(generalOptions.PrintStatsDelay)
+	captureStatsTicker := time.Tick(util.GeneralFlags.CaptureStatsDelay)
+	printStatsTicker := time.Tick(util.GeneralFlags.PrintStatsDelay)
 
 	var ratioCnt = 0
 	var totalCnt = 0
@@ -137,8 +138,8 @@ func (capturer *DNSCapturer) start() {
 				close(types.GlobalExitChannel)
 				return
 			}
-			if ratioCnt%ratioB < ratioA {
-				if ratioCnt > ratioB*ratioA {
+			if ratioCnt%util.RatioB < util.RatioA {
+				if ratioCnt > util.RatioB*util.RatioA {
 					ratioCnt = 0
 				}
 				select {

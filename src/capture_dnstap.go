@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 
 	dnstap "github.com/dnstap/golang-dnstap"
@@ -22,22 +23,22 @@ var ln net.Listener
 func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSockInput {
 	var err error
 	uri, err := url.ParseRequestURI(socketString)
-	errorHandler(err)
+	util.ErrorHandler(err)
 	if uri.Scheme == "tcp4" || uri.Scheme == "tcp" || uri.Scheme == "tcp6" {
 		ln, err = net.Listen(uri.Scheme, uri.Host)
-		errorHandler(err)
+		util.ErrorHandler(err)
 	} else {
 		ln, err = net.Listen(uri.Scheme, uri.Path)
-		errorHandler(err)
+		util.ErrorHandler(err)
 	}
 	log.Infof("listening on DNStap socket %v", socketString)
 
 	if uri.Scheme == "unix" {
 		//Chmod is defined in 8 bits not 10 bits, needs to be converter then passed on to the program
 		permission, err := strconv.ParseInt(socketChmod, 8, 0)
-		errorHandler(err)
+		util.ErrorHandler(err)
 		err = os.Chmod(uri.Path, os.FileMode(permission))
-		errorHandler(err)
+		util.ErrorHandler(err)
 	}
 	return dnstap.NewFrameStreamSockInput(ln)
 
@@ -49,8 +50,8 @@ func handleDNSTapInterrupt(done chan bool) {
 	go func() {
 		for range c {
 			log.Infof("SIGINT received.. Cleaning up")
-			if strings.Contains(captureOptions.DnstapSocket, "unix://") {
-				os.Remove(strings.Split(captureOptions.DnstapSocket, "://")[1])
+			if strings.Contains(util.CaptureFlags.DnstapSocket, "unix://") {
+				os.Remove(strings.Split(util.CaptureFlags.DnstapSocket, "://")[1])
 			} else {
 				ln.Close()
 			}
@@ -86,7 +87,7 @@ func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
 
 func startDNSTap(resultChannel chan types.DNSResult) {
 	log.Info("Starting DNStap capture")
-	input := parseDnstapSocket(captureOptions.DnstapSocket, captureOptions.DnstapPermission)
+	input := parseDnstapSocket(util.CaptureFlags.DnstapSocket, util.CaptureFlags.DnstapPermission)
 
 	buf := make(chan []byte, 1024)
 
@@ -97,8 +98,8 @@ func startDNSTap(resultChannel chan types.DNSResult) {
 	handleDNSTapInterrupt(done)
 
 	// Set up various tickers for different tasks
-	captureStatsTicker := time.Tick(generalOptions.CaptureStatsDelay)
-	printStatsTicker := time.Tick(generalOptions.PrintStatsDelay)
+	captureStatsTicker := time.Tick(util.GeneralFlags.CaptureStatsDelay)
+	printStatsTicker := time.Tick(util.GeneralFlags.PrintStatsDelay)
 
 	for {
 
@@ -114,8 +115,8 @@ func startDNSTap(resultChannel chan types.DNSResult) {
 				close(done)
 				return
 			}
-			if ratioCnt%ratioB < ratioA {
-				if ratioCnt > ratioB*ratioA {
+			if ratioCnt%util.RatioB < util.RatioA {
+				if ratioCnt > util.RatioB*util.RatioA {
 					ratioCnt = 0
 				}
 				select {

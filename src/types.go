@@ -9,84 +9,8 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
 	"github.com/mosajjal/dnsmonster/types"
 )
-
-type generalConfig struct {
-	maskSize4           int
-	maskSize6           int
-	packetLimit         int
-	serverName          string
-	printStatsDelay     time.Duration
-	skipTlsVerification bool
-}
-
-type clickHouseConfig struct {
-	resultChannel               chan types.DNSResult
-	clickhouseAddress           string
-	clickhouseBatchSize         uint
-	clickhouseOutputType        uint
-	clickhouseSaveFullQuery     bool
-	clickhouseDebug             bool
-	clickhouseDelay             time.Duration
-	clickhouseWorkers           uint
-	clickhouseWorkerChannelSize uint
-	general                     generalConfig
-}
-
-type elasticConfig struct {
-	resultChannel         chan types.DNSResult
-	elasticOutputEndpoint string
-	elasticOutputIndex    string
-	elasticOutputType     uint
-	elasticBatchSize      uint
-	elasticBatchDelay     time.Duration
-	general               generalConfig
-}
-
-type kafkaConfig struct {
-	resultChannel     chan types.DNSResult
-	kafkaOutputBroker string
-	kafkaOutputTopic  string
-	kafkaOutputType   uint
-	kafkaBatchSize    uint
-	kafkaBatchDelay   time.Duration
-	general           generalConfig
-}
-
-type splunkConfig struct {
-	resultChannel          chan types.DNSResult
-	splunkOutputEndpoints  []string
-	splunkOutputToken      string
-	splunkOutputType       uint
-	splunkOutputIndex      string
-	splunkOutputSource     string
-	splunkOutputSourceType string
-	splunkBatchSize        uint
-	splunkBatchDelay       time.Duration
-	general                generalConfig
-}
-
-type syslogConfig struct {
-	resultChannel        chan types.DNSResult
-	syslogOutputEndpoint string
-	syslogOutputType     uint
-	general              generalConfig
-}
-
-type fileConfig struct {
-	resultChannel  chan types.DNSResult
-	fileOutputPath string
-	fileOutputType uint
-	general        generalConfig
-}
-
-type stdoutConfig struct {
-	resultChannel    chan types.DNSResult
-	stdoutOutputType uint
-	general          generalConfig
-}
 
 type packetEncoder struct {
 	port              uint16
@@ -171,16 +95,10 @@ type dnsStream struct {
 	timestamp        time.Time
 }
 
-// DNSCapturer oobject is used to make our configuration portable within the entire code
+// DNSCapturer object is used to make our configuration portable within the entire code
 type DNSCapturer struct {
 	options    CaptureOptions
 	processing chan gopacket.Packet
-}
-
-type outputStats struct {
-	Name         string
-	SentToOutput int
-	Skipped      int
 }
 
 // captureStats is capturing statistics about our current live captures. At this point it's not accurate for PCAP files.
@@ -213,12 +131,6 @@ type fragmentList struct {
 type IPv6Defragmenter struct {
 	sync.RWMutex
 	ipFlows map[ipv6]*fragmentList
-}
-
-type splunkConnection struct {
-	client    *splunk.Client
-	unhealthy uint
-	err       error
 }
 
 // Register a new Layer to detect IPv4 and IPv6 packets without an ethernet frame.

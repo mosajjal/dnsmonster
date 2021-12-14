@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"context"
@@ -6,19 +6,20 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/olivere/elastic"
 )
 
 // var elasticUuidGen = fastuuid.MustNewGenerator()
-var elasticstats = outputStats{"elastic", 0, 0}
+var elasticstats = types.OutputStats{"elastic", 0, 0}
 var ctx = context.Background()
 
-func connectelasticRetry(esConfig elasticConfig) *elastic.Client {
+func connectelasticRetry(esConfig types.ElasticConfig) *elastic.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if esConfig.elasticOutputType == 0 {
+	if esConfig.ElasticOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
@@ -39,41 +40,41 @@ func connectelasticRetry(esConfig elasticConfig) *elastic.Client {
 	}
 }
 
-func connectelastic(esConfig elasticConfig) (*elastic.Client, error) {
+func connectelastic(esConfig types.ElasticConfig) (*elastic.Client, error) {
 	client, err := elastic.NewClient(
-		elastic.SetURL(esConfig.elasticOutputEndpoint),
+		elastic.SetURL(esConfig.ElasticOutputEndpoint),
 		elastic.SetSniff(false),
 		elastic.SetHealthcheckInterval(10*time.Second),
 		// elastic.SetRetrier(connectelasticRetry(exiting, elasticEndpoint)),
 		elastic.SetGzip(true),
 		elastic.SetErrorLog(log.New()),
 	)
-	errorHandler(err)
+	util.ErrorHandler(err)
 
 	//TODO: are we retrying without exiting out of dnsmonster?
 	// Ping the Elasticsearch server to get e.g. the version number
-	info, code, err := client.Ping(esConfig.elasticOutputEndpoint).Do(ctx)
-	errorHandler(err)
+	info, code, err := client.Ping(esConfig.ElasticOutputEndpoint).Do(ctx)
+	util.ErrorHandler(err)
 	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
 	return client, err
 }
 
-func elasticOutput(esConfig elasticConfig) {
+func ElasticOutput(esConfig types.ElasticConfig) {
 	client := connectelasticRetry(esConfig)
-	batch := make([]types.DNSResult, 0, esConfig.elasticBatchSize)
+	batch := make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 
-	ticker := time.Tick(esConfig.elasticBatchDelay)
-	printStatsTicker := time.Tick(esConfig.general.printStatsDelay)
+	ticker := time.Tick(esConfig.ElasticBatchDelay)
+	printStatsTicker := time.Tick(esConfig.General.PrintStatsDelay)
 
 	// Use the IndexExists service to check if a specified index exists.
-	exists, err := client.IndexExists(esConfig.elasticOutputIndex).Do(ctx)
-	errorHandler(err)
+	exists, err := client.IndexExists(esConfig.ElasticOutputIndex).Do(ctx)
+	util.ErrorHandler(err)
 
 	if !exists {
 		// Create a new index.
-		createIndex, err := client.CreateIndex(esConfig.elasticOutputIndex).Do(ctx)
-		errorHandler(err)
+		createIndex, err := client.CreateIndex(esConfig.ElasticOutputIndex).Do(ctx)
+		util.ErrorHandler(err)
 
 		if !createIndex.Acknowledged {
 			log.Panicln("Could not create the Elastic index.. Exiting")
@@ -82,8 +83,8 @@ func elasticOutput(esConfig elasticConfig) {
 
 	for {
 		select {
-		case data := <-esConfig.resultChannel:
-			if esConfig.general.packetLimit == 0 || len(batch) < esConfig.general.packetLimit {
+		case data := <-esConfig.ResultChannel:
+			if esConfig.General.PacketLimit == 0 || len(batch) < esConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker:
@@ -91,7 +92,7 @@ func elasticOutput(esConfig elasticConfig) {
 				log.Info(err)
 				client = connectelasticRetry(esConfig)
 			} else {
-				batch = make([]types.DNSResult, 0, esConfig.elasticBatchSize)
+				batch = make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 			}
 		case <-types.GlobalExitChannel:
 			return
@@ -101,10 +102,10 @@ func elasticOutput(esConfig elasticConfig) {
 	}
 }
 
-func elasticSendData(client *elastic.Client, batch []types.DNSResult, esConfig elasticConfig) error {
+func elasticSendData(client *elastic.Client, batch []types.DNSResult, esConfig types.ElasticConfig) error {
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
-			if checkIfWeSkip(esConfig.elasticOutputType, dnsQuery.Name) {
+			if util.CheckIfWeSkip(esConfig.ElasticOutputType, dnsQuery.Name) {
 				elasticstats.Skipped++
 				continue
 			}
@@ -113,15 +114,15 @@ func elasticSendData(client *elastic.Client, batch []types.DNSResult, esConfig e
 			// batch[i].UUID = elasticUuidGen.Hex128()
 
 			_, err := client.Index().
-				Index(esConfig.elasticOutputIndex).
+				Index(esConfig.ElasticOutputIndex).
 				Type("_doc").
 				BodyString(string(batch[i].String())).
 				Do(ctx)
 
-			errorHandler(err)
+			util.ErrorHandler(err)
 		}
 	}
-	_, err := client.Flush().Index(esConfig.elasticOutputIndex).Do(ctx)
+	_, err := client.Flush().Index(esConfig.ElasticOutputIndex).Do(ctx)
 	return err
 
 }

@@ -4,66 +4,67 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 )
 
 func dispatchOutput(resultChannel chan types.DNSResult) {
 
 	// Set up various tickers for different tasks
-	skipDomainsFileTicker := time.NewTicker(generalOptions.SkipDomainsRefreshInterval)
+	skipDomainsFileTicker := time.NewTicker(util.GeneralFlags.SkipDomainsRefreshInterval)
 	skipDomainsFileTickerChan := skipDomainsFileTicker.C
-	if generalOptions.SkipDomainsFile == "" {
+	if util.GeneralFlags.SkipDomainsFile == "" {
 		skipDomainsFileTicker.Stop()
 	}
 
-	allowDomainsFileTicker := time.NewTicker(generalOptions.AllowDomainsRefreshInterval)
+	allowDomainsFileTicker := time.NewTicker(util.GeneralFlags.AllowDomainsRefreshInterval)
 	allowDomainsFileTickerChan := allowDomainsFileTicker.C
-	if generalOptions.AllowDomainsFile == "" {
+	if util.GeneralFlags.AllowDomainsFile == "" {
 		log.Infof("skipping allowDomains refresh since it's empty")
 		allowDomainsFileTicker.Stop()
 	} else {
-		log.Infof("allowDomains refresh interval is %s", generalOptions.AllowDomainsRefreshInterval)
+		log.Infof("allowDomains refresh interval is %s", util.GeneralFlags.AllowDomainsRefreshInterval)
 	}
 
 	for {
 		select {
 		case data := <-resultChannel:
-			if outputOptions.StdoutOutputType > 0 {
+			if util.OutputFlags.StdoutOutputType > 0 {
 				stdoutResultChannel <- data
 			}
-			if outputOptions.FileOutputType > 0 {
+			if util.OutputFlags.FileOutputType > 0 {
 				fileResultChannel <- data
 			}
-			if outputOptions.SyslogOutputType > 0 {
+			if util.OutputFlags.SyslogOutputType > 0 {
 				syslogResultChannel <- data
 			}
-			if outputOptions.ClickhouseOutputType > 0 {
+			if util.OutputFlags.ClickhouseOutputType > 0 {
 				clickhouseResultChannel <- data
 			}
-			if outputOptions.KafkaOutputType > 0 {
+			if util.OutputFlags.KafkaOutputType > 0 {
 				kafkaResultChannel <- data
 			}
-			if outputOptions.ElasticOutputType > 0 {
+			if util.OutputFlags.ElasticOutputType > 0 {
 				elasticResultChannel <- data
 			}
-			if outputOptions.SplunkOutputType > 0 {
+			if util.OutputFlags.SplunkOutputType > 0 {
 				splunkResultChannel <- data
 			}
 		case <-types.GlobalExitChannel:
 			return
 		case <-skipDomainsFileTickerChan:
 			log.Infof("reached skipDomains tick")
-			if skipDomainMapBool {
-				skipDomainMap = loadDomainsToMap(generalOptions.SkipDomainsFile)
+			if util.SkipDomainMapBool {
+				util.SkipDomainMap = util.LoadDomainsToMap(util.GeneralFlags.SkipDomainsFile)
 			} else {
-				skipDomainList = loadDomainsToList(generalOptions.SkipDomainsFile)
+				util.SkipDomainList = util.LoadDomainsToList(util.GeneralFlags.SkipDomainsFile)
 			}
 		case <-allowDomainsFileTickerChan:
 			log.Infof("reached allowDomains tick")
-			if allowDomainMapBool {
-				allowDomainMap = loadDomainsToMap(generalOptions.AllowDomainsFile)
+			if util.AllowDomainMapBool {
+				util.AllowDomainMap = util.LoadDomainsToMap(util.GeneralFlags.AllowDomainsFile)
 			} else {
-				allowDomainList = loadDomainsToList(generalOptions.AllowDomainsFile)
+				util.AllowDomainList = util.LoadDomainsToList(util.GeneralFlags.AllowDomainsFile)
 			}
 		}
 	}

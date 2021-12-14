@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/google/gopacket"
@@ -28,7 +29,7 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 }
 func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 	pcapBPF, err := pcap.CompileBPFFilter(layers.LinkTypeEthernet, snaplen, filter)
-	errorHandler(err)
+	util.ErrorHandler(err)
 	bpfIns := []bpf.RawInstruction{}
 	for _, ins := range pcapBPF {
 		bpfIns2 := bpf.RawInstruction{
@@ -42,7 +43,7 @@ func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 	log.Infof("Filter: %s", filter)
 	err = h.TPacket.SetBPF(bpfIns)
 	if err != nil {
-		errorHandler(err)
+		util.ErrorHandler(err)
 	}
 	return err
 }
@@ -78,10 +79,10 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	handle := &afpacketHandle{}
 
 	frameSize, blockSize, numBlocks, err := afpacketComputeSize(
-		captureOptions.AfpacketBuffersizeMb,
+		util.CaptureFlags.AfpacketBuffersizeMb,
 		65536,
 		uint(os.Getpagesize()))
-	errorHandler(err)
+	util.ErrorHandler(err)
 	handle.TPacket, err = afpacket.NewTPacket(
 		afpacket.OptInterface(devName),
 		afpacket.OptFrameSize(frameSize),
@@ -90,7 +91,7 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 		afpacket.OptPollTimeout(pcap.BlockForever),
 		afpacket.SocketRaw,
 		afpacket.TPacketVersion3)
-	errorHandler(err)
+	util.ErrorHandler(err)
 
 	handle.SetBPFFilter(filter, 1024)
 	log.Infof("Opened: %s", devName)

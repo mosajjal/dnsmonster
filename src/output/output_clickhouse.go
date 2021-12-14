@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"encoding/binary"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	"github.com/rogpeppe/fastuuid"
 	log "github.com/sirupsen/logrus"
 
@@ -15,13 +16,13 @@ import (
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
 )
 
-var chstats = outputStats{"Clickhouse", 0, 0}
+var chstats = types.OutputStats{"Clickhouse", 0, 0}
 var uuidGen = fastuuid.MustNewGenerator()
 
-func connectClickhouseRetry(chConfig clickHouseConfig) clickhouse.Clickhouse {
+func connectClickhouseRetry(chConfig types.ClickHouseConfig) clickhouse.Clickhouse {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if chConfig.clickhouseOutputType == 0 {
+	if chConfig.ClickhouseOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
@@ -42,8 +43,8 @@ func connectClickhouseRetry(chConfig clickHouseConfig) clickhouse.Clickhouse {
 	}
 }
 
-func connectClickhouse(chConfig clickHouseConfig) (clickhouse.Clickhouse, error) {
-	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v", chConfig.clickhouseAddress, chConfig.clickhouseDebug))
+func connectClickhouse(chConfig types.ClickHouseConfig) (clickhouse.Clickhouse, error) {
+	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug))
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -59,11 +60,11 @@ func min(a, b int) int {
 	return b
 }
 
-func clickhouseOutput(chConfig clickHouseConfig) {
-	printStatsTicker := time.Tick(chConfig.general.printStatsDelay)
+func ClickhouseOutput(chConfig types.ClickHouseConfig) {
+	printStatsTicker := time.Tick(chConfig.General.PrintStatsDelay)
 	var workerChannelList []chan types.DNSResult
-	for i := 0; i < int(chConfig.clickhouseWorkers); i++ {
-		workerChannelList = append(workerChannelList, make(chan types.DNSResult, chConfig.clickhouseWorkerChannelSize))
+	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
+		workerChannelList = append(workerChannelList, make(chan types.DNSResult, chConfig.ClickhouseWorkerChannelSize))
 		go clickhouseOutputWorker(chConfig, workerChannelList[i]) //todo: fan out
 		types.GlobalWaitingGroup.Add(1)
 	}
@@ -71,9 +72,9 @@ func clickhouseOutput(chConfig clickHouseConfig) {
 	for {
 		cnt++
 		select {
-		case data := <-chConfig.resultChannel:
+		case data := <-chConfig.ResultChannel:
 			//fantout is a round-robin logic
-			workerChannelList[cnt%chConfig.clickhouseWorkers] <- data
+			workerChannelList[cnt%chConfig.ClickhouseWorkers] <- data
 		case <-types.GlobalExitChannel:
 			return
 		case <-printStatsTicker:
@@ -82,16 +83,16 @@ func clickhouseOutput(chConfig clickHouseConfig) {
 	}
 }
 
-func clickhouseOutputWorker(chConfig clickHouseConfig, workerchannel chan types.DNSResult) {
+func clickhouseOutputWorker(chConfig types.ClickHouseConfig, workerchannel chan types.DNSResult) {
 
 	connect := connectClickhouseRetry(chConfig)
-	batch := make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)
+	batch := make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
 
-	ticker := time.Tick(chConfig.clickhouseDelay)
+	ticker := time.Tick(chConfig.ClickhouseDelay)
 	for {
 		select {
 		case data := <-workerchannel:
-			if chConfig.general.packetLimit == 0 || len(batch) < chConfig.general.packetLimit {
+			if chConfig.General.PacketLimit == 0 || len(batch) < chConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker:
@@ -99,7 +100,7 @@ func clickhouseOutputWorker(chConfig clickHouseConfig, workerchannel chan types.
 				log.Warnf("Error sending data to clickhouse: %#v, %v", batch, err) //todo: remove batch from this print
 				connect = connectClickhouseRetry(chConfig)
 			} else {
-				batch = make([]types.DNSResult, 0, chConfig.clickhouseBatchSize)
+				batch = make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
 			}
 		case <-types.GlobalExitChannel:
 			return
@@ -108,7 +109,7 @@ func clickhouseOutputWorker(chConfig clickHouseConfig, workerchannel chan types.
 	}
 }
 
-func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, chConfig clickHouseConfig) error {
+func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, chConfig types.ClickHouseConfig) error {
 	if len(batch) == 0 {
 		return nil
 	}
@@ -153,14 +154,14 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 			for k := start; k < end; k++ {
 				for _, dnsQuery := range batch[k].DNS.Question {
 
-					if checkIfWeSkip(chConfig.clickhouseOutputType, dnsQuery.Name) {
+					if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {
 						chstats.Skipped++
 						continue
 					}
 					chstats.SentToOutput++
 
 					var fullQuery []byte
-					if chConfig.clickhouseSaveFullQuery {
+					if chConfig.ClickhouseSaveFullQuery {
 						fullQuery = []byte(batch[k].String()) //todo: check this
 					}
 					var SrcIP, DstIP uint64
@@ -188,7 +189,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 					//writing the vars into a SQL statement
 					b.WriteDate(0, batch[k].Timestamp)
 					b.WriteDateTime(1, batch[k].Timestamp)
-					b.WriteBytes(2, []byte(chConfig.general.serverName))
+					b.WriteBytes(2, []byte(chConfig.General.ServerName))
 					b.WriteUInt8(3, batch[k].IPVersion)
 					b.WriteUInt64(4, SrcIP)
 					b.WriteUInt64(5, DstIP)

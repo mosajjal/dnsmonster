@@ -9,6 +9,7 @@ import (
 	"github.com/google/gopacket/layers"
 	mkdns "github.com/miekg/dns"
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,10 +22,10 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 				err := msg.Unpack(udp.Payload)
 				// Process if no error or truncated, as it will have most of the information it have available
 				if err == nil {
-					MaskSize := generalOptions.MaskSize4
+					MaskSize := util.GeneralFlags.MaskSize4
 					BitSize := 8 * net.IPv4len
 					if IPVersion == 6 {
-						MaskSize = generalOptions.MaskSize6
+						MaskSize = util.GeneralFlags.MaskSize6
 						BitSize = 8 * net.IPv6len
 					}
 					encoder.resultChannel <- types.DNSResult{timestamp, msg, IPVersion, SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)), DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), "udp", uint16(len(udp.Payload))}
@@ -137,10 +138,10 @@ func (encoder *packetEncoder) run() {
 		case data := <-encoder.tcpReturnChannel:
 			msg := mkdns.Msg{}
 			if err := msg.Unpack(data.data); err == nil {
-				MaskSize := generalOptions.MaskSize4
+				MaskSize := util.GeneralFlags.MaskSize4
 				BitSize := 8 * net.IPv4len
 				if data.IPVersion == 6 {
-					MaskSize = generalOptions.MaskSize6
+					MaskSize = util.GeneralFlags.MaskSize6
 					BitSize = 8 * net.IPv6len
 				}
 				encoder.resultChannel <- types.DNSResult{data.timestamp, msg, data.IPVersion, data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)), data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), "tcp", uint16(len(data.data))}

@@ -1,4 +1,4 @@
-package main
+package util
 
 var BASH_COMPLETION_TEMPLATE = `
 _completion_dnsmonster() {

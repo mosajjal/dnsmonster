@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rogpeppe/fastuuid"
@@ -13,12 +14,12 @@ import (
 )
 
 var kafkaUuidGen = fastuuid.MustNewGenerator()
-var kafkastats = outputStats{"Kafka", 0, 0}
+var kafkastats = types.OutputStats{"Kafka", 0, 0}
 
-func connectKafkaRetry(kafConfig kafkaConfig) *kafka.Conn {
+func connectKafkaRetry(kafConfig types.KafkaConfig) *kafka.Conn {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if kafConfig.kafkaOutputType == 0 {
+	if kafConfig.KafkaOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
@@ -39,8 +40,8 @@ func connectKafkaRetry(kafConfig kafkaConfig) *kafka.Conn {
 	}
 }
 
-func connectKafka(kafConfig kafkaConfig) (*kafka.Conn, error) {
-	conn, err := kafka.DialLeader(context.Background(), "tcp", kafConfig.kafkaOutputBroker, kafConfig.kafkaOutputTopic, 0)
+func connectKafka(kafConfig types.KafkaConfig) (*kafka.Conn, error) {
+	conn, err := kafka.DialLeader(context.Background(), "tcp", kafConfig.KafkaOutputBroker, kafConfig.KafkaOutputTopic, 0)
 	if err != nil {
 		log.Info(err)
 		return nil, err
@@ -49,18 +50,18 @@ func connectKafka(kafConfig kafkaConfig) (*kafka.Conn, error) {
 	return conn, err
 }
 
-func kafkaOutput(kafConfig kafkaConfig) {
+func KafkaOutput(kafConfig types.KafkaConfig) {
 
 	connect := connectKafkaRetry(kafConfig)
-	batch := make([]types.DNSResult, 0, kafConfig.kafkaBatchSize)
+	batch := make([]types.DNSResult, 0, kafConfig.KafkaBatchSize)
 
-	ticker := time.Tick(kafConfig.kafkaBatchDelay)
-	printStatsTicker := time.Tick(kafConfig.general.printStatsDelay)
+	ticker := time.Tick(kafConfig.KafkaBatchDelay)
+	printStatsTicker := time.Tick(kafConfig.General.PrintStatsDelay)
 
 	for {
 		select {
-		case data := <-kafConfig.resultChannel:
-			if kafConfig.general.packetLimit == 0 || len(batch) < kafConfig.general.packetLimit {
+		case data := <-kafConfig.ResultChannel:
+			if kafConfig.General.PacketLimit == 0 || len(batch) < kafConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker:
@@ -68,7 +69,7 @@ func kafkaOutput(kafConfig kafkaConfig) {
 				log.Info(err)
 				connect = connectKafkaRetry(kafConfig)
 			} else {
-				batch = make([]types.DNSResult, 0, kafConfig.kafkaBatchDelay)
+				batch = make([]types.DNSResult, 0, kafConfig.KafkaBatchDelay)
 			}
 		case <-types.GlobalExitChannel:
 			return
@@ -78,11 +79,11 @@ func kafkaOutput(kafConfig kafkaConfig) {
 	}
 }
 
-func kafkaSendData(connect *kafka.Conn, batch []types.DNSResult, kafConfig kafkaConfig) error {
+func kafkaSendData(connect *kafka.Conn, batch []types.DNSResult, kafConfig types.KafkaConfig) error {
 	var msg []kafka.Message
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
-			if checkIfWeSkip(kafConfig.kafkaOutputType, dnsQuery.Name) {
+			if util.CheckIfWeSkip(kafConfig.KafkaOutputType, dnsQuery.Name) {
 				kafkastats.Skipped++
 				continue
 			}

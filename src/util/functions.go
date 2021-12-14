@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"bufio"
@@ -37,41 +37,41 @@ func checkSkipDomainHash(domainName string, inputHashTable map[string]bool) bool
 }
 
 //0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic.
-func checkIfWeSkip(outputType uint, query string) bool {
+func CheckIfWeSkip(outputType uint, query string) bool {
 	switch outputType {
 	case 0:
 		return true //always skip
 	case 1:
 		return false // never skip
 	case 2:
-		if skipDomainMapBool {
-			if checkSkipDomainHash(query, skipDomainMap) {
+		if SkipDomainMapBool {
+			if checkSkipDomainHash(query, SkipDomainMap) {
 				return true
 			}
-		} else if checkSkipDomainList(query, skipDomainList) {
+		} else if checkSkipDomainList(query, SkipDomainList) {
 			return true
 		}
 		return false
 	case 3:
-		if allowDomainMapBool {
-			if checkSkipDomainHash(query, allowDomainMap) {
+		if AllowDomainMapBool {
+			if checkSkipDomainHash(query, AllowDomainMap) {
 				return false
 			}
-		} else if checkSkipDomainList(query, allowDomainList) {
+		} else if checkSkipDomainList(query, AllowDomainList) {
 			return false
 		}
 		return true
 	// 4 means apply two logics, so we apply the two logics and && them together
 	case 4:
-		if !checkIfWeSkip(2, query) {
-			return checkIfWeSkip(3, query)
+		if !CheckIfWeSkip(2, query) {
+			return CheckIfWeSkip(3, query)
 		}
 		return true
 	}
 	return true
 }
 
-func loadDomainsToList(Filename string) [][]string {
+func LoadDomainsToList(Filename string) [][]string {
 	log.Info("Loading the domain from file/url to a list")
 	var lines [][]string
 	var scanner *bufio.Scanner
@@ -93,7 +93,7 @@ func loadDomainsToList(Filename string) [][]string {
 
 	} else {
 		file, err := os.Open(Filename)
-		errorHandler(err)
+		ErrorHandler(err)
 		log.Info("(re)loading File: ", Filename)
 		defer file.Close()
 		scanner = bufio.NewScanner(file)
@@ -107,13 +107,13 @@ func loadDomainsToList(Filename string) [][]string {
 	return lines
 }
 
-func errorHandler(err error) {
+func ErrorHandler(err error) {
 	if err != nil {
 		log.Fatal("fatal Error: ", err)
 	}
 }
 
-func loadDomainsToMap(Filename string) map[string]bool {
+func LoadDomainsToMap(Filename string) map[string]bool {
 	log.Info("Loading the domain from file/url to a hashmap")
 	lines := make(map[string]bool)
 	var scanner *bufio.Scanner
@@ -135,7 +135,7 @@ func loadDomainsToMap(Filename string) map[string]bool {
 
 	} else {
 		file, err := os.Open(Filename)
-		errorHandler(err)
+		ErrorHandler(err)
 		log.Info("(re)loading File: ", Filename)
 		defer file.Close()
 		scanner = bufio.NewScanner(file)

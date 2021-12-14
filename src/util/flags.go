@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"fmt"
@@ -7,11 +7,27 @@ import (
 	"strings"
 	"time"
 
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 )
 
-var captureOptions struct {
+var releaseVersion string = "DEVELOPMENT"
+
+var SkipDomainMapBool = false
+var AllowDomainMapBool = false
+
+// skipDomainList represents the list of skipped domains
+var SkipDomainList [][]string
+var AllowDomainList [][]string
+
+var SkipDomainMap = make(map[string]bool)
+var AllowDomainMap = make(map[string]bool)
+
+// Ratio numbers used for input sampling
+var RatioA int
+var RatioB int
+
+var CaptureFlags struct {
 	DevName              string `long:"devName"              env:"DNSMONSTER_DEVNAME"              default:""                                                                                                  description:"Device used to capture"`
 	PcapFile             string `long:"pcapFile"             env:"DNSMONSTER_PCAPFILE"             default:""                                                                                                  description:"Pcap filename to run"`
 	DnstapSocket         string `long:"dnstapSocket"         env:"DNSMONSTER_DNSTAPSOCKET"         default:""                                                                                                  description:"dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
@@ -26,7 +42,7 @@ var captureOptions struct {
 	NoEthernetframe      bool   `long:"noEtherframe"         env:"DNSMONSTER_NOETHERFRAME"         description:"The PCAP capture does not contain ethernet frames"`
 }
 
-var generalOptions struct {
+var GeneralFlags struct {
 	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
 	GcTime                      time.Duration  `long:"gcTime"                      env:"DNSMONSTER_GCTIME"                      default:"10s"                                                     description:"Garbage Collection interval for tcp assembly and ip defragmentation"`
 	CaptureStatsDelay           time.Duration  `long:"captureStatsDelay"           env:"DNSMONSTER_CAPTURESTATSDELAY"           default:"1s"                                                      description:"Duration to calculate interface stats"`
@@ -55,7 +71,7 @@ var generalOptions struct {
 	Version                     bool           `long:"version"                     env:"DNSMONSTER_VERSION"                     description:"show version and quit."  no-ini:"true" `
 }
 
-var outputOptions struct {
+var OutputFlags struct {
 	ClickhouseAddress           string         `long:"clickhouseAddress"           env:"DNSMONSTER_CLICKHOUSEADDRESS"           default:"localhost:9000"                                          description:"Address of the clickhouse database to save the results"`
 	ClickhouseDelay             time.Duration  `long:"clickhouseDelay"             env:"DNSMONSTER_CLICKHOUSEDELAY"             default:"1s"                                                      description:"Interval between sending results to ClickHouse"`
 	ClickhouseDebug             bool           `long:"clickhouseDebug"             env:"DNSMONSTER_CLICKHOUSEDEBUG"             description:"Debug Clickhouse connection"`
@@ -98,14 +114,14 @@ var helpOptions struct {
 	WriteConfig flags.Filename `long:"writeConfig"     no-ini:"true"      description:"generate a config file based on current inputs (flags, input config file and environment variables) and write to provided path" default:""`
 }
 
-func flagsProcess() {
+func ProcessFlags() {
 
 	var parser = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
 	iniParser := flags.NewIniParser(parser)
-	parser.AddGroup("general", "General Options", &generalOptions)
+	parser.AddGroup("general", "General Options", &GeneralFlags)
 	parser.AddGroup("help", "Help Options", &helpOptions)
-	parser.AddGroup("capture", "Options specific to capture side", &captureOptions)
-	parser.AddGroup("output", "Options specific to output side", &outputOptions)
+	parser.AddGroup("capture", "Options specific to capture side", &CaptureFlags)
+	parser.AddGroup("output", "Options specific to output side", &OutputFlags)
 	parser.Parse()
 
 	// process help options first
@@ -135,22 +151,18 @@ func flagsProcess() {
 	}
 
 	// check for config file option and parse it
-	if generalOptions.Config != "" {
-		err := iniParser.ParseFile(string(generalOptions.Config))
+	if GeneralFlags.Config != "" {
+		err := iniParser.ParseFile(string(GeneralFlags.Config))
 		if err != nil {
-			errorHandler(err)
+			ErrorHandler(err)
 		}
 		//  re-parse the argument from command line to give them priority
 		parser.Parse()
 	}
 
-}
-
-func checkFlags() {
-
 	// default logging to warning
 	var lvl log.Level = log.WarnLevel
-	switch generalOptions.LogLevel {
+	switch GeneralFlags.LogLevel {
 	case 0:
 		lvl = log.PanicLevel
 	case 1:
@@ -164,105 +176,121 @@ func checkFlags() {
 	}
 	log.SetLevel(lvl)
 
-	if generalOptions.Version {
+	if GeneralFlags.Version {
 		log.Fatalln("dnsmonster version:", releaseVersion)
 	}
 
 	//TODO: log format needs to be a configurable parameter
 	// log.SetFormatter(&log.JSONFormatter{})
 
-	if generalOptions.SkipDomainsFile != "" {
+	if GeneralFlags.SkipDomainsFile != "" {
 		log.Info("skipDomainsFile is provided")
 		// check to see if the file provided exists
 		// commented because this now can be either filepath or URL, TODO
 		// if _, err := os.Stat(generalOptions.SkipDomainsFile); err != nil {
 		// 	log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
 		// }
-		if generalOptions.SkipDomainsFileType != "csv" && generalOptions.SkipDomainsFileType != "hashtable" {
+		if GeneralFlags.SkipDomainsFileType != "csv" && GeneralFlags.SkipDomainsFileType != "hashtable" {
 			log.Fatal("skipDomainsFileType must be either csv or hashtable")
 		}
-		if generalOptions.SkipDomainsFileType == "hashtable" {
-			skipDomainMapBool = true
+		if GeneralFlags.SkipDomainsFileType == "hashtable" {
+			SkipDomainMapBool = true
 		}
 	}
 
-	if generalOptions.AllowDomainsFile != "" {
+	if GeneralFlags.AllowDomainsFile != "" {
 		log.Info("allowDomainsFile is provided")
 		// check to see if the file provided exists
 		// commented because this now can be either filepath or URL, TODO
 		// if _, err := os.Stat(generalOptions.AllowDomainsFile); err != nil {
 		// 	log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
 		// }
-		if generalOptions.AllowDomainsFileType != "csv" && generalOptions.AllowDomainsFileType != "hashtable" {
+		if GeneralFlags.AllowDomainsFileType != "csv" && GeneralFlags.AllowDomainsFileType != "hashtable" {
 			log.Fatal("allowDomainsFileType must be either csv or hashtable")
 		}
-		if generalOptions.AllowDomainsFileType == "hashtable" {
-			allowDomainMapBool = true
+		if GeneralFlags.AllowDomainsFileType == "hashtable" {
+			AllowDomainMapBool = true
 		}
 	}
 
-	if outputOptions.StdoutOutputType >= 5 {
+	if OutputFlags.StdoutOutputType >= 5 {
 		log.Fatal("stdoutOutputType must be one of 0, 1, 2, 3 or 4")
 	}
-	if outputOptions.FileOutputType >= 5 {
+	if OutputFlags.FileOutputType >= 5 {
 		log.Fatal("fileOutputType must be one of 0, 1, 2, 3 or 4")
-	} else if outputOptions.FileOutputType > 0 {
-		if outputOptions.FileOutputPath == "" {
+	} else if OutputFlags.FileOutputType > 0 {
+		if OutputFlags.FileOutputPath == "" {
 			log.Fatal("fileOutputType is set but fileOutputPath is not provided. Exiting")
 		}
 	}
-	if outputOptions.ClickhouseOutputType >= 5 {
+	if OutputFlags.ClickhouseOutputType >= 5 {
 		log.Fatal("clickhouseOutputType must be one of 0, 1, 2, 3 or 4")
 	}
-	if outputOptions.KafkaOutputType >= 5 {
+	if OutputFlags.KafkaOutputType >= 5 {
 		log.Fatal("kafkaOutputType must be one of 0, 1, 2, 3 or 4")
 	}
-	if outputOptions.ElasticOutputType >= 5 {
+	if OutputFlags.ElasticOutputType >= 5 {
 		log.Fatal("elasticOutputType must be one of 0, 1, 2, 3 or 4")
 	}
-	if captureOptions.Port > 65535 {
+	if CaptureFlags.Port > 65535 {
 		log.Fatal("--port must be between 1 and 65535")
 	}
-	if generalOptions.MaskSize4 > 32 || generalOptions.MaskSize4 < 0 {
+	if GeneralFlags.MaskSize4 > 32 || GeneralFlags.MaskSize4 < 0 {
 		log.Fatal("--maskSize4 must be between 0 and 32")
 	}
-	if generalOptions.MaskSize6 > 128 || generalOptions.MaskSize4 < 0 {
+	if GeneralFlags.MaskSize6 > 128 || GeneralFlags.MaskSize4 < 0 {
 		log.Fatal("--maskSize6 must be between 0 and 128")
 	}
-	if captureOptions.DevName == "" && captureOptions.PcapFile == "" && captureOptions.DnstapSocket == "" {
+	if CaptureFlags.DevName == "" && CaptureFlags.PcapFile == "" && CaptureFlags.DnstapSocket == "" {
 		log.Fatal("one of --devName, --pcapFile or --dnstapSocket is required")
 	}
 
-	if captureOptions.DevName != "" {
-		if captureOptions.PcapFile != "" || captureOptions.DnstapSocket != "" {
+	if CaptureFlags.DevName != "" {
+		if CaptureFlags.PcapFile != "" || CaptureFlags.DnstapSocket != "" {
 			log.Fatal("You must set only --devName, --pcapFile or --dnstapSocket")
 		}
 	} else {
-		if captureOptions.PcapFile != "" && captureOptions.DnstapSocket != "" {
+		if CaptureFlags.PcapFile != "" && CaptureFlags.DnstapSocket != "" {
 			log.Fatal("You must set only --devName, --pcapFile or --dnstapSocket")
 		}
 	}
 
-	if captureOptions.DnstapSocket != "" {
-		if !strings.HasPrefix(captureOptions.DnstapSocket, "unix://") && !strings.HasPrefix(captureOptions.DnstapSocket, "tcp://") {
+	if CaptureFlags.DnstapSocket != "" {
+		if !strings.HasPrefix(CaptureFlags.DnstapSocket, "unix://") && !strings.HasPrefix(CaptureFlags.DnstapSocket, "tcp://") {
 			log.Fatal("You must provide a unix:// or tcp:// socket for dnstap")
 		}
 	}
 
-	if generalOptions.PacketLimit < 0 {
+	if GeneralFlags.PacketLimit < 0 {
 		log.Fatal("--packetLimit must be equal or greather than 0")
 	}
 
-	ratioNumbers := strings.Split(captureOptions.SampleRatio, ":")
+	ratioNumbers := strings.Split(CaptureFlags.SampleRatio, ":")
 	if len(ratioNumbers) != 2 {
 		log.Fatal("wrong --sampleRatio syntax")
 	}
 	var errA error
 	var errB error
-	ratioA, errA = strconv.Atoi(ratioNumbers[0])
-	ratioB, errB = strconv.Atoi(ratioNumbers[1])
-	if errA != nil || errB != nil || ratioA > ratioB {
+	RatioA, errA = strconv.Atoi(ratioNumbers[0])
+	RatioB, errB = strconv.Atoi(ratioNumbers[1])
+	if errA != nil || errB != nil || RatioA > RatioB {
 		log.Fatal("wrong --sampleRatio syntax")
+	}
+
+	// load the skipDomainFile if exists
+	if GeneralFlags.SkipDomainsFile != "" {
+		if SkipDomainMapBool {
+			SkipDomainMap = LoadDomainsToMap(GeneralFlags.SkipDomainsFile)
+		} else {
+			SkipDomainList = LoadDomainsToList(GeneralFlags.SkipDomainsFile)
+		}
+	}
+	if GeneralFlags.AllowDomainsFile != "" {
+		if AllowDomainMapBool {
+			AllowDomainMap = LoadDomainsToMap(GeneralFlags.AllowDomainsFile)
+		} else {
+			AllowDomainList = LoadDomainsToList(GeneralFlags.AllowDomainsFile)
+		}
 	}
 
 }

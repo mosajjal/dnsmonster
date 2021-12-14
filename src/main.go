@@ -12,97 +12,65 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
 )
 
-var releaseVersion string = "DEVELOPMENT"
-
-// Ratio numbers used for input sampling
-var ratioA int
-var ratioB int
-
-// skipDomainList represents the list of skipped domains
-var skipDomainList [][]string
-var allowDomainList [][]string
-
-var skipDomainMap = make(map[string]bool)
-var allowDomainMap = make(map[string]bool)
-
-var skipDomainMapBool = false
-var allowDomainMapBool = false
-
-var clickhouseResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
-var kafkaResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
-var elasticResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
-var splunkResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
-var stdoutResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
-var fileResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
-var syslogResultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
-var resultChannel = make(chan types.DNSResult, generalOptions.ResultChannelSize)
+var clickhouseResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+var kafkaResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+var elasticResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+var splunkResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+var stdoutResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+var fileResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+var syslogResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+var resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 
 func main() {
-	flagsProcess()
-	checkFlags()
-	runtime.GOMAXPROCS(generalOptions.Gomaxprocs)
-	if generalOptions.Cpuprofile != "" {
+	util.ProcessFlags()
+	runtime.GOMAXPROCS(util.GeneralFlags.Gomaxprocs)
+	if util.GeneralFlags.Cpuprofile != "" {
 
 		defer profile.Start(profile.CPUProfile).Stop()
-	}
-
-	// load the skipDomainFile if exists
-	if generalOptions.SkipDomainsFile != "" {
-		if skipDomainMapBool {
-			skipDomainMap = loadDomainsToMap(generalOptions.SkipDomainsFile)
-		} else {
-			skipDomainList = loadDomainsToList(generalOptions.SkipDomainsFile)
-		}
-	}
-	if generalOptions.AllowDomainsFile != "" {
-		if allowDomainMapBool {
-			allowDomainMap = loadDomainsToMap(generalOptions.AllowDomainsFile)
-		} else {
-			allowDomainList = loadDomainsToList(generalOptions.AllowDomainsFile)
-		}
 	}
 
 	// Setup our output channels
 	setupOutputs()
 
 	// Setup the memory profile if reuqested
-	if generalOptions.Memprofile != "" {
+	if util.GeneralFlags.Memprofile != "" {
 		go func() {
 			time.Sleep(120 * time.Second)
 			log.Warn("Writing memory profile")
-			f, err := os.Create(generalOptions.Memprofile)
-			errorHandler(err)
+			f, err := os.Create(util.GeneralFlags.Memprofile)
+			util.ErrorHandler(err)
 			runtime.GC() // get up-to-date statistics
 
 			err = pprof.Lookup("heap").WriteTo(f, 0)
-			errorHandler(err)
+			util.ErrorHandler(err)
 			f.Close()
 		}()
 	}
 
 	// Start listening if we're using pcap or afpacket
 
-	if captureOptions.DnstapSocket == "" {
+	if util.CaptureFlags.DnstapSocket == "" {
 		capturer := newDNSCapturer(CaptureOptions{
-			captureOptions.DevName,
-			captureOptions.UseAfpacket,
-			captureOptions.PcapFile,
-			captureOptions.Filter,
-			uint16(captureOptions.Port),
-			generalOptions.GcTime,
+			util.CaptureFlags.DevName,
+			util.CaptureFlags.UseAfpacket,
+			util.CaptureFlags.PcapFile,
+			util.CaptureFlags.Filter,
+			uint16(util.CaptureFlags.Port),
+			util.GeneralFlags.GcTime,
 			resultChannel,
-			captureOptions.PacketHandlerCount,
-			captureOptions.PacketChannelSize,
-			generalOptions.TcpHandlerCount,
-			generalOptions.TcpAssemblyChannelSize,
-			generalOptions.TcpResultChannelSize,
-			generalOptions.DefraggerChannelSize,
-			generalOptions.DefraggerChannelReturnSize,
-			captureOptions.NoEthernetframe,
+			util.CaptureFlags.PacketHandlerCount,
+			util.CaptureFlags.PacketChannelSize,
+			util.GeneralFlags.TcpHandlerCount,
+			util.GeneralFlags.TcpAssemblyChannelSize,
+			util.GeneralFlags.TcpResultChannelSize,
+			util.GeneralFlags.DefraggerChannelSize,
+			util.GeneralFlags.DefraggerChannelReturnSize,
+			util.CaptureFlags.NoEthernetframe,
 		})
 
 		capturer.start()

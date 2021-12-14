@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"crypto/tls"
@@ -12,23 +12,24 @@ import (
 
 	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 )
 
-var splunkStats = outputStats{"splunk", 0, 0}
-var splunkConnectionList = make(map[string]splunkConnection)
+var splunkStats = types.OutputStats{"splunk", 0, 0}
+var splunkConnectionList = make(map[string]types.SplunkConnection)
 var splunkKickOff bool = false
 
-func connectMultiSplunkRetry(spConfig splunkConfig) {
-	for _, splunkEndpoint := range spConfig.splunkOutputEndpoints {
+func connectMultiSplunkRetry(spConfig types.SplunkConfig) {
+	for _, splunkEndpoint := range spConfig.SplunkOutputEndpoints {
 		go connectSplunkRetry(spConfig, splunkEndpoint)
 	}
 }
 
-func connectSplunkRetry(spConfig splunkConfig, splunkEndpoint string) splunkConnection {
+func connectSplunkRetry(spConfig types.SplunkConfig, splunkEndpoint string) types.SplunkConnection {
 	tick := time.NewTicker(5 * time.Second)
-	conn := splunkConnection{}
+	conn := types.SplunkConnection{}
 	// don't retry connection if we're doing dry run
-	if spConfig.splunkOutputType == 0 {
+	if spConfig.SplunkOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
@@ -41,8 +42,8 @@ func connectSplunkRetry(spConfig splunkConfig, splunkEndpoint string) splunkConn
 		case <-tick.C:
 			// check to see if the connection exists
 			if conn, ok := splunkConnectionList[splunkEndpoint]; ok {
-				if conn.unhealthy != 0 {
-					log.Warnf("Connection is unhealthy: %v", conn.err)
+				if conn.Unhealthy != 0 {
+					log.Warnf("Connection is unhealthy: %v", conn.Err)
 					splunkConnectionList[splunkEndpoint] = connectSplunk(spConfig, splunkEndpoint)
 				}
 			} else {
@@ -53,9 +54,9 @@ func connectSplunkRetry(spConfig splunkConfig, splunkEndpoint string) splunkConn
 	}
 }
 
-func connectSplunk(spConfig splunkConfig, splunkEndpoint string) splunkConnection {
+func connectSplunk(spConfig types.SplunkConfig, splunkEndpoint string) types.SplunkConnection {
 
-	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: spConfig.general.skipTlsVerification}}
+	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: spConfig.General.SkipTlsVerification}}
 	httpClient := &http.Client{Timeout: time.Second * 20, Transport: tr}
 
 	splunkURL := splunkEndpoint
@@ -67,17 +68,17 @@ func connectSplunk(spConfig splunkConfig, splunkEndpoint string) splunkConnectio
 	client := splunk.NewClient(
 		httpClient,
 		splunkURL,
-		spConfig.splunkOutputToken,
-		spConfig.splunkOutputSource,
-		spConfig.splunkOutputSourceType,
-		spConfig.splunkOutputIndex,
+		spConfig.SplunkOutputToken,
+		spConfig.SplunkOutputSource,
+		spConfig.SplunkOutputSourceType,
+		spConfig.SplunkOutputIndex,
 	)
 	err := client.CheckHealth()
 	unhealthy := uint(0)
 	if err != nil {
 		unhealthy += 1
 	}
-	myConn := splunkConnection{client, unhealthy, err}
+	myConn := types.SplunkConnection{client, unhealthy, err}
 	log.Warnf("new splunk connection %v", myConn)
 	return myConn
 }
@@ -85,7 +86,7 @@ func connectSplunk(spConfig splunkConfig, splunkEndpoint string) splunkConnectio
 func selectHealthyConnection() string {
 	// lastId is used where all the connections are unhealthy
 	for id, connection := range splunkConnectionList {
-		if connection.unhealthy == 0 {
+		if connection.Unhealthy == 0 {
 			return id
 		}
 	}
@@ -94,34 +95,34 @@ func selectHealthyConnection() string {
 	return ""
 }
 
-func splunkOutput(spConfig splunkConfig) {
+func SplunkOutput(spConfig types.SplunkConfig) {
 
 	log.Infof("Connecting to Splunk endpoints")
 	connectMultiSplunkRetry(spConfig)
 
-	batch := make([]types.DNSResult, 0, spConfig.splunkBatchSize)
+	batch := make([]types.DNSResult, 0, spConfig.SplunkBatchSize)
 	rand.Seed(time.Now().Unix())
-	ticker := time.Tick(spConfig.splunkBatchDelay)
-	printStatsTicker := time.Tick(spConfig.general.printStatsDelay)
+	ticker := time.Tick(spConfig.SplunkBatchDelay)
+	printStatsTicker := time.Tick(spConfig.General.PrintStatsDelay)
 
 	for {
 		select {
-		case data := <-spConfig.resultChannel:
-			if spConfig.general.packetLimit == 0 || len(batch) < spConfig.general.packetLimit {
+		case data := <-spConfig.ResultChannel:
+			if spConfig.General.PacketLimit == 0 || len(batch) < spConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker:
 			healthyId := selectHealthyConnection()
 			if conn, ok := splunkConnectionList[healthyId]; ok {
 
-				if err := splunkSendData(conn.client, batch, spConfig); err != nil {
+				if err := splunkSendData(conn.Client, batch, spConfig); err != nil {
 					log.Info(err)
 					log.Warnf("marking connection as unhealthy: %+v", conn)
-					conn.unhealthy += 1
+					conn.Unhealthy += 1
 					splunkConnectionList[healthyId] = conn
 					splunkStats.Skipped += len(batch)
 				} else {
-					batch = make([]types.DNSResult, 0, spConfig.splunkBatchSize)
+					batch = make([]types.DNSResult, 0, spConfig.SplunkBatchSize)
 				}
 			} else {
 				log.Warn("Splunk Connection not found")
@@ -135,18 +136,18 @@ func splunkOutput(spConfig splunkConfig) {
 	}
 }
 
-func splunkSendData(client *splunk.Client, batch []types.DNSResult, spConfig splunkConfig) error {
+func splunkSendData(client *splunk.Client, batch []types.DNSResult, spConfig types.SplunkConfig) error {
 	var events []*splunk.Event
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
-			if checkIfWeSkip(spConfig.splunkOutputType, dnsQuery.Name) {
+			if util.CheckIfWeSkip(spConfig.SplunkOutputType, dnsQuery.Name) {
 				splunkStats.Skipped++
 				continue
 			}
 			splunkStats.SentToOutput++
 			events = append(
 				events,
-				client.NewEventWithTime(batch[i].Timestamp, batch[i].String(), spConfig.splunkOutputSource, spConfig.splunkOutputSourceType, spConfig.splunkOutputIndex),
+				client.NewEventWithTime(batch[i].Timestamp, batch[i].String(), spConfig.SplunkOutputSource, spConfig.SplunkOutputSourceType, spConfig.SplunkOutputIndex),
 			)
 		}
 	}

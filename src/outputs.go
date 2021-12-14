@@ -1,124 +1,126 @@
 package main
 
 import (
+	"github.com/mosajjal/dnsmonster/output"
 	"github.com/mosajjal/dnsmonster/types"
+	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 )
 
 func setupOutputs() {
-	generalConfig := generalConfig{
-		generalOptions.MaskSize4,
-		generalOptions.MaskSize6,
-		generalOptions.PacketLimit,
-		generalOptions.ServerName,
-		generalOptions.PrintStatsDelay,
-		generalOptions.SkipTLSVerification,
+	generalConfig := types.GeneralConfig{
+		MaskSize4:           util.GeneralFlags.MaskSize4,
+		MaskSize6:           util.GeneralFlags.MaskSize6,
+		PacketLimit:         util.GeneralFlags.PacketLimit,
+		ServerName:          util.GeneralFlags.ServerName,
+		PrintStatsDelay:     util.GeneralFlags.PrintStatsDelay,
+		SkipTlsVerification: util.GeneralFlags.SkipTLSVerification,
 	}
 	log.Info("Creating the dispatch Channel")
 	go dispatchOutput(resultChannel)
 	types.GlobalWaitingGroup.Add(1)
 	defer types.GlobalWaitingGroup.Done()
 
-	if outputOptions.FileOutputType > 0 {
+	if util.OutputFlags.FileOutputType > 0 {
 		log.Info("Creating File Output Channel")
-		fConfig := fileConfig{
-			fileResultChannel,
-			string(outputOptions.FileOutputPath),
-			outputOptions.FileOutputType,
-			generalConfig,
+		fConfig := types.FileConfig{
+			ResultChannel:  fileResultChannel,
+			FileOutputPath: string(util.OutputFlags.FileOutputPath),
+			FileOutputType: util.OutputFlags.FileOutputType,
+			General:        generalConfig,
 		}
-		go fileOutput(fConfig)
+		go output.FileOutput(fConfig)
 		types.GlobalWaitingGroup.Add(1)
 		defer types.GlobalWaitingGroup.Done()
 		// go fileOutput(fileResultChannel, exiting, &wg)
 	}
-	if outputOptions.StdoutOutputType > 0 {
+	if util.OutputFlags.StdoutOutputType > 0 {
 		log.Info("Creating stdout Output Channel")
-		stdConfig := stdoutConfig{
-			stdoutResultChannel,
-			outputOptions.StdoutOutputType,
-			generalConfig,
+		stdConfig := types.StdoutConfig{
+			ResultChannel:    stdoutResultChannel,
+			StdoutOutputType: util.OutputFlags.StdoutOutputType,
+			General:          generalConfig,
 		}
-		go stdoutOutput(stdConfig)
+		go output.StdoutOutput(stdConfig)
 		types.GlobalWaitingGroup.Add(1)
 		defer types.GlobalWaitingGroup.Done()
 		// go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
-	if outputOptions.SyslogOutputType > 0 {
+	if util.OutputFlags.SyslogOutputType > 0 {
 		log.Info("Creating syslog Output Channel")
-		sysConfig := syslogConfig{
+		sysConfig := types.SyslogConfig{
 			syslogResultChannel,
-			outputOptions.SyslogOutputEndpoint,
-			outputOptions.SyslogOutputType,
+			util.OutputFlags.SyslogOutputEndpoint,
+			util.OutputFlags.SyslogOutputType,
 			generalConfig,
 		}
-		go syslogOutput(sysConfig)
+		go output.SyslogOutput(sysConfig)
 		types.GlobalWaitingGroup.Add(1)
 		defer types.GlobalWaitingGroup.Done()
 	}
-	if outputOptions.ClickhouseOutputType > 0 {
+	if util.OutputFlags.ClickhouseOutputType > 0 {
 		log.Info("Creating Clickhouse Output Channel")
-		chConfig := clickHouseConfig{
+		chConfig := types.ClickHouseConfig{
 			clickhouseResultChannel,
-			outputOptions.ClickhouseAddress,
-			outputOptions.ClickhouseBatchSize,
-			outputOptions.ClickhouseOutputType,
-			outputOptions.ClickhouseSaveFullQuery,
-			outputOptions.ClickhouseDebug,
-			outputOptions.ClickhouseDelay,
-			outputOptions.ClickhouseWorkers,
-			outputOptions.ClickhouseWorkerChannelSize,
+			util.OutputFlags.ClickhouseAddress,
+			util.OutputFlags.ClickhouseBatchSize,
+			util.OutputFlags.ClickhouseOutputType,
+			util.OutputFlags.ClickhouseSaveFullQuery,
+			util.OutputFlags.ClickhouseDebug,
+			util.OutputFlags.ClickhouseDelay,
+			util.OutputFlags.ClickhouseWorkers,
+			util.OutputFlags.ClickhouseWorkerChannelSize,
 			generalConfig,
 		}
-		go clickhouseOutput(chConfig)
+		go output.ClickhouseOutput(chConfig)
 		types.GlobalWaitingGroup.Add(1)
 		defer types.GlobalWaitingGroup.Done()
 	}
-	if outputOptions.KafkaOutputType > 0 {
+	if util.OutputFlags.KafkaOutputType > 0 {
 		log.Info("Creating Kafka Output Channel")
-		kafConfig := kafkaConfig{
+		kafConfig := types.KafkaConfig{
 			kafkaResultChannel,
-			outputOptions.KafkaOutputBroker,
-			outputOptions.KafkaOutputTopic,
-			outputOptions.KafkaOutputType,
-			outputOptions.KafkaBatchSize,
-			outputOptions.KafkaBatchDelay,
+			util.OutputFlags.KafkaOutputBroker,
+			util.OutputFlags.KafkaOutputTopic,
+			util.OutputFlags.KafkaOutputType,
+			util.OutputFlags.KafkaBatchSize,
+			util.OutputFlags.KafkaBatchDelay,
 			generalConfig,
 		}
-		go kafkaOutput(kafConfig)
+		go output.KafkaOutput(kafConfig)
 		types.GlobalWaitingGroup.Add(1)
 		defer types.GlobalWaitingGroup.Done()
 	}
-	if outputOptions.ElasticOutputType > 0 {
+	if util.OutputFlags.ElasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")
-		esConfig := elasticConfig{
+		esConfig := types.ElasticConfig{
 			elasticResultChannel,
-			outputOptions.ElasticOutputEndpoint,
-			outputOptions.ElasticOutputIndex,
-			outputOptions.ElasticOutputType,
-			outputOptions.ElasticBatchSize,
-			outputOptions.ElasticBatchDelay,
+			util.OutputFlags.ElasticOutputEndpoint,
+			util.OutputFlags.ElasticOutputIndex,
+			util.OutputFlags.ElasticOutputType,
+			util.OutputFlags.ElasticBatchSize,
+			util.OutputFlags.ElasticBatchDelay,
 			generalConfig,
 		}
-		go elasticOutput(esConfig)
+		go output.ElasticOutput(esConfig)
 		types.GlobalWaitingGroup.Add(1)
 		defer types.GlobalWaitingGroup.Done()
 	}
-	if outputOptions.SplunkOutputType > 0 {
+	if util.OutputFlags.SplunkOutputType > 0 {
 		log.Info("Creating Splunk Output Channel")
-		spConfig := splunkConfig{
+		spConfig := types.SplunkConfig{
 			splunkResultChannel,
-			outputOptions.SplunkOutputEndpoints,
-			outputOptions.SplunkOutputToken,
-			outputOptions.SplunkOutputType,
-			outputOptions.SplunkOutputIndex,
-			outputOptions.SplunkOutputSource,
-			outputOptions.SplunkOutputSourceType,
-			outputOptions.SplunkBatchSize,
-			outputOptions.SplunkBatchDelay,
+			util.OutputFlags.SplunkOutputEndpoints,
+			util.OutputFlags.SplunkOutputToken,
+			util.OutputFlags.SplunkOutputType,
+			util.OutputFlags.SplunkOutputIndex,
+			util.OutputFlags.SplunkOutputSource,
+			util.OutputFlags.SplunkOutputSourceType,
+			util.OutputFlags.SplunkBatchSize,
+			util.OutputFlags.SplunkBatchDelay,
 			generalConfig,
 		}
-		go splunkOutput(spConfig)
+		go output.SplunkOutput(spConfig)
 		types.GlobalWaitingGroup.Add(1)
 		defer types.GlobalWaitingGroup.Done()
 	}

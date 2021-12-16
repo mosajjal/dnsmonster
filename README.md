@@ -1,5 +1,5 @@
 ![Build Status](https://github.com/mosajjal/dnsmonster/workflows/Build%20Test/badge.svg?style=flat-square)
-![Go Version](https://img.shields.io/github/go-mod/go-version/mosajjal/dnsmonster/main?filename=src%2Fgo.mod&style=flat-square)
+![Go Version](https://img.shields.io/github/go-mod/go-version/mosajjal/dnsmonster/main?filename=go.mod&style=flat-square)
 ![Latest Version](https://img.shields.io/github/v/tag/mosajjal/dnsmonster?label=latest&style=flat-square)
 ![License](https://img.shields.io/github/license/mosajjal/dnsmonster?style=flat-square)
 ![Open Issues](https://img.shields.io/github/issues/mosajjal/dnsmonster?style=flat-square)
@@ -508,13 +508,13 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 
 Make sure you have `libpcap-devel` and `linux-headers` packages installed.
 
-`go get gitlab.com/mosajjal/dnsmonster/src`
+`go get github.com/mosajjal/dnsmonster`
 
 ## Static Build
 
 ```
- $ git clone https://gitlab.com/mosajjal/dnsmonster
- $ cd dnsmonster/src/
+ $ git clone https://github.com/mosajjal/dnsmonster
+ $ cd dnsmonster/
  $ go get
  $ go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
 ```

@@ -25,26 +25,22 @@ jobs:
       run: |
         sudo apt install -y libpcap0.8-dev  
         go get -v 
-      working-directory: "./src"
 
     - name: Build
       run: go build -v .
-      working-directory: "./src"
 
     - name: Test
       run: go test -v .
-      working-directory: "./src"
 
     - name: generate sample config file 
       run: ./dnsmonster --writeConfig=../config-sample.ini
-      working-directory: "./src"
 
     - name: update README command line options
       run: |
         START="$(($(grep -n "start of command line options" README.md | cut -f1 -d:)+2))"
         END="$(($(grep -n "end of command line options" README.md | cut -f1 -d:)-2))"
         USAGE=$(cat <<-END
-        $(COLUMNS=120 ./src/dnsmonster --help | sed -r 1d)
+        $(COLUMNS=120 ./dnsmonster --help | sed -r 1d)
         END
         )
         awk -v var="$USAGE" 'NR=='$START'{print var} NR<'$START' || NR>'$END README.md > README.tmp

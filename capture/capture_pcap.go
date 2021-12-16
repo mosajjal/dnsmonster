@@ -1,4 +1,4 @@
-package main
+package capture
 
 import (
 	"time"
@@ -54,7 +54,7 @@ func handleInterrupt(done chan bool) {
 	}()
 }
 
-func newDNSCapturer(options CaptureOptions) DNSCapturer {
+func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 	if options.DevName != "" && options.PcapFile != "" {
 		log.Fatal("You cant set DevName and PcapFile.")
 	}
@@ -95,17 +95,17 @@ func newDNSCapturer(options CaptureOptions) DNSCapturer {
 	return DNSCapturer{options, processingChannel}
 }
 
-func (capturer *DNSCapturer) start() {
+func (capturer *DNSCapturer) Start() {
 	var handle *pcap.Handle
 	var afhandle *afpacketHandle
 	var packetSource *gopacket.PacketSource
 	options := capturer.options
-	if options.DevName != "" && !options.useAfpacket {
+	if options.DevName != "" && !options.UseAfpacket {
 		handle = initializeLivePcap(options.DevName, options.Filter)
 		defer handle.Close()
 		packetSource = gopacket.NewPacketSource(handle, handle.LinkType())
 		log.Info("Waiting for packets")
-	} else if options.DevName != "" && options.useAfpacket {
+	} else if options.DevName != "" && options.UseAfpacket {
 		afhandle = initializeLiveAFpacket(options.DevName, options.Filter)
 		defer afhandle.Close()
 		packetSource = gopacket.NewPacketSource(afhandle, afhandle.LinkType())

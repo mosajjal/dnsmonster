@@ -1,4 +1,4 @@
-package main
+package capture
 
 import (
 	"container/list"
@@ -29,7 +29,7 @@ type packetEncoder struct {
 // CaptureOptions is a set of generated options variables to use within our capture routine
 type CaptureOptions struct {
 	DevName                      string
-	useAfpacket                  bool
+	UseAfpacket                  bool
 	PcapFile                     string
 	Filter                       string
 	Port                         uint16

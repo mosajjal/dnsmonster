@@ -1,5 +1,5 @@
 // Package ip6defrag implements a IPv6 defragmenter
-package main
+package capture
 
 import (
 	"fmt"

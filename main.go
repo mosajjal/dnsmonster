@@ -11,6 +11,7 @@ import (
 	"runtime/pprof"
 	"time"
 
+	"github.com/mosajjal/dnsmonster/capture"
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	"github.com/pkg/profile"
@@ -27,16 +28,16 @@ var syslogResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultCha
 var resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 
 func main() {
+
+	// process and handle flags
 	util.ProcessFlags()
+
+	// debug and profile options
 	runtime.GOMAXPROCS(util.GeneralFlags.Gomaxprocs)
 	if util.GeneralFlags.Cpuprofile != "" {
 
 		defer profile.Start(profile.CPUProfile).Stop()
 	}
-
-	// Setup our output channels
-	setupOutputs()
-
 	// Setup the memory profile if reuqested
 	if util.GeneralFlags.Memprofile != "" {
 		go func() {
@@ -52,10 +53,12 @@ func main() {
 		}()
 	}
 
-	// Start listening if we're using pcap or afpacket
+	// Setup our output channels
+	setupOutputs()
 
+	// Start listening if we're using pcap or afpacket
 	if util.CaptureFlags.DnstapSocket == "" {
-		capturer := newDNSCapturer(CaptureOptions{
+		capturer := capture.NewDNSCapturer(capture.CaptureOptions{
 			util.CaptureFlags.DevName,
 			util.CaptureFlags.UseAfpacket,
 			util.CaptureFlags.PcapFile,
@@ -73,11 +76,11 @@ func main() {
 			util.CaptureFlags.NoEthernetframe,
 		})
 
-		capturer.start()
+		capturer.Start()
 		// Wait for the output to finish
 		log.Info("Exiting")
 		types.GlobalWaitingGroup.Wait()
-	} else {
-		startDNSTap(resultChannel)
+	} else { // dnstap si totally different, hence only the result channel is being pushed to it
+		capture.StartDNSTap(resultChannel)
 	}
 }

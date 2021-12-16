@@ -1,4 +1,4 @@
-package main
+package capture
 
 import (
 	"net"
@@ -85,7 +85,7 @@ func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
 	return myDNSResult
 }
 
-func startDNSTap(resultChannel chan types.DNSResult) {
+func StartDNSTap(resultChannel chan types.DNSResult) {
 	log.Info("Starting DNStap capture")
 	input := parseDnstapSocket(util.CaptureFlags.DnstapSocket, util.CaptureFlags.DnstapPermission)
 

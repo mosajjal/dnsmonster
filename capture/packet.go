@@ -1,4 +1,4 @@
-package main
+package capture
 
 import (
 	"time"

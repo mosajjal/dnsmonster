@@ -1,4 +1,4 @@
-package main
+package capture
 
 import (
 	"github.com/google/gopacket/ip4defrag"

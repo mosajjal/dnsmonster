@@ -18,7 +18,6 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20211104044242-0b57a1ee6b0c // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
-	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/klauspost/compress v1.13.6 // indirect
@@ -36,6 +35,6 @@ require (
 	golang.org/x/net v0.0.0-20211215060638-4ddde0e984e9
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

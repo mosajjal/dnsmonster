@@ -39,7 +39,7 @@ func (ds *dnsStream) processStream() {
 						DstIP:     net.IP(ds.Net.Dst().Raw()),
 						timestamp: ds.timestamp,
 					}
-					// Save the remaining data for future querys
+					// Save the remaining data for future queries
 					data = data[expected:]
 				} else {
 					break
@@ -79,7 +79,7 @@ func tcpAssembler(tcpchannel chan tcpPacket, tcpReturnChannel chan tcpData, gcTi
 	}
 	streamPoolV6 := tcpassembly.NewStreamPool(streamFactoryV6)
 	assemblerV6 := tcpassembly.NewAssembler(streamPoolV6)
-	ticker := time.Tick(gcTime)
+	ticker := time.NewTicker(gcTime)
 	for {
 		select {
 		case packet := <-tcpchannel:
@@ -88,14 +88,12 @@ func tcpAssembler(tcpchannel chan tcpPacket, tcpReturnChannel chan tcpData, gcTi
 				case 4:
 					streamFactoryV4.currentTimestamp = packet.timestamp
 					assemblerV4.AssembleWithTimestamp(packet.flow, &packet.tcp, time.Now())
-					break
 				case 6:
 					streamFactoryV6.currentTimestamp = packet.timestamp
 					assemblerV6.AssembleWithTimestamp(packet.flow, &packet.tcp, time.Now())
-					break
 				}
 			}
-		case <-ticker:
+		case <-ticker.C:
 			{
 				// Flush connections that haven't seen activity in the past GcTime.
 				assemblerV4.FlushOlderThan(time.Now().Add(gcTime * -1))

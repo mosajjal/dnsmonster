@@ -28,7 +28,10 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 						MaskSize = util.GeneralFlags.MaskSize6
 						BitSize = 8 * net.IPv6len
 					}
-					encoder.resultChannel <- types.DNSResult{timestamp, msg, IPVersion, SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)), DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), "udp", uint16(len(udp.Payload))}
+					encoder.resultChannel <- types.DNSResult{Timestamp: timestamp,
+						DNS: msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+						DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
+					}
 				}
 			}
 		case layers.LayerTypeTCP:
@@ -144,7 +147,10 @@ func (encoder *packetEncoder) run() {
 					MaskSize = util.GeneralFlags.MaskSize6
 					BitSize = 8 * net.IPv6len
 				}
-				encoder.resultChannel <- types.DNSResult{data.timestamp, msg, data.IPVersion, data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)), data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), "tcp", uint16(len(data.data))}
+				encoder.resultChannel <- types.DNSResult{Timestamp: data.timestamp,
+					DNS: msg, IPVersion: data.IPVersion, SrcIP: data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+					DstIP: data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "tcp", PacketLength: uint16(len(data.data)),
+				}
 			}
 		case packet := <-encoder.ip4DefrggerReturn:
 			// Packet was defragged, parse the remaining data

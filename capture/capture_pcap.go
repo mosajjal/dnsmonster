@@ -123,8 +123,8 @@ func (capturer *DNSCapturer) Start() {
 	handleInterrupt(types.GlobalExitChannel)
 
 	// Set up various tickers for different tasks
-	captureStatsTicker := time.Tick(util.GeneralFlags.CaptureStatsDelay)
-	printStatsTicker := time.Tick(util.GeneralFlags.PrintStatsDelay)
+	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
+	printStatsTicker := time.NewTicker(util.GeneralFlags.PrintStatsDelay)
 
 	var ratioCnt = 0
 	var totalCnt = 0
@@ -151,7 +151,7 @@ func (capturer *DNSCapturer) Start() {
 			}
 		case <-types.GlobalExitChannel:
 			return
-		case <-captureStatsTicker:
+		case <-captureStatsTicker.C:
 			if handle != nil {
 				mystats, err := handle.Stats()
 				if err == nil {
@@ -165,7 +165,7 @@ func (capturer *DNSCapturer) Start() {
 			}
 			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
 
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("%+v", pcapStats)
 
 		}

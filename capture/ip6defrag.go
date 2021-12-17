@@ -69,9 +69,9 @@ func (d *IPv6Defragmenter) DefragIPv6(in *layers.IPv6, inFragment *layers.IPv6Fr
 // This is useful when operating on pcap files instead of live captured data
 //
 func (d *IPv6Defragmenter) DefragIPv6WithTimestamp(in *layers.IPv6, inFragment *layers.IPv6Fragment, t time.Time) (*layers.IPv6, error) {
-	// perfom security checks
+	// perform security checks
 	st, err := d.securityChecks(inFragment)
-	if err != nil || st == false {
+	if err != nil || !st {
 		debug.Printf("defrag: alert security check")
 		return nil, err
 	}

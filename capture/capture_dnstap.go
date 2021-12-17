@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	dnstap "github.com/dnstap/golang-dnstap"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 var done = make(chan bool)
@@ -56,7 +56,6 @@ func handleDNSTapInterrupt(done chan bool) {
 				ln.Close()
 			}
 			close(done)
-			return
 		}
 	}()
 }
@@ -98,8 +97,8 @@ func StartDNSTap(resultChannel chan types.DNSResult) {
 	handleDNSTapInterrupt(done)
 
 	// Set up various tickers for different tasks
-	captureStatsTicker := time.Tick(util.GeneralFlags.CaptureStatsDelay)
-	printStatsTicker := time.Tick(util.GeneralFlags.PrintStatsDelay)
+	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
+	printStatsTicker := time.NewTicker(util.GeneralFlags.PrintStatsDelay)
 
 	for {
 
@@ -128,11 +127,11 @@ func StartDNSTap(resultChannel chan types.DNSResult) {
 			}
 		case <-done:
 			return
-		case <-captureStatsTicker:
+		case <-captureStatsTicker.C:
 			pcapStats.PacketsGot = totalCnt
 			pcapStats.PacketsLost = 0
 			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("%+v", pcapStats)
 		}
 	}

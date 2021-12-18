@@ -1,8 +1,9 @@
 // dnsmonster implements a packet sniffer for DNS traffic. It can accept traffic from a pcap file or a live interface,
-// and can be used to index and store thousands of queries per second. It aims to be scalable and easy to use, and help
+// and can be used to index and store hundreds of thousands of queries per second. It aims to be scalable and easy to use, and help
 // security teams to understand the details about an enterprise's DNS traffic. It does not aim to breach
-// the privacy of the end-users, with the ability to mask source IP from 1 to 32 bits, making the data potentially untraceable.
-
+// the privacy of the end-users, with the ability to mask source IP, making the data potentially untraceable.
+// the project has been developed as a monolith, but now it has been split into multiple modules.
+// the modules will be expanded and improved over time, and will have a robust API to be used by other projects.
 package main
 
 import (

@@ -51,10 +51,10 @@ func setupOutputs() {
 	if util.OutputFlags.SyslogOutputType > 0 {
 		log.Info("Creating syslog Output Channel")
 		sysConfig := types.SyslogConfig{
-			syslogResultChannel,
-			util.OutputFlags.SyslogOutputEndpoint,
-			util.OutputFlags.SyslogOutputType,
-			generalConfig,
+			ResultChannel:        syslogResultChannel,
+			SyslogOutputEndpoint: util.OutputFlags.SyslogOutputEndpoint,
+			SyslogOutputType:     util.OutputFlags.SyslogOutputType,
+			General:              generalConfig,
 		}
 		go output.SyslogOutput(sysConfig)
 		types.GlobalWaitingGroup.Add(1)
@@ -63,16 +63,16 @@ func setupOutputs() {
 	if util.OutputFlags.ClickhouseOutputType > 0 {
 		log.Info("Creating Clickhouse Output Channel")
 		chConfig := types.ClickHouseConfig{
-			clickhouseResultChannel,
-			util.OutputFlags.ClickhouseAddress,
-			util.OutputFlags.ClickhouseBatchSize,
-			util.OutputFlags.ClickhouseOutputType,
-			util.OutputFlags.ClickhouseSaveFullQuery,
-			util.OutputFlags.ClickhouseDebug,
-			util.OutputFlags.ClickhouseDelay,
-			util.OutputFlags.ClickhouseWorkers,
-			util.OutputFlags.ClickhouseWorkerChannelSize,
-			generalConfig,
+			ResultChannel:               clickhouseResultChannel,
+			ClickhouseAddress:           util.OutputFlags.ClickhouseAddress,
+			ClickhouseBatchSize:         util.OutputFlags.ClickhouseBatchSize,
+			ClickhouseOutputType:        util.OutputFlags.ClickhouseOutputType,
+			ClickhouseSaveFullQuery:     util.OutputFlags.ClickhouseSaveFullQuery,
+			ClickhouseDebug:             util.OutputFlags.ClickhouseDebug,
+			ClickhouseDelay:             util.OutputFlags.ClickhouseDelay,
+			ClickhouseWorkers:           util.OutputFlags.ClickhouseWorkers,
+			ClickhouseWorkerChannelSize: util.OutputFlags.ClickhouseWorkerChannelSize,
+			General:                     generalConfig,
 		}
 		go output.ClickhouseOutput(chConfig)
 		types.GlobalWaitingGroup.Add(1)
@@ -81,13 +81,13 @@ func setupOutputs() {
 	if util.OutputFlags.KafkaOutputType > 0 {
 		log.Info("Creating Kafka Output Channel")
 		kafConfig := types.KafkaConfig{
-			kafkaResultChannel,
-			util.OutputFlags.KafkaOutputBroker,
-			util.OutputFlags.KafkaOutputTopic,
-			util.OutputFlags.KafkaOutputType,
-			util.OutputFlags.KafkaBatchSize,
-			util.OutputFlags.KafkaBatchDelay,
-			generalConfig,
+			ResultChannel:     kafkaResultChannel,
+			KafkaOutputBroker: util.OutputFlags.KafkaOutputBroker,
+			KafkaOutputTopic:  util.OutputFlags.KafkaOutputTopic,
+			KafkaOutputType:   util.OutputFlags.KafkaOutputType,
+			KafkaBatchSize:    util.OutputFlags.KafkaBatchSize,
+			KafkaBatchDelay:   util.OutputFlags.KafkaBatchDelay,
+			General:           generalConfig,
 		}
 		go output.KafkaOutput(kafConfig)
 		types.GlobalWaitingGroup.Add(1)
@@ -96,13 +96,13 @@ func setupOutputs() {
 	if util.OutputFlags.ElasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")
 		esConfig := types.ElasticConfig{
-			elasticResultChannel,
-			util.OutputFlags.ElasticOutputEndpoint,
-			util.OutputFlags.ElasticOutputIndex,
-			util.OutputFlags.ElasticOutputType,
-			util.OutputFlags.ElasticBatchSize,
-			util.OutputFlags.ElasticBatchDelay,
-			generalConfig,
+			ResultChannel:         elasticResultChannel,
+			ElasticOutputEndpoint: util.OutputFlags.ElasticOutputEndpoint,
+			ElasticOutputIndex:    util.OutputFlags.ElasticOutputIndex,
+			ElasticOutputType:     util.OutputFlags.ElasticOutputType,
+			ElasticBatchSize:      util.OutputFlags.ElasticBatchSize,
+			ElasticBatchDelay:     util.OutputFlags.ElasticBatchDelay,
+			General:               generalConfig,
 		}
 		go output.ElasticOutput(esConfig)
 		types.GlobalWaitingGroup.Add(1)
@@ -111,16 +111,16 @@ func setupOutputs() {
 	if util.OutputFlags.SplunkOutputType > 0 {
 		log.Info("Creating Splunk Output Channel")
 		spConfig := types.SplunkConfig{
-			splunkResultChannel,
-			util.OutputFlags.SplunkOutputEndpoints,
-			util.OutputFlags.SplunkOutputToken,
-			util.OutputFlags.SplunkOutputType,
-			util.OutputFlags.SplunkOutputIndex,
-			util.OutputFlags.SplunkOutputSource,
-			util.OutputFlags.SplunkOutputSourceType,
-			util.OutputFlags.SplunkBatchSize,
-			util.OutputFlags.SplunkBatchDelay,
-			generalConfig,
+			ResultChannel:          splunkResultChannel,
+			SplunkOutputEndpoints:  util.OutputFlags.SplunkOutputEndpoints,
+			SplunkOutputToken:      util.OutputFlags.SplunkOutputToken,
+			SplunkOutputType:       util.OutputFlags.SplunkOutputType,
+			SplunkOutputIndex:      util.OutputFlags.SplunkOutputIndex,
+			SplunkOutputSource:     util.OutputFlags.SplunkOutputSource,
+			SplunkOutputSourceType: util.OutputFlags.SplunkOutputSourceType,
+			SplunkBatchSize:        util.OutputFlags.SplunkBatchSize,
+			SplunkBatchDelay:       util.OutputFlags.SplunkBatchDelay,
+			General:                generalConfig,
 		}
 		go output.SplunkOutput(spConfig)
 		types.GlobalWaitingGroup.Add(1)

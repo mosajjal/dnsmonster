@@ -11,7 +11,7 @@ EOF
 
 dockercomposetemplate=$(cat <<EOF
   ch:
-    image: yandex/clickhouse-server:21.8.4.51
+    image: yandex/clickhouse-server:21.12-alpine
     restart: always
     ports:
       - "8123:8123"
@@ -36,7 +36,7 @@ dockercomposetemplate=$(cat <<EOF
         timeout: 10s
         retries: 3
   grafana:
-    image: grafana/grafana:8.1.2
+    image: grafana/grafana:8.3.3
     restart: always
     ports:
       - "3000:3000"
@@ -75,6 +75,8 @@ dnsmonsteragent=$(cat <<EOF
 EOF
 )
 
+echo "fetching submodules"
+git submodule update --recursive
 echo "Starting the DNSMonster AIO Builder using docker-compose."
 echo "IMPORTANT: this script should be run when you are inside dnsmonster directory (./autobuild.sh). Do NOT run this from another directory"
 echo -n "before we begin, make sure to have TCP ports 3000, 8123 and 9000 available in your host machine and press Enter to continue..."

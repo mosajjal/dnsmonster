@@ -60,21 +60,21 @@ func main() {
 	// Start listening if we're using pcap or afpacket
 	if util.CaptureFlags.DnstapSocket == "" {
 		capturer := capture.NewDNSCapturer(capture.CaptureOptions{
-			util.CaptureFlags.DevName,
-			util.CaptureFlags.UseAfpacket,
-			util.CaptureFlags.PcapFile,
-			util.CaptureFlags.Filter,
-			uint16(util.CaptureFlags.Port),
-			util.GeneralFlags.GcTime,
-			resultChannel,
-			util.CaptureFlags.PacketHandlerCount,
-			util.CaptureFlags.PacketChannelSize,
-			util.GeneralFlags.TcpHandlerCount,
-			util.GeneralFlags.TcpAssemblyChannelSize,
-			util.GeneralFlags.TcpResultChannelSize,
-			util.GeneralFlags.DefraggerChannelSize,
-			util.GeneralFlags.DefraggerChannelReturnSize,
-			util.CaptureFlags.NoEthernetframe,
+			DevName:                      util.CaptureFlags.DevName,
+			UseAfpacket:                  util.CaptureFlags.UseAfpacket,
+			PcapFile:                     util.CaptureFlags.PcapFile,
+			Filter:                       util.CaptureFlags.Filter,
+			Port:                         uint16(util.CaptureFlags.Port),
+			GcTime:                       util.GeneralFlags.GcTime,
+			ResultChannel:                resultChannel,
+			PacketHandlerCount:           util.CaptureFlags.PacketHandlerCount,
+			PacketChannelSize:            util.CaptureFlags.PacketChannelSize,
+			TCPHandlerCount:              util.GeneralFlags.TcpHandlerCount,
+			TCPAssemblyChannelSize:       util.GeneralFlags.TcpAssemblyChannelSize,
+			TCPResultChannelSize:         util.GeneralFlags.TcpResultChannelSize,
+			IPDefraggerChannelSize:       util.GeneralFlags.DefraggerChannelSize,
+			IPDefraggerReturnChannelSize: util.GeneralFlags.DefraggerChannelReturnSize,
+			NoEthernetframe:              util.CaptureFlags.NoEthernetframe,
 		})
 
 		capturer.Start()

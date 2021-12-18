@@ -10,11 +10,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var stdoutstats = types.OutputStats{"Stdout", 0, 0}
-var fileoutstats = types.OutputStats{"File", 0, 0}
+var stdoutstats = types.OutputStats{Name: "Stdout", SentToOutput: 0, Skipped: 0}
+var fileoutstats = types.OutputStats{Name: "File", SentToOutput: 0, Skipped: 0}
 
 func stdoutOutputWorker(stdConfig types.StdoutConfig) {
-	printStatsTicker := time.Tick(stdConfig.General.PrintStatsDelay)
+	printStatsTicker := time.NewTicker(stdConfig.General.PrintStatsDelay)
 
 	for {
 		select {
@@ -31,7 +31,7 @@ func stdoutOutputWorker(stdConfig types.StdoutConfig) {
 			}
 		case <-types.GlobalExitChannel:
 			return
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("output: %+v", stdoutstats)
 		}
 	}
@@ -54,7 +54,7 @@ func FileOutput(fConfig types.FileConfig) {
 		util.ErrorHandler(err)
 		defer fileObject.Close()
 	}
-	printStatsTicker := time.Tick(fConfig.General.PrintStatsDelay)
+	printStatsTicker := time.NewTicker(fConfig.General.PrintStatsDelay)
 
 	for {
 		select {
@@ -72,7 +72,7 @@ func FileOutput(fConfig types.FileConfig) {
 			}
 		case <-types.GlobalExitChannel:
 			return
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("output: %+v", fileoutstats)
 		}
 	}

@@ -16,7 +16,7 @@ import (
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
 )
 
-var chstats = types.OutputStats{"Clickhouse", 0, 0}
+var chstats = types.OutputStats{Name: "Clickhouse", SentToOutput: 0, Skipped: 0}
 var uuidGen = fastuuid.MustNewGenerator()
 
 func connectClickhouseRetry(chConfig types.ClickHouseConfig) clickhouse.Clickhouse {
@@ -61,13 +61,13 @@ func min(a, b int) int {
 }
 
 // Main handler for Clickhouse output. the data from the dispatched output channel will reach this function
-// Essentially, the function is responsible to hold an avilable connection ready by calling another goroutine,
+// Essentially, the function is responsible to hold an available connection ready by calling another goroutine,
 // maintain the incoming data batch and try to INSERT them as quick as possible into the Clickhouse table
-// the table strucutre of Clickhouse is hardcoded into the code so before outputing to Clickhouse, the user
+// the table structure of Clickhouse is hardcoded into the code so before outputing to Clickhouse, the user
 // needs to make sure that there is proper Database connection and table are present. Refer to the project's
 // clickhouse folder for the file tables.sql
 func ClickhouseOutput(chConfig types.ClickHouseConfig) {
-	printStatsTicker := time.Tick(chConfig.General.PrintStatsDelay)
+	printStatsTicker := time.NewTicker(chConfig.General.PrintStatsDelay)
 	var workerChannelList []chan types.DNSResult
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
 		workerChannelList = append(workerChannelList, make(chan types.DNSResult, chConfig.ClickhouseWorkerChannelSize))
@@ -83,7 +83,7 @@ func ClickhouseOutput(chConfig types.ClickHouseConfig) {
 			workerChannelList[cnt%chConfig.ClickhouseWorkers] <- data
 		case <-types.GlobalExitChannel:
 			return
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("output: %+v", chstats)
 		}
 	}
@@ -94,14 +94,14 @@ func clickhouseOutputWorker(chConfig types.ClickHouseConfig, workerchannel chan 
 	connect := connectClickhouseRetry(chConfig)
 	batch := make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
 
-	ticker := time.Tick(chConfig.ClickhouseDelay)
+	ticker := time.NewTicker(chConfig.ClickhouseDelay)
 	for {
 		select {
 		case data := <-workerchannel:
 			if chConfig.General.PacketLimit == 0 || len(batch) < chConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
-		case <-ticker:
+		case <-ticker.C:
 			if err := clickhouseSendData(connect, batch, chConfig); err != nil {
 				log.Warnf("Error sending data to clickhouse: %#v, %v", batch, err) //todo: remove batch from this print
 				connect = connectClickhouseRetry(chConfig)

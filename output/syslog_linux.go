@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var syslogstats = types.OutputStats{"Syslog", 0, 0}
+var syslogstats = types.OutputStats{Name: "Syslog", SentToOutput: 0, Skipped: 0}
 
 func connectSyslogRetry(sysConfig types.SyslogConfig) *syslog.Writer {
 	tick := time.NewTicker(5 * time.Second)
@@ -53,7 +53,7 @@ func SyslogOutput(sysConfig types.SyslogConfig) {
 
 	writer := connectSyslogRetry(sysConfig)
 
-	printStatsTicker := time.Tick(sysConfig.General.PrintStatsDelay)
+	printStatsTicker := time.NewTicker(sysConfig.General.PrintStatsDelay)
 
 	for {
 		select {
@@ -76,7 +76,7 @@ func SyslogOutput(sysConfig types.SyslogConfig) {
 			}
 		case <-types.GlobalExitChannel:
 			return
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("output: %+v", syslogstats)
 		}
 	}

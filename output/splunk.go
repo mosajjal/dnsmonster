@@ -15,9 +15,8 @@ import (
 	"github.com/mosajjal/dnsmonster/util"
 )
 
-var splunkStats = types.OutputStats{"splunk", 0, 0}
+var splunkStats = types.OutputStats{Name: "splunk", SentToOutput: 0, Skipped: 0}
 var splunkConnectionList = make(map[string]types.SplunkConnection)
-var splunkKickOff bool = false
 
 func connectMultiSplunkRetry(spConfig types.SplunkConfig) {
 	for _, splunkEndpoint := range spConfig.SplunkOutputEndpoints {
@@ -78,7 +77,7 @@ func connectSplunk(spConfig types.SplunkConfig, splunkEndpoint string) types.Spl
 	if err != nil {
 		unhealthy += 1
 	}
-	myConn := types.SplunkConnection{client, unhealthy, err}
+	myConn := types.SplunkConnection{Client: client, Unhealthy: unhealthy, Err: err}
 	log.Warnf("new splunk connection %v", myConn)
 	return myConn
 }
@@ -91,7 +90,6 @@ func selectHealthyConnection() string {
 		}
 	}
 	log.Warn("No more healthy HEC connections left")
-	splunkKickOff = false
 	return ""
 }
 
@@ -102,8 +100,8 @@ func SplunkOutput(spConfig types.SplunkConfig) {
 
 	batch := make([]types.DNSResult, 0, spConfig.SplunkBatchSize)
 	rand.Seed(time.Now().Unix())
-	ticker := time.Tick(spConfig.SplunkBatchDelay)
-	printStatsTicker := time.Tick(spConfig.General.PrintStatsDelay)
+	ticker := time.NewTicker(spConfig.SplunkBatchDelay)
+	printStatsTicker := time.NewTicker(spConfig.General.PrintStatsDelay)
 
 	for {
 		select {
@@ -111,7 +109,7 @@ func SplunkOutput(spConfig types.SplunkConfig) {
 			if spConfig.General.PacketLimit == 0 || len(batch) < spConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
-		case <-ticker:
+		case <-ticker.C:
 			healthyId := selectHealthyConnection()
 			if conn, ok := splunkConnectionList[healthyId]; ok {
 
@@ -130,7 +128,7 @@ func SplunkOutput(spConfig types.SplunkConfig) {
 			}
 		case <-types.GlobalExitChannel:
 			return
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("output: %+v", splunkStats)
 		}
 	}

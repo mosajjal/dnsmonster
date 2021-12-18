@@ -13,7 +13,7 @@ import (
 )
 
 // var elasticUuidGen = fastuuid.MustNewGenerator()
-var elasticstats = types.OutputStats{"elastic", 0, 0}
+var elasticstats = types.OutputStats{Name: "elastic", SentToOutput: 0, Skipped: 0}
 var ctx = context.Background()
 
 func connectelasticRetry(esConfig types.ElasticConfig) *elastic.Client {
@@ -64,8 +64,8 @@ func ElasticOutput(esConfig types.ElasticConfig) {
 	client := connectelasticRetry(esConfig)
 	batch := make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 
-	ticker := time.Tick(esConfig.ElasticBatchDelay)
-	printStatsTicker := time.Tick(esConfig.General.PrintStatsDelay)
+	ticker := time.NewTicker(esConfig.ElasticBatchDelay)
+	printStatsTicker := time.NewTicker(esConfig.General.PrintStatsDelay)
 
 	// Use the IndexExists service to check if a specified index exists.
 	exists, err := client.IndexExists(esConfig.ElasticOutputIndex).Do(ctx)
@@ -87,7 +87,7 @@ func ElasticOutput(esConfig types.ElasticConfig) {
 			if esConfig.General.PacketLimit == 0 || len(batch) < esConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
-		case <-ticker:
+		case <-ticker.C:
 			if err := elasticSendData(client, batch, esConfig); err != nil {
 				log.Info(err)
 				client = connectelasticRetry(esConfig)
@@ -96,7 +96,7 @@ func ElasticOutput(esConfig types.ElasticConfig) {
 			}
 		case <-types.GlobalExitChannel:
 			return
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("output: %+v", elasticstats)
 		}
 	}

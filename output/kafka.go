@@ -14,7 +14,7 @@ import (
 )
 
 var kafkaUuidGen = fastuuid.MustNewGenerator()
-var kafkastats = types.OutputStats{"Kafka", 0, 0}
+var kafkastats = types.OutputStats{Name: "Kafka", SentToOutput: 0, Skipped: 0}
 
 func connectKafkaRetry(kafConfig types.KafkaConfig) *kafka.Conn {
 	tick := time.NewTicker(5 * time.Second)
@@ -55,8 +55,8 @@ func KafkaOutput(kafConfig types.KafkaConfig) {
 	connect := connectKafkaRetry(kafConfig)
 	batch := make([]types.DNSResult, 0, kafConfig.KafkaBatchSize)
 
-	ticker := time.Tick(kafConfig.KafkaBatchDelay)
-	printStatsTicker := time.Tick(kafConfig.General.PrintStatsDelay)
+	ticker := time.NewTicker(kafConfig.KafkaBatchDelay)
+	printStatsTicker := time.NewTicker(kafConfig.General.PrintStatsDelay)
 
 	for {
 		select {
@@ -64,7 +64,7 @@ func KafkaOutput(kafConfig types.KafkaConfig) {
 			if kafConfig.General.PacketLimit == 0 || len(batch) < kafConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
-		case <-ticker:
+		case <-ticker.C:
 			if err := kafkaSendData(connect, batch, kafConfig); err != nil {
 				log.Info(err)
 				connect = connectKafkaRetry(kafConfig)
@@ -73,7 +73,7 @@ func KafkaOutput(kafConfig types.KafkaConfig) {
 			}
 		case <-types.GlobalExitChannel:
 			return
-		case <-printStatsTicker:
+		case <-printStatsTicker.C:
 			log.Infof("output: %+v", kafkastats)
 		}
 	}

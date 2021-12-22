@@ -31,7 +31,7 @@ dockercomposetemplate=$(cat <<EOF
       - CLICKHOUSE_LOGS_FOLDER:/var/log/clickhouse-server/
       - CLICKHOUSE_DATA_FOLDER:/var/lib/clickhouse/
     healthcheck:
-        test: ["CMD", "wget", "-O-", "-q", "http://localhost:8123/?query=SELECT name FROM system.tables WHERE name = 'DNS_LOG'"]
+        test: ["CMD", "wget", "-O-", "-q", "http://localhost:8123/?query=SELECT%20name%20FROM%20system.tables%20WHERE%20name%20%3D%20%27DNS_LOG%27"]
         interval: 1m
         timeout: 10s
         retries: 3

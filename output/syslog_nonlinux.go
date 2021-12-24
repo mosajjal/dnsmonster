@@ -7,6 +7,7 @@
 package output
 
 import (
+	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,6 +18,6 @@ var syslog struct {
 	LOG_DAEMON  bool
 }
 
-func SyslogOutput(sysConfig syslogConfig) {
+func SyslogOutput(sysConfig types.SyslogConfig) {
 	log.Error("No Syslog is supported in Windows")
 }

@@ -30,12 +30,12 @@ CREATE TABLE IF NOT EXISTS DNS_LOG (
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_COUNT
 ENGINE=SummingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY (DnsDate, Server, Question)
-  ORDER BY (DnsDate, Server, Question)
-  SAMPLE BY Question
+  PRIMARY KEY (DnsDate, Server, QH)
+  ORDER BY (DnsDate, Server, QH)
+  SAMPLE BY QH
   TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
   SETTINGS index_granularity = 8192
-  AS SELECT DnsDate, toStartOfMinute(timestamp) as t, Server, Question, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY DnsDate, t, Server, Question;
+  AS SELECT DnsDate, toStartOfMinute(timestamp) as t, Server, Question, cityHash64(Question) as QH, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY DnsDate, t, Server, Question;
 
 -- View for unique domain count
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_UNIQUE
@@ -46,12 +46,12 @@ ENGINE=AggregatingMergeTree(DnsDate, (timestamp, Server), 8192) AS
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_PROTOCOL
 ENGINE=SummingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY (DnsDate, Server, Protocol)
-  ORDER BY (DnsDate, Server, Protocol)
-  SAMPLE BY Protocol
+  PRIMARY KEY (DnsDate, Server, PH)
+  ORDER BY (DnsDate, Server, PH)
+  SAMPLE BY PH
   TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
   SETTINGS index_granularity = 8192
-  AS SELECT DnsDate, timestamp, Server, Protocol, count(*) as c FROM DNS_LOG GROUP BY Server, DnsDate, timestamp, Protocol;
+  AS SELECT DnsDate, timestamp, Server, Protocol, cityHash64(Protocol) as PH, count(*) as c FROM DNS_LOG GROUP BY Server, DnsDate, timestamp, Protocol;
 
 
 -- View with packet sizes

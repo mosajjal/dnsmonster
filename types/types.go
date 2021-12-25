@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bytedance/sonic"
 	mkdns "github.com/miekg/dns"
 	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
 )
@@ -107,11 +106,6 @@ type StdoutConfig struct {
 	ResultChannel    chan DNSResult
 	StdoutOutputType uint
 	General          GeneralConfig
-}
-
-func (d *DNSResult) String() string {
-	res, _ := sonic.Marshal(d)
-	return string(res)
 }
 
 // Setup output routine

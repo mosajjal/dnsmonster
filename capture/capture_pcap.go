@@ -11,33 +11,36 @@ import (
 	"os/signal"
 
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcapgo"
 )
 
 var pcapStats captureStats
 
-func initializeLivePcap(devName, filter string) *pcap.Handle {
+func initializeLivePcap(devName, filter string) *pcapgo.EthernetHandle {
 	// Open device
-	handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
+	handle, err := pcapgo.NewEthernetHandle(devName)
+	// handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
 	util.ErrorHandler(err)
 
 	// Set Filter
 	log.Infof("Using Device: %s", devName)
 	log.Infof("Filter: %s", filter)
-	err = handle.SetBPFFilter(filter)
+	err = handle.SetBPF(TcpdumpToPcapgoBpf(filter))
 	util.ErrorHandler(err)
 
 	return handle
 }
 
-func initializeOfflinePcap(fileName, filter string) *pcap.Handle {
-	handle, err := pcap.OpenOffline(fileName)
+func initializeOfflinePcap(fileName, filter string) *pcapgo.Reader {
+	f, err := os.Open(fileName)
+	defer f.Close()
 	util.ErrorHandler(err)
+	handle, err := pcapgo.NewReader(f)
 
 	// Set Filter
 	log.Infof("Using File: %s", fileName)
-	log.Infof("Filter: %s", filter)
-	err = handle.SetBPFFilter(filter)
+	log.Warnf("BPF Filter is not supported in offline mode.")
 	util.ErrorHandler(err)
 	return handle
 }
@@ -96,24 +99,24 @@ func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 }
 
 func (capturer *DNSCapturer) Start() {
-	var handle *pcap.Handle
-	var afhandle *afpacketHandle
+	var pcapHandle *pcapgo.EthernetHandle
+	var afHandle *afpacketHandle
+	var pcapFilHandle *pcapgo.Reader
 	var packetSource *gopacket.PacketSource
 	options := capturer.options
 	if options.DevName != "" && !options.UseAfpacket {
-		handle = initializeLivePcap(options.DevName, options.Filter)
-		defer handle.Close()
-		packetSource = gopacket.NewPacketSource(handle, handle.LinkType())
+		pcapHandle = initializeLivePcap(options.DevName, options.Filter)
+		defer pcapHandle.Close()
+		packetSource = gopacket.NewPacketSource(pcapHandle, layers.LinkTypeEthernet)
 		log.Info("Waiting for packets")
 	} else if options.DevName != "" && options.UseAfpacket {
-		afhandle = initializeLiveAFpacket(options.DevName, options.Filter)
-		defer afhandle.Close()
-		packetSource = gopacket.NewPacketSource(afhandle, afhandle.LinkType())
+		afHandle = initializeLiveAFpacket(options.DevName, options.Filter)
+		defer afHandle.Close()
+		packetSource = gopacket.NewPacketSource(afHandle, afHandle.LinkType())
 		log.Info("Waiting for packets using AFpacket")
 	} else {
-		handle = initializeOfflinePcap(options.PcapFile, options.Filter)
-		defer handle.Close()
-		packetSource = gopacket.NewPacketSource(handle, handle.LinkType())
+		pcapFilHandle = initializeOfflinePcap(options.PcapFile, options.Filter)
+		packetSource = gopacket.NewPacketSource(pcapFilHandle, pcapFilHandle.LinkType())
 		log.Info("Reading off Pcap file")
 	}
 	packetSource.DecodeOptions.Lazy = true
@@ -152,16 +155,19 @@ func (capturer *DNSCapturer) Start() {
 		case <-types.GlobalExitChannel:
 			return
 		case <-captureStatsTicker.C:
-			if handle != nil {
-				mystats, err := handle.Stats()
+			if pcapFilHandle != nil {
+				pcapStats.PacketsLost = 0
+				pcapStats.PacketsGot = totalCnt
+			} else if pcapHandle != nil {
+				mystats, err := pcapHandle.Stats()
 				if err == nil {
-					pcapStats.PacketsGot = mystats.PacketsReceived
-					pcapStats.PacketsLost = mystats.PacketsDropped
+					pcapStats.PacketsGot = int(mystats.Packets)
+					pcapStats.PacketsLost = int(mystats.Drops)
 				} else {
 					pcapStats.PacketsGot = totalCnt
 				}
 			} else {
-				updateAfpacketStats(afhandle)
+				updateAfpacketStats(afHandle)
 			}
 			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
 

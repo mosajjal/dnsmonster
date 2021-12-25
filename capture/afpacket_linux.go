@@ -1,7 +1,11 @@
+//go:build linux
+// +build linux
+
 package capture
 
 import (
 	"os"
+	"time"
 
 	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
@@ -9,8 +13,6 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/afpacket"
 	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
-	"golang.org/x/net/bpf"
 )
 
 type afpacketHandle struct {
@@ -28,20 +30,9 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 	return layers.LinkTypeEthernet
 }
 func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
-	pcapBPF, err := pcap.CompileBPFFilter(layers.LinkTypeEthernet, snaplen, filter)
-	util.ErrorHandler(err)
-	bpfIns := []bpf.RawInstruction{}
-	for _, ins := range pcapBPF {
-		bpfIns2 := bpf.RawInstruction{
-			Op: ins.Code,
-			Jt: ins.Jt,
-			Jf: ins.Jf,
-			K:  ins.K,
-		}
-		bpfIns = append(bpfIns, bpfIns2)
-	}
+	pcapBPF := TcpdumpToPcapgoBpf(filter)
 	log.Infof("Filter: %s", filter)
-	err = h.TPacket.SetBPF(bpfIns)
+	err = h.TPacket.SetBPF(pcapBPF)
 	if err != nil {
 		util.ErrorHandler(err)
 	}
@@ -88,7 +79,7 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 		afpacket.OptFrameSize(frameSize),
 		afpacket.OptBlockSize(blockSize),
 		afpacket.OptNumBlocks(numBlocks),
-		afpacket.OptPollTimeout(pcap.BlockForever),
+		afpacket.OptPollTimeout(-10*time.Millisecond),
 		afpacket.SocketRaw,
 		afpacket.TPacketVersion3)
 	util.ErrorHandler(err)

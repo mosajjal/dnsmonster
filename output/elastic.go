@@ -61,6 +61,7 @@ func connectelastic(esConfig types.ElasticConfig) (*elastic.Client, error) {
 }
 
 func ElasticOutput(esConfig types.ElasticConfig) {
+	defer types.GlobalWaitingGroup.Done()
 	client := connectelasticRetry(esConfig)
 	batch := make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 

@@ -19,9 +19,8 @@ func setupOutputs() {
 		SkipTlsVerification: util.GeneralFlags.SkipTLSVerification,
 	}
 	log.Info("Creating the dispatch Channel")
-	go dispatchOutput(resultChannel)
 	types.GlobalWaitingGroup.Add(1)
-	defer types.GlobalWaitingGroup.Done()
+	go dispatchOutput(resultChannel)
 
 	if util.OutputFlags.FileOutputType > 0 {
 		log.Info("Creating File Output Channel")
@@ -31,9 +30,8 @@ func setupOutputs() {
 			FileOutputType: util.OutputFlags.FileOutputType,
 			General:        generalConfig,
 		}
-		go output.FileOutput(fConfig)
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go output.FileOutput(fConfig)
 		// go fileOutput(fileResultChannel, exiting, &wg)
 	}
 	if util.OutputFlags.StdoutOutputType > 0 {
@@ -43,9 +41,8 @@ func setupOutputs() {
 			StdoutOutputType: util.OutputFlags.StdoutOutputType,
 			General:          generalConfig,
 		}
-		go output.StdoutOutput(stdConfig)
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go output.StdoutOutput(stdConfig)
 		// go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
 	if util.OutputFlags.SyslogOutputType > 0 {
@@ -56,9 +53,8 @@ func setupOutputs() {
 			SyslogOutputType:     util.OutputFlags.SyslogOutputType,
 			General:              generalConfig,
 		}
-		go output.SyslogOutput(sysConfig)
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go output.SyslogOutput(sysConfig)
 	}
 	if util.OutputFlags.ClickhouseOutputType > 0 {
 		log.Info("Creating Clickhouse Output Channel")
@@ -74,9 +70,8 @@ func setupOutputs() {
 			ClickhouseWorkerChannelSize: util.OutputFlags.ClickhouseWorkerChannelSize,
 			General:                     generalConfig,
 		}
-		go output.ClickhouseOutput(chConfig)
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go output.ClickhouseOutput(chConfig)
 	}
 	if util.OutputFlags.KafkaOutputType > 0 {
 		log.Info("Creating Kafka Output Channel")
@@ -89,9 +84,8 @@ func setupOutputs() {
 			KafkaBatchDelay:   util.OutputFlags.KafkaBatchDelay,
 			General:           generalConfig,
 		}
-		go output.KafkaOutput(kafConfig)
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go output.KafkaOutput(kafConfig)
 	}
 	if util.OutputFlags.ElasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")
@@ -104,9 +98,8 @@ func setupOutputs() {
 			ElasticBatchDelay:     util.OutputFlags.ElasticBatchDelay,
 			General:               generalConfig,
 		}
-		go output.ElasticOutput(esConfig)
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go output.ElasticOutput(esConfig)
 	}
 	if util.OutputFlags.SplunkOutputType > 0 {
 		log.Info("Creating Splunk Output Channel")
@@ -122,14 +115,13 @@ func setupOutputs() {
 			SplunkBatchDelay:       util.OutputFlags.SplunkBatchDelay,
 			General:                generalConfig,
 		}
-		go output.SplunkOutput(spConfig)
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go output.SplunkOutput(spConfig)
 	}
 }
 
 func dispatchOutput(resultChannel chan types.DNSResult) {
-
+	defer types.GlobalWaitingGroup.Done()
 	// Set up various tickers for different tasks
 	skipDomainsFileTicker := time.NewTicker(util.GeneralFlags.SkipDomainsRefreshInterval)
 	skipDomainsFileTickerChan := skipDomainsFileTicker.C

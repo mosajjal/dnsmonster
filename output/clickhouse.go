@@ -67,12 +67,13 @@ func min(a, b int) int {
 // needs to make sure that there is proper Database connection and table are present. Refer to the project's
 // clickhouse folder for the file tables.sql
 func ClickhouseOutput(chConfig types.ClickHouseConfig) {
+	defer types.GlobalWaitingGroup.Done()
 	printStatsTicker := time.NewTicker(chConfig.General.PrintStatsDelay)
 	var workerChannelList []chan types.DNSResult
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
 		workerChannelList = append(workerChannelList, make(chan types.DNSResult, chConfig.ClickhouseWorkerChannelSize))
-		go clickhouseOutputWorker(chConfig, workerChannelList[i]) //todo: fan out
 		types.GlobalWaitingGroup.Add(1)
+		go clickhouseOutputWorker(chConfig, workerChannelList[i]) //todo: fan out
 	}
 	var cnt uint
 	for {
@@ -90,7 +91,7 @@ func ClickhouseOutput(chConfig types.ClickHouseConfig) {
 }
 
 func clickhouseOutputWorker(chConfig types.ClickHouseConfig, workerchannel chan types.DNSResult) {
-
+	defer types.GlobalWaitingGroup.Done()
 	connect := connectClickhouseRetry(chConfig)
 	batch := make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
 

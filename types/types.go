@@ -111,3 +111,5 @@ type StdoutConfig struct {
 // Setup output routine
 var GlobalExitChannel = make(chan bool)
 var GlobalWaitingGroup sync.WaitGroup
+
+// var G, GCtx = errgroup.WithContext(context.Background())

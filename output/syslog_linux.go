@@ -50,7 +50,7 @@ func connectSyslog(sysConfig types.SyslogConfig) (*syslog.Writer, error) {
 }
 
 func SyslogOutput(sysConfig types.SyslogConfig) {
-
+	defer types.GlobalWaitingGroup.Done()
 	writer := connectSyslogRetry(sysConfig)
 
 	printStatsTicker := time.NewTicker(sysConfig.General.PrintStatsDelay)

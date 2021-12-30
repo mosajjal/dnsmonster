@@ -51,7 +51,7 @@ func connectKafka(kafConfig types.KafkaConfig) (*kafka.Conn, error) {
 }
 
 func KafkaOutput(kafConfig types.KafkaConfig) {
-
+	defer types.GlobalWaitingGroup.Done()
 	connect := connectKafkaRetry(kafConfig)
 	batch := make([]types.DNSResult, 0, kafConfig.KafkaBatchSize)
 

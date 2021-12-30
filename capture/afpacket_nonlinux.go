@@ -38,9 +38,9 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 func (h *afpacketHandle) Close() {
 }
 
-func updateAfpacketStats(afhandle *afpacketHandle) {
-	pcapStats.PacketsGot = 0
-	pcapStats.PacketsLost = 0
+func (afhandle *afpacketHandle) Stats() (*unix.TpacketStats, error) {
+	tpacketStats := unix.TpacketStats{0, 0}
+	return &tpacketStats, err
 }
 
 func initializeLiveAFpacket(devName, filter string) *afpacketHandle {

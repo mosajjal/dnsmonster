@@ -14,6 +14,7 @@ var stdoutstats = types.OutputStats{Name: "Stdout", SentToOutput: 0, Skipped: 0}
 var fileoutstats = types.OutputStats{Name: "File", SentToOutput: 0, Skipped: 0}
 
 func stdoutOutputWorker(stdConfig types.StdoutConfig) {
+	defer types.GlobalWaitingGroup.Done()
 	printStatsTicker := time.NewTicker(stdConfig.General.PrintStatsDelay)
 
 	for {
@@ -38,14 +39,15 @@ func stdoutOutputWorker(stdConfig types.StdoutConfig) {
 }
 
 func StdoutOutput(stdConfig types.StdoutConfig) {
+	defer types.GlobalWaitingGroup.Done()
 	for i := 0; i < 8; i++ {
-		go stdoutOutputWorker(stdConfig)
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go stdoutOutputWorker(stdConfig)
 	}
 }
 
 func FileOutput(fConfig types.FileConfig) {
+	defer types.GlobalWaitingGroup.Done()
 	var fileObject *os.File
 	if fConfig.FileOutputType > 0 {
 		var err error

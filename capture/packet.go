@@ -1,6 +1,7 @@
 package capture
 
 import (
+	"math/rand"
 	"time"
 
 	"net"
@@ -48,7 +49,8 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 
 }
 
-func (encoder *packetEncoder) inputHandlerWorker(p chan gopacket.Packet) {
+func (encoder *packetEncoder) inputHandlerWorker(p chan rawPacketBytes) {
+	defer types.GlobalWaitingGroup.Done()
 	var ethLayer layers.Ethernet
 	var ip4 layers.IPv4
 	var ip6 layers.IPv6
@@ -67,50 +69,58 @@ func (encoder *packetEncoder) inputHandlerWorker(p chan gopacket.Packet) {
 	}
 	parser := gopacket.NewDecodingLayerParser(startLayer, decodeLayers...)
 	foundLayerTypes := []gopacket.LayerType{}
-	for packet := range p {
-		timestamp := packet.Metadata().Timestamp
-		if timestamp.IsZero() {
-			timestamp = time.Now()
-		}
-		_ = parser.DecodeLayers(packet.Data(), &foundLayerTypes)
-		// first parse the ip layer, so we can find fragmented packets
-		for _, layerType := range foundLayerTypes {
-			switch layerType {
-			case layers.LayerTypeIPv4:
-				// Check for fragmentation
-				if ip4.Flags&layers.IPv4DontFragment == 0 && (ip4.Flags&layers.IPv4MoreFragments != 0 || ip4.FragOffset != 0) {
-					// Packet is fragmented, send it to the defragger
-					encoder.ip4Defrgger <- ipv4ToDefrag{
-						ip4,
-						timestamp,
-					}
-				} else {
-					// log.Infof("packet %v coming to %p\n", timestamp, &encoder)
-					encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), timestamp, 4, ip4.SrcIP, ip4.DstIP)
-				}
-			case layers.LayerTypeIPv6:
-				// Store the packet metadata
-				if ip6.NextHeader == layers.IPProtocolIPv6Fragment {
-					// TODO: Move the parsing to DecodingLayer when gopacket support it
-					if frag := packet.Layer(layers.LayerTypeIPv6Fragment).(*layers.IPv6Fragment); frag != nil {
-						encoder.ip6Defrgger <- ipv6FragmentInfo{
-							ip6,
-							*frag,
+	for {
+		select {
+		case packet := <-p:
+			timestamp := packet.info.Timestamp
+			if timestamp.IsZero() {
+				timestamp = time.Now()
+			}
+			_ = parser.DecodeLayers(packet.bytes, &foundLayerTypes)
+			// first parse the ip layer, so we can find fragmented packets
+			for _, layerType := range foundLayerTypes {
+				switch layerType {
+				case layers.LayerTypeIPv4:
+					// Check for fragmentation
+					if ip4.Flags&layers.IPv4DontFragment == 0 && (ip4.Flags&layers.IPv4MoreFragments != 0 || ip4.FragOffset != 0) {
+						// Packet is fragmented, send it to the defragger
+						encoder.ip4Defrgger <- ipv4ToDefrag{
+							ip4,
 							timestamp,
 						}
+					} else {
+						// log.Infof("packet %v coming to %p\n", timestamp, &encoder)
+						encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), timestamp, 4, ip4.SrcIP, ip4.DstIP)
 					}
-				} else {
-					encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip6.NetworkFlow(), timestamp, 6, ip6.SrcIP, ip6.DstIP)
+				case layers.LayerTypeIPv6:
+					//todo: find a way to handle fragmented packets
+					// Store the packet metadata
+					if ip6.NextHeader == layers.IPProtocolIPv6Fragment {
+						// TODO: Move the parsing to DecodingLayer when gopacket support it. Currently we have to fully reconstruct the packet from eth layer which is super slow
+						reconstructedPacket := gopacket.NewPacket(packet.bytes, layers.LayerTypeEthernet, gopacket.Default)
+						if frag := reconstructedPacket.Layer(layers.LayerTypeIPv6Fragment).(*layers.IPv6Fragment); frag != nil {
+							encoder.ip6Defrgger <- ipv6FragmentInfo{
+								ip6,
+								*frag,
+								timestamp,
+							}
+						}
+					} else {
+						encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip6.NetworkFlow(), timestamp, 6, ip6.SrcIP, ip6.DstIP)
+					}
 				}
 			}
+		case <-types.GlobalExitChannel:
+			log.Warn("Exiting Encoder worker loop")
+			return
 		}
-
 	}
 
 }
 
 func (encoder *packetEncoder) run() {
-
+	defer types.GlobalWaitingGroup.Done()
+	rand.Seed(20)
 	var ip4 layers.IPv4
 
 	var udp layers.UDP
@@ -126,14 +136,13 @@ func (encoder *packetEncoder) run() {
 	)
 	foundLayerTypes := []gopacket.LayerType{}
 
-	var handlerChanList []chan gopacket.Packet
+	var handlerChanList []chan rawPacketBytes
 	for i := 0; i < int(encoder.handlerCount); i++ {
 		log.Infof("Creating handler #%d\n", i)
-		handlerChanList = append(handlerChanList, make(chan gopacket.Packet, 10000)) //todo: parameter for size of this channel needs to be defined
+		handlerChanList = append(handlerChanList, make(chan rawPacketBytes, 10000)) //todo: parameter for size of this channel needs to be defined
 		//todo: add the wg
-		go encoder.inputHandlerWorker(handlerChanList[i])
 		types.GlobalWaitingGroup.Add(1)
-		defer types.GlobalWaitingGroup.Done()
+		go encoder.inputHandlerWorker(handlerChanList[i])
 	}
 
 	for {
@@ -175,8 +184,9 @@ func (encoder *packetEncoder) run() {
 			}
 			encoder.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
 		case packet := <-encoder.input:
-			handlerChanList[packet.LinkLayer().LinkFlow().FastHash()%uint64(encoder.handlerCount)] <- packet
+			handlerChanList[rand.Intn(int(encoder.handlerCount))] <- packet
 		case <-types.GlobalExitChannel:
+			log.Warn("Exiting Encoder loop")
 			return
 		}
 	}

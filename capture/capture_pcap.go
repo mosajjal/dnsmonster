@@ -10,8 +10,6 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcapgo"
 )
 
@@ -32,26 +30,13 @@ func initializeLivePcap(devName, filter string) *pcapgo.EthernetHandle {
 	return handle
 }
 
-func initializeOfflinePcap(fileName, filter string) *pcapgo.Reader {
-	f, err := os.Open(fileName)
-	// defer f.Close() //todo: find where to close the file. in here doesn't work
-	util.ErrorHandler(err)
-	handle, err := pcapgo.NewReader(f)
-
-	// Set Filter
-	log.Infof("Using File: %s", fileName)
-	log.Warnf("BPF Filter is not supported in offline mode.")
-	util.ErrorHandler(err)
-	return handle
-}
-
-func handleInterrupt(done chan bool) {
+func handleInterrupt() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
 			log.Infof("SIGINT received")
-			close(done)
+			close(types.GlobalExitChannel)
 			return
 		}
 	}()
@@ -64,7 +49,7 @@ func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 	var tcpChannels []chan tcpPacket
 
 	tcpReturnChannel := make(chan tcpData, options.TCPResultChannelSize)
-	processingChannel := make(chan gopacket.Packet, options.PacketChannelSize)
+	processingChannel := make(chan rawPacketBytes, options.PacketChannelSize)
 	ip4DefraggerChannel := make(chan ipv4ToDefrag, options.IPDefraggerChannelSize)
 	ip6DefraggerChannel := make(chan ipv6FragmentInfo, options.IPDefraggerChannelSize)
 	ip4DefraggerReturn := make(chan ipv4Defragged, options.IPDefraggerReturnChannelSize)
@@ -90,40 +75,48 @@ func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 		options.PacketHandlerCount,
 		options.NoEthernetframe,
 	}
-	go encoder.run()
 	types.GlobalWaitingGroup.Add(1)
-	defer types.GlobalWaitingGroup.Done()
-	// todo: use the global wg for this
+	go encoder.run()
 
 	return DNSCapturer{options, processingChannel}
 }
 
 func (capturer *DNSCapturer) Start() {
-	var pcapHandle *pcapgo.EthernetHandle
-	var afHandle *afpacketHandle
-	var pcapFilHandle *pcapgo.Reader
-	var packetSource *gopacket.PacketSource
+
+	var myHandler genericHandler
+
 	options := capturer.options
+	packetBytesChannel := make(chan rawPacketBytes, options.PacketChannelSize)
 	if options.DevName != "" && !options.UseAfpacket {
-		pcapHandle = initializeLivePcap(options.DevName, options.Filter)
-		defer pcapHandle.Close()
-		packetSource = gopacket.NewPacketSource(pcapHandle, layers.LinkTypeEthernet)
+		myHandler = initializeLivePcap(options.DevName, options.Filter)
 		log.Info("Waiting for packets")
+
 	} else if options.DevName != "" && options.UseAfpacket {
-		afHandle = initializeLiveAFpacket(options.DevName, options.Filter)
-		defer afHandle.Close()
-		packetSource = gopacket.NewPacketSource(afHandle, afHandle.LinkType())
+		myHandler = initializeLiveAFpacket(options.DevName, options.Filter)
 		log.Info("Waiting for packets using AFpacket")
+
 	} else {
-		pcapFilHandle = initializeOfflinePcap(options.PcapFile, options.Filter)
-		packetSource = gopacket.NewPacketSource(pcapFilHandle, pcapFilHandle.LinkType())
+		myHandler = initializeOfflinePcap(options.PcapFile, options.Filter)
 		log.Info("Reading off Pcap file")
 	}
-	packetSource.DecodeOptions.Lazy = true
-	packetSource.NoCopy = true
+
+	defer myHandler.Close() // closes the packet handler and/or capture files
+	types.GlobalWaitingGroup.Add(1)
+	go func() {
+		defer types.GlobalWaitingGroup.Done()
+		for {
+			//todo: the capture info has the timestamps, need to find a way to push this to handler
+			data, ci, err := myHandler.ReadPacketData()
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			packetBytesChannel <- rawPacketBytes{data, ci}
+		}
+	}()
 
 	// Setup SIGINT handling
-	handleInterrupt(types.GlobalExitChannel)
+	handleInterrupt()
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
@@ -133,42 +126,35 @@ func (capturer *DNSCapturer) Start() {
 	var totalCnt = 0
 	for {
 		ratioCnt++
+
 		select {
-		case packet := <-packetSource.Packets():
-			if packet == nil {
+		case packetRawBytes := <-packetBytesChannel:
+			if packetRawBytes.bytes == nil {
 				log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 10 seconds waiting for processing to finish")
 				time.Sleep(time.Second * 10)
-				close(types.GlobalExitChannel)
+				// close(types.GlobalExitChannel)  //todo: is this needed here?
 				return
 			}
 			if ratioCnt%util.RatioB < util.RatioA {
-				if ratioCnt > util.RatioB*util.RatioA {
+				if ratioCnt > util.RatioB*util.RatioA { //reset ratiocount before it goes to an absurdly high number
 					ratioCnt = 0
 				}
-				select {
-				case capturer.processing <- packet:
-					totalCnt++
-				case <-types.GlobalExitChannel:
-					return
-				}
+				capturer.processing <- packetRawBytes
 			}
 		case <-types.GlobalExitChannel:
+			log.Warn("Exiting capture loop")
 			return
 		case <-captureStatsTicker.C:
-			if pcapFilHandle != nil {
-				pcapStats.PacketsLost = 0
-				pcapStats.PacketsGot = totalCnt
-			} else if pcapHandle != nil {
-				mystats, err := pcapHandle.Stats()
-				if err == nil {
-					pcapStats.PacketsGot = int(mystats.Packets)
-					pcapStats.PacketsLost = int(mystats.Drops)
-				} else {
-					pcapStats.PacketsGot = totalCnt
-				}
-			} else {
-				updateAfpacketStats(afHandle)
+
+			mystats, err := myHandler.Stats()
+			if err == nil {
+				pcapStats.PacketsGot = int(mystats.Packets)
+				pcapStats.PacketsLost = int(mystats.Drops)
 			}
+			if err != nil || mystats.Packets == 0 { // to make up for pcap not being able to get stats
+				pcapStats.PacketsGot = totalCnt
+			}
+
 			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
 
 		case <-printStatsTicker.C:

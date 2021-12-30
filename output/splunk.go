@@ -94,7 +94,7 @@ func selectHealthyConnection() string {
 }
 
 func SplunkOutput(spConfig types.SplunkConfig) {
-
+	defer types.GlobalWaitingGroup.Done()
 	log.Infof("Connecting to Splunk endpoints")
 	connectMultiSplunkRetry(spConfig)
 

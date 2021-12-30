@@ -10,11 +10,12 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 	"github.com/mosajjal/dnsmonster/types"
+	"golang.org/x/sys/unix"
 )
 
 type packetEncoder struct {
 	port              uint16
-	input             <-chan gopacket.Packet
+	input             <-chan rawPacketBytes
 	ip4Defrgger       chan<- ipv4ToDefrag
 	ip6Defrgger       chan<- ipv6FragmentInfo
 	ip4DefrggerReturn <-chan ipv4Defragged
@@ -98,7 +99,7 @@ type dnsStream struct {
 // DNSCapturer object is used to make our configuration portable within the entire code
 type DNSCapturer struct {
 	options    CaptureOptions
-	processing chan gopacket.Packet
+	processing chan rawPacketBytes
 }
 
 // captureStats is capturing statistics about our current live captures. At this point it's not accurate for PCAP files.
@@ -139,4 +140,16 @@ var LayerTypeDetectIP = gopacket.RegisterLayerType(250, gopacket.LayerTypeMetada
 type DetectIP struct {
 	layers.BaseLayer
 	family layers.EthernetType
+}
+
+type genericHandler interface {
+	ReadPacketData() ([]byte, gopacket.CaptureInfo, error)
+	ZeroCopyReadPacketData() ([]byte, gopacket.CaptureInfo, error)
+	Close()
+	Stats() (*unix.TpacketStats, error)
+}
+
+type rawPacketBytes struct {
+	bytes []byte
+	info  gopacket.CaptureInfo
 }

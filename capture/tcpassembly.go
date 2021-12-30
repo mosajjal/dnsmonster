@@ -14,6 +14,7 @@ import (
 )
 
 func (ds *dnsStream) processStream() {
+	defer types.GlobalWaitingGroup.Done()
 	var data []byte
 	var tmp = make([]byte, 4096)
 
@@ -46,6 +47,7 @@ func (ds *dnsStream) processStream() {
 				}
 			}
 		}
+		// todo: should we handle exit here
 	}
 }
 
@@ -59,6 +61,7 @@ func (stream *dnsStreamFactory) New(net, transport gopacket.Flow) tcpassembly.St
 	}
 
 	// We must read all the data from the reader or we will have the data standing in memory
+	types.GlobalWaitingGroup.Add(1)
 	go dstream.processStream()
 
 	return &dstream.reader

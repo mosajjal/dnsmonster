@@ -69,7 +69,7 @@ func ClickhouseOutput(chConfig types.ClickHouseConfig) {
 	var workerChannelList []chan types.DNSResult
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
 		workerChannelList = append(workerChannelList, make(chan types.DNSResult, chConfig.ClickhouseWorkerChannelSize))
-		go clickhouseOutputWorker(chConfig, workerChannelList[i]) //todo: fan out
+		go clickhouseOutputWorker(chConfig, workerChannelList[i])
 	}
 	var cnt uint
 	for {
@@ -97,7 +97,7 @@ func clickhouseOutputWorker(chConfig types.ClickHouseConfig, workerchannel chan 
 			}
 		case <-ticker.C:
 			if err := clickhouseSendData(connect, batch, chConfig); err != nil {
-				log.Warnf("Error sending data to clickhouse: %#v, %v", batch, err) //todo: remove batch from this print
+				log.Warnf("Error sending data to clickhouse: %v", err)
 				connect = connectClickhouseRetry(chConfig)
 			} else {
 				batch = make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
@@ -213,7 +213,7 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 			}
 		}()
 	}
-	clickhouseWaitGroup.Wait() //todo: do I need to have s separate waitgroup for CH?
+	clickhouseWaitGroup.Wait() // there is a separate waitgroup only for Clickhouse, need to investigate if this is needed or not.
 	if err := connect.Commit(); err != nil {
 		log.Warnf("Error writing block: %s", err)
 		return err

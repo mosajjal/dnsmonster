@@ -185,8 +185,8 @@ func ProcessFlags() {
 
 	if GeneralFlags.SkipDomainsFile != "" {
 		log.Info("skipDomainsFile is provided")
-		// check to see if the file provided exists
-		// commented because this now can be either filepath or URL, TODO
+		// todo: check to see if the file provided exists
+		// commented because this now can be either filepath or URL
 		// if _, err := os.Stat(generalOptions.SkipDomainsFile); err != nil {
 		// 	log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
 		// }
@@ -200,8 +200,8 @@ func ProcessFlags() {
 
 	if GeneralFlags.AllowDomainsFile != "" {
 		log.Info("allowDomainsFile is provided")
-		// check to see if the file provided exists
-		// commented because this now can be either filepath or URL, TODO
+		// todo: check to see if the file provided exists
+		// commented because this now can be either filepath or URL
 		// if _, err := os.Stat(generalOptions.AllowDomainsFile); err != nil {
 		// 	log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
 		// }

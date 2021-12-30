@@ -93,7 +93,6 @@ func (encoder *packetEncoder) inputHandlerWorker(p chan rawPacketBytes) {
 						encoder.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), timestamp, 4, ip4.SrcIP, ip4.DstIP)
 					}
 				case layers.LayerTypeIPv6:
-					//todo: find a way to handle fragmented packets
 					// Store the packet metadata
 					if ip6.NextHeader == layers.IPProtocolIPv6Fragment {
 						// TODO: Move the parsing to DecodingLayer when gopacket support it. Currently we have to fully reconstruct the packet from eth layer which is super slow
@@ -137,8 +136,7 @@ func (encoder *packetEncoder) run() {
 	var handlerChanList []chan rawPacketBytes
 	for i := 0; i < int(encoder.handlerCount); i++ {
 		log.Infof("Creating handler #%d\n", i)
-		handlerChanList = append(handlerChanList, make(chan rawPacketBytes, 10000)) //todo: parameter for size of this channel needs to be defined
-		//todo: add the wg
+		handlerChanList = append(handlerChanList, make(chan rawPacketBytes, 10000)) //todo: parameter for size of this channel needs to be defined as a flag
 		go encoder.inputHandlerWorker(handlerChanList[i])
 	}
 

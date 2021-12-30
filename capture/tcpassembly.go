@@ -45,7 +45,6 @@ func (ds *dnsStream) processStream() {
 				}
 			}
 		}
-		// todo: should we handle exit here
 	}
 }
 

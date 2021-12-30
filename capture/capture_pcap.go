@@ -105,7 +105,6 @@ func (capturer *DNSCapturer) Start() {
 	defer myHandler.Close() // closes the packet handler and/or capture files. there might be a duplicate of this in pcapfile
 	go func() {
 		for {
-			//todo: the capture info has the timestamps, need to find a way to push this to handler
 			data, ci, err := myHandler.ReadPacketData()
 			util.ErrorHandler(err)
 			packetBytesChannel <- rawPacketBytes{data, ci}
@@ -129,7 +128,6 @@ func (capturer *DNSCapturer) Start() {
 			if packetRawBytes.bytes == nil {
 				log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 10 seconds waiting for processing to finish")
 				time.Sleep(time.Second * 10)
-				// close(types.GlobalExitChannel)  //todo: is this needed here?
 				return
 			}
 			if ratioCnt%util.RatioB < util.RatioA {

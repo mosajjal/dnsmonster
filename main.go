@@ -80,7 +80,7 @@ func main() {
 		capturer.Start()
 		// Wait for the output to finish
 		log.Info("Exiting..")
-		types.GlobalWaitingGroup.Wait()
+
 	} else { // dnstap si totally different, hence only the result channel is being pushed to it
 		capture.StartDNSTap(resultChannel)
 	}

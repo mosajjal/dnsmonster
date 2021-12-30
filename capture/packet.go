@@ -50,7 +50,7 @@ func (encoder *packetEncoder) processTransport(foundLayerTypes *[]gopacket.Layer
 }
 
 func (encoder *packetEncoder) inputHandlerWorker(p chan rawPacketBytes) {
-	defer types.GlobalWaitingGroup.Done()
+
 	var ethLayer layers.Ethernet
 	var ip4 layers.IPv4
 	var ip6 layers.IPv6
@@ -110,16 +110,14 @@ func (encoder *packetEncoder) inputHandlerWorker(p chan rawPacketBytes) {
 					}
 				}
 			}
-		case <-types.GlobalExitChannel:
-			log.Warn("Exiting Encoder worker loop")
-			return
+
 		}
 	}
 
 }
 
 func (encoder *packetEncoder) run() {
-	defer types.GlobalWaitingGroup.Done()
+
 	rand.Seed(20)
 	var ip4 layers.IPv4
 
@@ -141,7 +139,6 @@ func (encoder *packetEncoder) run() {
 		log.Infof("Creating handler #%d\n", i)
 		handlerChanList = append(handlerChanList, make(chan rawPacketBytes, 10000)) //todo: parameter for size of this channel needs to be defined
 		//todo: add the wg
-		types.GlobalWaitingGroup.Add(1)
 		go encoder.inputHandlerWorker(handlerChanList[i])
 	}
 
@@ -185,9 +182,6 @@ func (encoder *packetEncoder) run() {
 			encoder.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
 		case packet := <-encoder.input:
 			handlerChanList[rand.Intn(int(encoder.handlerCount))] <- packet
-		case <-types.GlobalExitChannel:
-			log.Warn("Exiting Encoder loop")
-			return
 		}
 	}
 }

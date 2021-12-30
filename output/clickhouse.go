@@ -34,9 +34,7 @@ func connectClickhouseRetry(chConfig types.ClickHouseConfig) clickhouse.Clickhou
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-types.GlobalExitChannel:
-			// When exiting, return immediately
-			return nil
+
 		case <-tick.C:
 			continue
 		}
@@ -67,12 +65,10 @@ func min(a, b int) int {
 // needs to make sure that there is proper Database connection and table are present. Refer to the project's
 // clickhouse folder for the file tables.sql
 func ClickhouseOutput(chConfig types.ClickHouseConfig) {
-	defer types.GlobalWaitingGroup.Done()
 	printStatsTicker := time.NewTicker(chConfig.General.PrintStatsDelay)
 	var workerChannelList []chan types.DNSResult
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
 		workerChannelList = append(workerChannelList, make(chan types.DNSResult, chConfig.ClickhouseWorkerChannelSize))
-		types.GlobalWaitingGroup.Add(1)
 		go clickhouseOutputWorker(chConfig, workerChannelList[i]) //todo: fan out
 	}
 	var cnt uint
@@ -82,8 +78,6 @@ func ClickhouseOutput(chConfig types.ClickHouseConfig) {
 		case data := <-chConfig.ResultChannel:
 			//fantout is a round-robin logic
 			workerChannelList[cnt%chConfig.ClickhouseWorkers] <- data
-		case <-types.GlobalExitChannel:
-			return
 		case <-printStatsTicker.C:
 			log.Infof("output: %+v", chstats)
 		}
@@ -91,7 +85,6 @@ func ClickhouseOutput(chConfig types.ClickHouseConfig) {
 }
 
 func clickhouseOutputWorker(chConfig types.ClickHouseConfig, workerchannel chan types.DNSResult) {
-	defer types.GlobalWaitingGroup.Done()
 	connect := connectClickhouseRetry(chConfig)
 	batch := make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
 
@@ -109,8 +102,6 @@ func clickhouseOutputWorker(chConfig types.ClickHouseConfig, workerchannel chan 
 			} else {
 				batch = make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
 			}
-		case <-types.GlobalExitChannel:
-			return
 
 		}
 	}

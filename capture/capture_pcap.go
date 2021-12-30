@@ -3,7 +3,6 @@ package capture
 import (
 	"time"
 
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 
@@ -35,9 +34,13 @@ func handleInterrupt() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
-			log.Infof("SIGINT received")
-			close(types.GlobalExitChannel)
-			return
+			for {
+				log.Infof("SIGINT Received. Stopping capture...")
+
+				<-time.After(10 * time.Second)
+				log.Fatal("emergency exit")
+				return
+			}
 		}
 	}()
 }
@@ -75,7 +78,6 @@ func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 		options.PacketHandlerCount,
 		options.NoEthernetframe,
 	}
-	types.GlobalWaitingGroup.Add(1)
 	go encoder.run()
 
 	return DNSCapturer{options, processingChannel}
@@ -100,17 +102,12 @@ func (capturer *DNSCapturer) Start() {
 		log.Info("Reading off Pcap file")
 	}
 
-	defer myHandler.Close() // closes the packet handler and/or capture files
-	types.GlobalWaitingGroup.Add(1)
+	defer myHandler.Close() // closes the packet handler and/or capture files. there might be a duplicate of this in pcapfile
 	go func() {
-		defer types.GlobalWaitingGroup.Done()
 		for {
 			//todo: the capture info has the timestamps, need to find a way to push this to handler
 			data, ci, err := myHandler.ReadPacketData()
-			if err != nil {
-				log.Error(err)
-				return
-			}
+			util.ErrorHandler(err)
 			packetBytesChannel <- rawPacketBytes{data, ci}
 		}
 	}()
@@ -141,9 +138,7 @@ func (capturer *DNSCapturer) Start() {
 				}
 				capturer.processing <- packetRawBytes
 			}
-		case <-types.GlobalExitChannel:
-			log.Warn("Exiting capture loop")
-			return
+
 		case <-captureStatsTicker.C:
 
 			mystats, err := myHandler.Stats()

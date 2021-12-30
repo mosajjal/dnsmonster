@@ -34,7 +34,7 @@ func initializeLivePcap(devName, filter string) *pcapgo.EthernetHandle {
 
 func initializeOfflinePcap(fileName, filter string) *pcapgo.Reader {
 	f, err := os.Open(fileName)
-	defer f.Close()
+	// defer f.Close() //todo: find where to close the file. in here doesn't work
 	util.ErrorHandler(err)
 	handle, err := pcapgo.NewReader(f)
 

@@ -48,7 +48,6 @@ func connectelastic(esConfig types.ElasticConfig) (*elastic.Client, error) {
 	)
 	util.ErrorHandler(err)
 
-	//TODO: are we retrying without exiting out of dnsmonster?
 	// Ping the Elasticsearch server to get e.g. the version number
 	info, code, err := client.Ping(esConfig.ElasticOutputEndpoint).Do(ctx)
 	util.ErrorHandler(err)

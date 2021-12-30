@@ -38,7 +38,8 @@ func (h *pcapFileHandle) Close() {
 }
 
 func (h *pcapFileHandle) Stats() (*unix.TpacketStats, error) {
-	//todo: this needs to be implemented correctly
+	// in printstats, we check if this is 0, and we add the total counter to this to make sure we have a better number
+	// in essence, there should be 0 packet loss for a pcap file since the rate of the packet is controlled by i/o not network
 	tpacketStats := unix.TpacketStats{0, 0}
 	return &tpacketStats, nil
 }

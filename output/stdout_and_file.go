@@ -14,7 +14,6 @@ var stdoutstats = types.OutputStats{Name: "Stdout", SentToOutput: 0, Skipped: 0}
 var fileoutstats = types.OutputStats{Name: "File", SentToOutput: 0, Skipped: 0}
 
 func stdoutOutputWorker(stdConfig types.StdoutConfig) {
-	defer types.GlobalWaitingGroup.Done()
 	printStatsTicker := time.NewTicker(stdConfig.General.PrintStatsDelay)
 
 	for {
@@ -30,8 +29,7 @@ func stdoutOutputWorker(stdConfig types.StdoutConfig) {
 
 				fmt.Printf("%s\n", data.String())
 			}
-		case <-types.GlobalExitChannel:
-			return
+
 		case <-printStatsTicker.C:
 			log.Infof("output: %+v", stdoutstats)
 		}
@@ -39,15 +37,12 @@ func stdoutOutputWorker(stdConfig types.StdoutConfig) {
 }
 
 func StdoutOutput(stdConfig types.StdoutConfig) {
-	defer types.GlobalWaitingGroup.Done()
 	for i := 0; i < 8; i++ {
-		types.GlobalWaitingGroup.Add(1)
 		go stdoutOutputWorker(stdConfig)
 	}
 }
 
 func FileOutput(fConfig types.FileConfig) {
-	defer types.GlobalWaitingGroup.Done()
 	var fileObject *os.File
 	if fConfig.FileOutputType > 0 {
 		var err error
@@ -72,8 +67,7 @@ func FileOutput(fConfig types.FileConfig) {
 				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
 				util.ErrorHandler(err)
 			}
-		case <-types.GlobalExitChannel:
-			return
+
 		case <-printStatsTicker.C:
 			log.Infof("output: %+v", fileoutstats)
 		}

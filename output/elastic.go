@@ -31,9 +31,6 @@ func connectelasticRetry(esConfig types.ElasticConfig) *elastic.Client {
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-types.GlobalExitChannel:
-			// When exiting, return immediately
-			return nil
 		case <-tick.C:
 			continue
 		}
@@ -61,7 +58,6 @@ func connectelastic(esConfig types.ElasticConfig) (*elastic.Client, error) {
 }
 
 func ElasticOutput(esConfig types.ElasticConfig) {
-	defer types.GlobalWaitingGroup.Done()
 	client := connectelasticRetry(esConfig)
 	batch := make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 
@@ -95,8 +91,6 @@ func ElasticOutput(esConfig types.ElasticConfig) {
 			} else {
 				batch = make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 			}
-		case <-types.GlobalExitChannel:
-			return
 		case <-printStatsTicker.C:
 			log.Infof("output: %+v", elasticstats)
 		}

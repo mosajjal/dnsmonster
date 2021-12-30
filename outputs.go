@@ -19,7 +19,7 @@ func setupOutputs() {
 		SkipTlsVerification: util.GeneralFlags.SkipTLSVerification,
 	}
 	log.Info("Creating the dispatch Channel")
-	types.GlobalWaitingGroup.Add(1)
+
 	go dispatchOutput(resultChannel)
 
 	if util.OutputFlags.FileOutputType > 0 {
@@ -30,7 +30,7 @@ func setupOutputs() {
 			FileOutputType: util.OutputFlags.FileOutputType,
 			General:        generalConfig,
 		}
-		types.GlobalWaitingGroup.Add(1)
+
 		go output.FileOutput(fConfig)
 		// go fileOutput(fileResultChannel, exiting, &wg)
 	}
@@ -41,7 +41,7 @@ func setupOutputs() {
 			StdoutOutputType: util.OutputFlags.StdoutOutputType,
 			General:          generalConfig,
 		}
-		types.GlobalWaitingGroup.Add(1)
+
 		go output.StdoutOutput(stdConfig)
 		// go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
@@ -53,7 +53,6 @@ func setupOutputs() {
 			SyslogOutputType:     util.OutputFlags.SyslogOutputType,
 			General:              generalConfig,
 		}
-		types.GlobalWaitingGroup.Add(1)
 		go output.SyslogOutput(sysConfig)
 	}
 	if util.OutputFlags.ClickhouseOutputType > 0 {
@@ -70,7 +69,6 @@ func setupOutputs() {
 			ClickhouseWorkerChannelSize: util.OutputFlags.ClickhouseWorkerChannelSize,
 			General:                     generalConfig,
 		}
-		types.GlobalWaitingGroup.Add(1)
 		go output.ClickhouseOutput(chConfig)
 	}
 	if util.OutputFlags.KafkaOutputType > 0 {
@@ -84,7 +82,6 @@ func setupOutputs() {
 			KafkaBatchDelay:   util.OutputFlags.KafkaBatchDelay,
 			General:           generalConfig,
 		}
-		types.GlobalWaitingGroup.Add(1)
 		go output.KafkaOutput(kafConfig)
 	}
 	if util.OutputFlags.ElasticOutputType > 0 {
@@ -98,7 +95,7 @@ func setupOutputs() {
 			ElasticBatchDelay:     util.OutputFlags.ElasticBatchDelay,
 			General:               generalConfig,
 		}
-		types.GlobalWaitingGroup.Add(1)
+
 		go output.ElasticOutput(esConfig)
 	}
 	if util.OutputFlags.SplunkOutputType > 0 {
@@ -115,13 +112,12 @@ func setupOutputs() {
 			SplunkBatchDelay:       util.OutputFlags.SplunkBatchDelay,
 			General:                generalConfig,
 		}
-		types.GlobalWaitingGroup.Add(1)
+
 		go output.SplunkOutput(spConfig)
 	}
 }
 
 func dispatchOutput(resultChannel chan types.DNSResult) {
-	defer types.GlobalWaitingGroup.Done()
 	// Set up various tickers for different tasks
 	skipDomainsFileTicker := time.NewTicker(util.GeneralFlags.SkipDomainsRefreshInterval)
 	skipDomainsFileTickerChan := skipDomainsFileTicker.C
@@ -162,8 +158,7 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			if util.OutputFlags.SplunkOutputType > 0 {
 				splunkResultChannel <- data
 			}
-		case <-types.GlobalExitChannel:
-			return
+
 		case <-skipDomainsFileTickerChan:
 			log.Infof("reached skipDomains tick")
 			if util.SkipDomainMapBool {

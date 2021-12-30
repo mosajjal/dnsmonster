@@ -26,7 +26,6 @@ func connectMultiSplunkRetry(spConfig types.SplunkConfig) {
 
 func connectSplunkRetry(spConfig types.SplunkConfig, splunkEndpoint string) types.SplunkConnection {
 	tick := time.NewTicker(5 * time.Second)
-	conn := types.SplunkConnection{}
 	// don't retry connection if we're doing dry run
 	if spConfig.SplunkOutputType == 0 {
 		tick.Stop()
@@ -35,9 +34,7 @@ func connectSplunkRetry(spConfig types.SplunkConfig, splunkEndpoint string) type
 	for {
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-types.GlobalExitChannel:
-			// When exiting, return immediately
-			return conn
+
 		case <-tick.C:
 			// check to see if the connection exists
 			if conn, ok := splunkConnectionList[splunkEndpoint]; ok {
@@ -94,7 +91,6 @@ func selectHealthyConnection() string {
 }
 
 func SplunkOutput(spConfig types.SplunkConfig) {
-	defer types.GlobalWaitingGroup.Done()
 	log.Infof("Connecting to Splunk endpoints")
 	connectMultiSplunkRetry(spConfig)
 
@@ -126,8 +122,7 @@ func SplunkOutput(spConfig types.SplunkConfig) {
 				log.Warn("Splunk Connection not found")
 				splunkStats.Skipped += len(batch)
 			}
-		case <-types.GlobalExitChannel:
-			return
+
 		case <-printStatsTicker.C:
 			log.Infof("output: %+v", splunkStats)
 		}

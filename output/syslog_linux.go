@@ -30,9 +30,7 @@ func connectSyslogRetry(sysConfig types.SyslogConfig) *syslog.Writer {
 
 		// Error getting connection, wait the timer or check if we are exiting
 		select {
-		case <-types.GlobalExitChannel:
-			// When exiting, return immediately
-			return nil
+
 		case <-tick.C:
 			continue
 		}
@@ -50,7 +48,6 @@ func connectSyslog(sysConfig types.SyslogConfig) (*syslog.Writer, error) {
 }
 
 func SyslogOutput(sysConfig types.SyslogConfig) {
-	defer types.GlobalWaitingGroup.Done()
 	writer := connectSyslogRetry(sysConfig)
 
 	printStatsTicker := time.NewTicker(sysConfig.General.PrintStatsDelay)
@@ -74,8 +71,7 @@ func SyslogOutput(sysConfig types.SyslogConfig) {
 				// we should skip to the next data since we've already saved all the questions. Multi-Question DNS queries are not common
 				continue
 			}
-		case <-types.GlobalExitChannel:
-			return
+
 		case <-printStatsTicker.C:
 			log.Infof("output: %+v", syslogstats)
 		}

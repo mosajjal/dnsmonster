@@ -9,12 +9,10 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	"github.com/mosajjal/dnsmonster/types"
 	log "github.com/sirupsen/logrus"
 )
 
 func (ds *dnsStream) processStream() {
-	defer types.GlobalWaitingGroup.Done()
 	var data []byte
 	var tmp = make([]byte, 4096)
 
@@ -61,7 +59,6 @@ func (stream *dnsStreamFactory) New(net, transport gopacket.Flow) tcpassembly.St
 	}
 
 	// We must read all the data from the reader or we will have the data standing in memory
-	types.GlobalWaitingGroup.Add(1)
 	go dstream.processStream()
 
 	return &dstream.reader
@@ -102,8 +99,7 @@ func tcpAssembler(tcpchannel chan tcpPacket, tcpReturnChannel chan tcpData, gcTi
 				assemblerV4.FlushOlderThan(time.Now().Add(gcTime * -1))
 				assemblerV6.FlushOlderThan(time.Now().Add(gcTime * -1))
 			}
-		case <-types.GlobalExitChannel:
-			return
+
 		}
 	}
 }

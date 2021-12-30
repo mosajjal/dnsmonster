@@ -2,7 +2,6 @@ package types
 
 import (
 	"net"
-	"sync"
 	"time"
 
 	mkdns "github.com/miekg/dns"
@@ -107,9 +106,3 @@ type StdoutConfig struct {
 	StdoutOutputType uint
 	General          GeneralConfig
 }
-
-// Setup output routine
-var GlobalExitChannel = make(chan bool)
-var GlobalWaitingGroup sync.WaitGroup
-
-// var G, GCtx = errgroup.WithContext(context.Background())

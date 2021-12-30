@@ -41,8 +41,9 @@ func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 }
 
 func (h *afpacketHandle) Close() {
-
+	h.TPacket.Close()
 }
+
 func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	frameSize uint, blockSize uint, numBlocks uint, err error) {
 

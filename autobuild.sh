@@ -45,7 +45,7 @@ dockercomposetemplate=$(cat <<EOF
     depends_on:
       - ch
     volumes:
-      - ./grafana/plugins:/var/lib/grafana/plugins/
+      - ./grafana/plugins/vertamedia-clickhouse-datasource/dist:/var/lib/grafana/plugins/vertamedia-clickhouse-datasource
       - ./bin/curl:/sbin/curl
 networks:
   monitoring:
@@ -155,7 +155,12 @@ sleep 30
 echo "Crete tables for Clickhouse"
 docker-compose exec ch /bin/sh -c 'cat /tmp/tables.sql | clickhouse-client -h 127.0.0.1 --multiquery'
 
-echo "Adding the datasourcee to Grafana"
+# echo "downloading latest version of Clickhouse plugin for Grafana"
+# docker-compose exec grafana /sbin/curl -L https://github.com/Vertamedia/clickhouse-grafana/releases/download/v2.4.2/vertamedia-clickhouse-datasource-2.4.2.zip -o /tmp/vertamedia-clickhouse-datasource-2.4.2.zip
+# docker-compose exec grafana unzip /tmp/vertamedia-clickhouse-datasource-2.4.2.zip -d /var/lib/grafana/plugins/
+# echo
+
+echo "Adding the datasource to Grafana"
 docker-compose exec grafana /sbin/curl -H 'Content-Type:application/json' 'http://admin:admin@127.0.0.1:3000/api/datasources' --data-raw '{"name":"ClickHouse","type":"vertamedia-clickhouse-datasource","url":"http://ch:8123","access":"proxy"}'
 echo
 

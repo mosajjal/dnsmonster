@@ -175,7 +175,7 @@ func (encoder *packetEncoder) run() {
 			}
 			encoder.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
 		case packet := <-encoder.input:
-			handlerChanList[packet.NetworkLayer().NetworkFlow().FastHash()%uint64(encoder.handlerCount)] <- packet
+			handlerChanList[packet.LinkLayer().LinkFlow().FastHash()%uint64(encoder.handlerCount)] <- packet
 		case <-types.GlobalExitChannel:
 			return
 		}

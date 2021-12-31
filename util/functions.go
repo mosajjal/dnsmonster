@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -109,7 +110,9 @@ func LoadDomainsToList(Filename string) [][]string {
 
 func ErrorHandler(err error) {
 	if err != nil {
-		log.Fatal("fatal Error: ", err)
+		log.Error("fatal Error: ", err)
+		time.Sleep(time.Second * 5)
+		os.Exit(1)
 	}
 }
 

@@ -66,7 +66,7 @@ func KafkaOutput(kafConfig types.KafkaConfig) {
 				log.Info(err)
 				connect = connectKafkaRetry(kafConfig)
 			} else {
-				batch = make([]types.DNSResult, 0, kafConfig.KafkaBatchDelay)
+				batch = make([]types.DNSResult, 0, kafConfig.KafkaBatchSize)
 			}
 
 		case <-printStatsTicker.C:

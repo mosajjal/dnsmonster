@@ -115,7 +115,7 @@ var helpOptions struct {
 }
 
 func ProcessFlags() {
-
+	//todo: flags are camel-case but ini is not. this needs to be consistent
 	var parser = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
 	iniParser := flags.NewIniParser(parser)
 	parser.AddGroup("general", "General Options", &GeneralFlags)
@@ -212,6 +212,8 @@ func ProcessFlags() {
 			AllowDomainMapBool = true
 		}
 	}
+
+	// todo: check to see if there's at least one output is enabled. possibly can add all the types and see if it's a positive number
 
 	if OutputFlags.StdoutOutputType >= 5 {
 		log.Fatal("stdoutOutputType must be one of 0, 1, 2, 3 or 4")

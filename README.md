@@ -11,6 +11,7 @@ Table of Contents
 - [Main features](#main-features)
 - [Installation](#installation)
   - [Linux](#linux)
+    - [Container](#container)
     - [Build Manually](#build-manually)
     - [Build Statically](#build-statically)
   - [Windows](#windows)
@@ -68,6 +69,13 @@ The code before version 1.x is considered beta quality and is subject to breakin
 ## Linux
 
 Best way to get started with `dnsmonster` is to download the binary from the release section. The binary is statically built against `musl`, hence it should work out of the box for many distros. For `afpacket` support, you must use kernel 3.x+. Any modern Linux distribution (CentOS/RHEL 7+, Ubuntu 14.0.4.2+, Debian 7+) is shipped with a 3.x+ version so it should work out of the box. If your distro is not working with the pre-compiled version properly, please submit an issue with the details, and build `dnsmonster` manually using this section [Build Manually](#build-manually).
+
+### Container
+
+Since `dnsmonster` uses raw packet capture funcationality, Docker/Podman daemon must grant the capability to the container
+
+```sudo docker run --rm -it --net=host --cap-add NET_RAW --cap-add NET_ADMIN --name dnsmonster ghcr.io/mosajjal/dnsmonster:latest --devName lo --stdoutOutputType=1```
+
 
 ### Build Manually
 

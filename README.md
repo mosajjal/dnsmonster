@@ -36,14 +36,13 @@ Table of Contents
 
 # DNS Monster
 
-Passive DNS collection and monitoring built with Golang, Clickhouse and Grafana: 
+Passive DNS monitoring framework built on Golang. 
 `dnsmonster` implements a packet sniffer for DNS traffic. It can accept traffic from a `pcap` file, a live interface or a `dnstap` socket, 
-and can be used to index and store thousands of DNS queries per second (it has shown to be capable of indexing 200k+ DNS queries per second on a commodity computer). It aims to be scalable, simple and easy to use, and help
+and can be used to index and store hundreds of thousands of DNS queries per second as it has shown to be capable of indexing 200k+ DNS queries per second on a commodity computer. It aims to be scalable, simple and easy to use, and help
 security teams to understand the details about an enterprise's DNS traffic. `dnsmonster` does not look to follow DNS conversations, rather it aims to index DNS packets as soon as they come in. It also does not aim to breach
-the privacy of the end-users, with the ability to mask source IP from 1 to 32 bits, making the data potentially untraceable. [Blogpost](https://blog.n0p.me/dnsmonster/)
+the privacy of the end-users, with the ability to mask Layer 3 IPs (IPv4 and IPv6), enabling teams to perform trend analysis on aggregated data without being able to trace back the queries to an individual. [Blogpost](https://blog.n0p.me/dnsmonster/)
 
-
-IMPORTANT NOTE: The code before version 1.x is considered beta quality and is subject to breaking changes. Please check the release notes for each tag to see the list of breaking scenarios between each release, and how to mitigate potential data loss.
+The code before version 1.x is considered beta quality and is subject to breaking changes. Please check the release notes for each tag to see the list of breaking scenarios between each release, and how to mitigate potential data loss.
 
 ![Inner logic of dnsmonster](static/dnsmonster-inner.svg)
 
@@ -51,14 +50,14 @@ IMPORTANT NOTE: The code before version 1.x is considered beta quality and is su
 
 - Can use Linux's `afpacket` and zero-copy packet capture.
 - Supports BPF
-- Can fuzz source IP to enhance privacy
+- Can mask IP to enhance privacy
 - Can have a pre-processing sampling ratio
 - Can have a list of "skip" `fqdn`s to avoid writing some domains/suffix/prefix to storage, thus improving DB performance
 - Can have a list of "allow" domains to only log hits of certain domains in Clickhouse/Stdout/File
-- Modular output with different logic per output stream. Currently stdout/file/clickhouse
+- Modular output with different logic per output stream. See [Supported Outputs](#supported-outputs)
 - Hot-reload of skip and allow domain files
 - Automatic data retention policy using ClickHouse's TTL attribute
-- Built-in dashboard using Grafana
+- Simple Grafana dashboard for Clickhouse tables
 - Can be shipped as a single, statically-linked binary
 - Ability to be configured using Env variables, command line options or configuration file
 - Ability to sample output metrics using ClickHouse's SAMPLE capability
@@ -66,24 +65,61 @@ IMPORTANT NOTE: The code before version 1.x is considered beta quality and is su
 - Supports DNS Over TCP, Fragmented DNS (udp/tcp) and IPv6
 - Supports [dnstrap](https://github.com/dnstap/golang-dnstap) over Unix socket or TCP
 
-# Manual Installation
+# Installation
 
 ## Linux
-For `afpacket` v3 support, you need to use kernel 3.x+. Any Linux distro since 5 years ago is shipped with a 3.x+ version so it should work out of the box. The release binary is shipped as a statically-linked binary and shouldn't need any dependencies and will work out of the box. If your distro is not running the pre-compiled version properly, please submit an issue with the details and build `dnsmonster` manually using this section [Build Manually](#build-manually).
 
-## Windows
-Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. I've tested it in a Windows 10 environment and it ran without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
+Best way to get started with `dnsmonster` is to download the binary from the release section. The binary is statically built against `musl`, hence it should work out of the box for many distros. For `afpacket` support, you must use kernel 3.x+. Any modern Linux distribution (CentOS/RHEL 7+, Ubuntu 14.0.4.2+, Debian 7+) is shipped with a 3.x+ version so it should work out of the box. If your distro is not working with the pre-compiled version properly, please submit an issue with the details, and build `dnsmonster` manually using this section [Build Manually](#build-manually).
 
-  - open cmd.exe (probably as Admin) and run the following: `getmac.exe`, you'll see a table with your interfaces' MAC address and a Transport Name column with something like this: `\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}`
-  - run `dnsmonster.exe` in `cmd.exe` like this:
+### Build Manually
 
-```batch
-dnsmonster.exe \Device\NPF_{16000000-0000-0000-0000-145C4638064C}
+- with `libpcap`:
+  Make sure you have `go`, `libpcap-devel` and `linux-headers` packages installed. The name of the packages might differ based on your distribution. After this, simply clone the repository and run `go build .`
+
+```sh
+git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
+cd /tmp/dnsmonster
+go get
+go build -o dnsmonster .
 ```
 
-Note that you should change `\Tcpip` from `getmac.exe` to `\NPF` inside `dnsmonster.exe`.
+- without `libpcap`:
+`dnsmonster` only uses one function from `libpcap`, and that is converting the `tcpdump`-style filters into BPF bytecode. If you can live with no BPF support, you can build `dnsmonster` without `libpcap`
 
-Since `afpacket` is a Linux feature and Windows is not supported, `useAfpacket` and its related options will not work and will cause unexpected behavior on Windows.
+```sh
+git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
+cd /tmp/dnsmonster
+go get
+go build -o dnsmonster -tags nolibpcap .
+```
+
+### Build Statically
+
+If you have a copy of `libpcap.a`, you can build the statically link it to `dnsmonster` and build it fully statically. In the code below, please change `/root/libpcap-1.9.1/libpcap.a` to the location of your copy.
+
+```
+ $ git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster
+ $ cd /tmp/dnsmonster/
+ $ go get
+ $ go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
+```
+
+For more information on how the statically linked binary is created, take a look at [this](Dockerfile) Dockerfile.
+
+## Windows
+
+NOTE: Pre-built Windows binaries are not available for the later versions, duo to limitations of `pcapgo`'s raw packet capture.
+
+Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. I've tested it in a Windows 10 environment and it ran without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
+
+  - open cmd.exe as Administrator and run the following: `getmac.exe`, you'll see a table with your interfaces' MAC address and a Transport Name column with something like this: `\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}`
+  - run `dnsmonster.exe` in `cmd.exe` like this:
+
+```sh
+dnsmonster.exe --devName \Device\NPF_{16000000-0000-0000-0000-145C4638064C}
+```
+
+Note that you must change `\Tcpip` from `getmac.exe` to `\NPF` and then pass it to `dnsmonster.exe`.
 
 # Architecture
 
@@ -110,20 +146,15 @@ running `./autobuild.sh` creates multiple containers:
 
 ![Basic AIO Diagram](static/dnsmonster-enterprise.svg)
 
-### Set up a ClickHouse Cluster
-
-Clickhouse website provides an excellent tutorial on how to create a cluster with a "virtual" table, [reference](https://clickhouse.tech/docs/en/getting-started/tutorial/#cluster-deployment). Note that `DNS_LOG` has to be created virtually in this cluster in order to provide HA and load balancing across the nodes. 
-
-Configuration of Agent as well as Grafana is Coming soon!
 
 # Configuration
 
 DNSMonster can be configured using 3 different methods. Command line options, Environment variables and configuration file. Order of precedence:
 
-- Command line options
-- Environment variables
-- Configuration file
-- Default values
+- Command line options (Case-sensitive, camelCase)
+- Environment variables (Always upper-case)
+- Configuration file (Case-sensitive, PascalCase)
+- Default values (No configuration)
 
 ## Command line options
 [//]: <> (start of command line options)
@@ -446,17 +477,17 @@ $ sudo -E dnsmonster
 you can run `dnsmonster` using the following command to in order to use configuration file:
 
 ```shell
-$ sudo dnsmonster -config=dnsmonster.cfg
+$ sudo dnsmonster -config=dnsmonster.ini
 
 # Or you can use environment variables to set the configuration file path
-$ export DNSMONSTER_CONFIG=dnsmonster.cfg
+$ export DNSMONSTER_CONFIG=dnsmonster.ini
 $ sudo -E dnsmonster
 ```
 
 
 ## What's the retention policy
 
-The default retention policy for the DNS data is set to 30 days. You can change the number by building the containers using `./autobuild.sh`. Since ClickHouse doesn't have an internal timestamp, the TTL will look at incoming packet's date in `pcap` files. So while importing old `pcap` files, ClickHouse may automatically start removing the data as they're being written and you won't see any actual data in your Grafana. To fix that, you can change TTL to a day older than your earliest packet inside the PCAP file. 
+The default retention policy for the ClickHouse tables is set to 30 days. You can change the number by building the containers using `./autobuild.sh`. Since ClickHouse doesn't have an internal timestamp, the TTL will look at incoming packet's date in `pcap` files. So while importing old `pcap` files, ClickHouse may automatically start removing the data as they're being written and you won't see any actual data in your Grafana. To fix that, you can change TTL to a day older than your earliest packet inside the PCAP file. 
 
 NOTE: to change a TTL at any point in time, you need to directly connect to the Clickhouse server using a `clickhouse` client and run the following SQL statement (this example changes it from 30 to 90 days):
 ```sql
@@ -478,6 +509,8 @@ ALTER TABLE `.inner.DNS_CLASS` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ALTER TABLE `.inner.DNS_RESPONSECODE` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ALTER TABLE `.inner.DNS_SRCIP_MASK` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ```
+
+UPDATE: in the latest version of `clickhouse`, the .inner tables do not have the same name as the corresponding aggregation views. In order to modify the TTL you have to find the table names in UUID format using `SHOW TABLES` and repeat the `ALTER` command with those UUIDs.
 
 # Sampling and Skipping
 
@@ -502,28 +535,8 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 * Splunk HEC
 * Stdout
 * File
-* Syslog
+* Syslog (Linux Only)
 
-# Build Manually
-
-Make sure you have `libpcap-devel` and `linux-headers` packages installed.
-
-`go get github.com/mosajjal/dnsmonster`
-
-## Static Build
-
-```
- $ git clone https://github.com/mosajjal/dnsmonster
- $ cd dnsmonster/
- $ go get
- $ go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
-```
-
-For more information on how the statically linked binary is created, take a look at [this](Dockerfile) Dockerfile.
-
-## pre-built Binary
-
-There are two binary flavours released for each release. A statically-linked self-contained binary built against `musl` on Alpine Linux, which will be maintained [here](https://n0p.me/bin/dnsmonster), and dynamically linked binaries for Windows and Linux, which will depend on `libpcap`. These releases are built against `glibc` so they will have a slight performance advantage over `musl`. These builds will be available in the [release](https://github.com/mosajjal/dnsmonster/releases) section of Github repository. 
 
 # Roadmap
 - [x] Down-sampling capability for SELECT queries
@@ -538,12 +551,12 @@ There are two binary flavours released for each release. A statically-linked sel
 - [x] Splunk HEC output support
 - [x] Syslog output support
 - [x] Grafana dashboard performance improvements
+- [x] remove `libpcap` dependency and move to `pcapgo` for packet processing
 - [ ] Splunk Dashboard
 - [ ] Kibana Dashbaord
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
 - [ ] Getting the data ready to be used for ML & Anomaly Detection
-- [ ] remove `libpcap` dependency and move to `pcapgo`
 - [ ] Clickhouse versioning and migration tool
 - [ ] `statsd` and `Prometheus` support 
 

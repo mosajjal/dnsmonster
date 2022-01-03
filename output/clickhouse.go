@@ -43,6 +43,7 @@ func connectClickhouseRetry(chConfig types.ClickHouseConfig) clickhouse.Clickhou
 
 func connectClickhouse(chConfig types.ClickHouseConfig) (clickhouse.Clickhouse, error) {
 	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug))
+	//todo: there are many options that needs to be added to this. Compression, TLS, etc.
 	if err != nil {
 		log.Error(err)
 		return nil, err

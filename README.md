@@ -74,7 +74,9 @@ Best way to get started with `dnsmonster` is to download the binary from the rel
 
 Since `dnsmonster` uses raw packet capture funcationality, Docker/Podman daemon must grant the capability to the container
 
-```sudo docker run --rm -it --net=host --cap-add NET_RAW --cap-add NET_ADMIN --name dnsmonster ghcr.io/mosajjal/dnsmonster:latest --devName lo --stdoutOutputType=1```
+```
+sudo docker run --rm -it --net=host --cap-add NET_RAW --cap-add NET_ADMIN --name dnsmonster ghcr.io/mosajjal/dnsmonster:latest --devName lo --stdoutOutputType=1
+```
 
 
 ### Build Manually

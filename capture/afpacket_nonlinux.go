@@ -38,9 +38,8 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 func (h *afpacketHandle) Close() {
 }
 
-func (afhandle *afpacketHandle) Stats() (*unix.TpacketStats, error) {
-	tpacketStats := unix.TpacketStats{0, 0}
-	return &tpacketStats, err
+func (afhandle *afpacketHandle) Stats() {
+
 }
 
 func initializeLiveAFpacket(devName, filter string) *afpacketHandle {

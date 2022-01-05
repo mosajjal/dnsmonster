@@ -91,7 +91,7 @@ func StartDNSTap(resultChannel chan types.DNSResult) {
 	buf := make(chan []byte, 1024)
 
 	ratioCnt := 0
-	totalCnt := 0
+	totalCnt := uint(0)
 
 	// Setup SIGINT handling
 	handleDNSTapInterrupt(done)

@@ -38,8 +38,8 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 func (h *afpacketHandle) Close() {
 }
 
-func (afhandle *afpacketHandle) Stats() {
-
+func (afhandle *afpacketHandle) Stat(uint, uint) {
+	return 0, 0
 }
 
 func initializeLiveAFpacket(devName, filter string) *afpacketHandle {

@@ -8,26 +8,9 @@ import (
 
 	"os"
 	"os/signal"
-
-	"github.com/google/gopacket/pcapgo"
 )
 
 var pcapStats captureStats
-
-func initializeLivePcap(devName, filter string) *pcapgo.EthernetHandle {
-	// Open device
-	handle, err := pcapgo.NewEthernetHandle(devName)
-	// handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
-	util.ErrorHandler(err)
-
-	// Set Filter
-	log.Infof("Using Device: %s", devName)
-	log.Infof("Filter: %s", filter)
-	err = handle.SetBPF(TcpdumpToPcapgoBpf(filter))
-	util.ErrorHandler(err)
-
-	return handle
-}
 
 func handleInterrupt() {
 	c := make(chan os.Signal, 1)
@@ -119,7 +102,7 @@ func (capturer *DNSCapturer) Start() {
 	printStatsTicker := time.NewTicker(util.GeneralFlags.PrintStatsDelay)
 
 	var ratioCnt = 0
-	var totalCnt = 0
+	var totalCnt = uint(0)
 	for {
 		ratioCnt++
 
@@ -139,13 +122,12 @@ func (capturer *DNSCapturer) Start() {
 
 		case <-captureStatsTicker.C:
 
-			mystats, err := myHandler.Stats()
-			if err == nil {
-				pcapStats.PacketsGot = int(mystats.Packets)
-				pcapStats.PacketsLost = int(mystats.Drops)
-			}
-			if err != nil || mystats.Packets == 0 { // to make up for pcap not being able to get stats
+			packets, drop := myHandler.Stat()
+			if packets == 0 { // to make up for pcap not being able to get stats
 				pcapStats.PacketsGot = totalCnt
+			} else {
+				pcapStats.PacketsGot = packets
+				pcapStats.PacketsLost = drop
 			}
 
 			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))

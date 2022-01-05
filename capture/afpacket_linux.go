@@ -9,7 +9,6 @@ import (
 
 	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/sys/unix"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/afpacket"
@@ -91,8 +90,10 @@ func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	return handle
 }
 
-func (afhandle *afpacketHandle) Stats() (*unix.TpacketStats, error) {
+func (afhandle *afpacketHandle) Stat() (uint, uint) {
 	mystats, statsv3, err := afhandle.TPacket.SocketStats()
-	tpacketStats := unix.TpacketStats{uint32(mystats.Packets() + statsv3.Packets()), uint32(mystats.Drops() + statsv3.Drops())}
-	return &tpacketStats, err
+	if err != nil {
+		return uint(mystats.Packets() + statsv3.Packets()), uint(mystats.Drops() + statsv3.Drops())
+	}
+	return 0, 0
 }

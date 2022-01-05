@@ -7,7 +7,6 @@ import (
 	"github.com/google/gopacket/pcapgo"
 	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/sys/unix"
 )
 
 type pcapFileHandle struct {
@@ -37,9 +36,8 @@ func (h *pcapFileHandle) Close() {
 	h.file.Close()
 }
 
-func (h *pcapFileHandle) Stats() (*unix.TpacketStats, error) {
+func (h *pcapFileHandle) Stat() (uint, uint) {
 	// in printstats, we check if this is 0, and we add the total counter to this to make sure we have a better number
 	// in essence, there should be 0 packet loss for a pcap file since the rate of the packet is controlled by i/o not network
-	tpacketStats := unix.TpacketStats{0, 0}
-	return &tpacketStats, nil
+	return 0, 0
 }

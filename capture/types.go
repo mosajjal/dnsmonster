@@ -10,7 +10,6 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 	"github.com/mosajjal/dnsmonster/types"
-	"golang.org/x/sys/unix"
 )
 
 type packetEncoder struct {
@@ -104,8 +103,8 @@ type DNSCapturer struct {
 
 // captureStats is capturing statistics about our current live captures. At this point it's not accurate for PCAP files.
 type captureStats struct {
-	PacketsGot        int
-	PacketsLost       int
+	PacketsGot        uint
+	PacketsLost       uint
 	PacketLossPercent float32
 }
 
@@ -146,7 +145,7 @@ type genericHandler interface {
 	ReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	ZeroCopyReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	Close()
-	Stats() (*unix.TpacketStats, error)
+	Stat() (uint, uint)
 }
 
 type rawPacketBytes struct {

@@ -15,6 +15,7 @@ Table of Contents
     - [Build Manually](#build-manually)
     - [Build Statically](#build-statically)
   - [Windows](#windows)
+  - [FreeBSD and MacOS](#freebsd-and-macos)
 - [Architecture](#architecture)
   - [AIO Installation using Docker](#aio-installation-using-docker)
     - [AIO Demo](#aio-demo)
@@ -92,7 +93,7 @@ go build -o dnsmonster .
 ```
 
 - without `libpcap`:
-`dnsmonster` only uses one function from `libpcap`, and that is converting the `tcpdump`-style filters into BPF bytecode. If you can live with no BPF support, you can build `dnsmonster` without `libpcap`
+`dnsmonster` only uses one function from `libpcap`, and that is converting the `tcpdump`-style filters into BPF bytecode. If you can live with no BPF support, you can build `dnsmonster` without `libpcap`. Note that for any other platform, the packet capture falls back to `libpcap` so it becomes a hard dependency (*BSD, Windows, Darwin)
 
 ```sh
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
@@ -101,24 +102,26 @@ go get
 go build -o dnsmonster -tags nolibpcap .
 ```
 
+The above build also works on ARMv7 (RPi4) and AArch64.
+
 ### Build Statically
 
 If you have a copy of `libpcap.a`, you can build the statically link it to `dnsmonster` and build it fully statically. In the code below, please change `/root/libpcap-1.9.1/libpcap.a` to the location of your copy.
 
 ```
- $ git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster
- $ cd /tmp/dnsmonster/
- $ go get
- $ go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
+git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster
+cd /tmp/dnsmonster/
+go get
+go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
 ```
 
 For more information on how the statically linked binary is created, take a look at [this](Dockerfile) Dockerfile.
 
 ## Windows
 
-NOTE: Pre-built Windows binaries are not available for the later versions, duo to limitations of `pcapgo`'s raw packet capture.
+Bulding on Windows is much the same as Linux. Just make sure that you have `npcap`. Clone the repository (`--history 1` works), and run `go get` and `go build .`
 
-Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. I've tested it in a Windows 10 environment and it ran without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
+As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. I've tested it in a Windows 10 environment and it ran without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
 
   - open cmd.exe as Administrator and run the following: `getmac.exe`, you'll see a table with your interfaces' MAC address and a Transport Name column with something like this: `\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}`
   - run `dnsmonster.exe` in `cmd.exe` like this:
@@ -128,6 +131,17 @@ dnsmonster.exe --devName \Device\NPF_{16000000-0000-0000-0000-145C4638064C}
 ```
 
 Note that you must change `\Tcpip` from `getmac.exe` to `\NPF` and then pass it to `dnsmonster.exe`.
+
+## FreeBSD and MacOS
+
+Much the same as Linux and Windows, make sure you have `git`, `libpcap` and `go` installed, then follow the same instructions:
+
+```sh
+git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
+cd /tmp/dnsmonster
+go get
+go build -o dnsmonster .
+```
 
 # Architecture
 

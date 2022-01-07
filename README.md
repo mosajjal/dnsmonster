@@ -375,6 +375,11 @@ output:
       --fileOutputPath=                  Path to output file. Used if
                                          fileOutputType is not none
                                          [$DNSMONSTER_FILEOUTPUTPATH]
+      --fileOutputFormat=[json|csv]      Output format for file.
+                                         options:json,csv. note that the csv
+                                         splits the datetime format into
+                                         multiple fields (default: json)
+                                         [$DNSMONSTER_FILEOUTPUTFORMAT]
       --stdoutOutputType=[0|1|2|3|4]     What should be written to stdout.
                                          options:
                                          ;	0: Disable Output
@@ -386,6 +391,11 @@ output:
                                          ;	4: Enable Output and apply both skip
                                          and allow domains logic (default: 0)
                                          [$DNSMONSTER_STDOUTOUTPUTTYPE]
+      --stdoutOutputFormat=[json|csv]    Output format for stdout.
+                                         options:json,csv. note that the csv
+                                         splits the datetime format into
+                                         multiple fields (default: json)
+                                         [$DNSMONSTER_STDOUTOUTPUTFORMAT]
       --syslogOutputType=[0|1|2|3|4]     What should be written to Syslog
                                          server. options:
                                          ;	0: Disable Output

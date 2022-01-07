@@ -15,7 +15,7 @@ var fileoutstats = types.OutputStats{Name: "File", SentToOutput: 0, Skipped: 0}
 
 func stdoutOutputWorker(stdConfig types.StdoutConfig) {
 	printStatsTicker := time.NewTicker(stdConfig.General.PrintStatsDelay)
-
+	isOutputJson := stdConfig.StdoutOutputFormat == "json"
 	for {
 		select {
 		case data := <-stdConfig.ResultChannel:
@@ -26,8 +26,11 @@ func stdoutOutputWorker(stdConfig types.StdoutConfig) {
 					continue
 				}
 				stdoutstats.SentToOutput++
-
-				fmt.Printf("%s\n", data.String())
+				if isOutputJson {
+					fmt.Printf("%s\n", data.String())
+				} else {
+					fmt.Printf("%s\n", data.CsvRow())
+				}
 			}
 
 		case <-printStatsTicker.C:
@@ -37,6 +40,10 @@ func stdoutOutputWorker(stdConfig types.StdoutConfig) {
 }
 
 func StdoutOutput(stdConfig types.StdoutConfig) {
+	isOutputJson := stdConfig.StdoutOutputFormat == "json"
+	if !isOutputJson {
+		types.PrintCsvHeader()
+	}
 	for i := 0; i < 8; i++ {
 		go stdoutOutputWorker(stdConfig)
 	}
@@ -53,6 +60,11 @@ func FileOutput(fConfig types.FileConfig) {
 	}
 	printStatsTicker := time.NewTicker(fConfig.General.PrintStatsDelay)
 
+	isOutputJson := fConfig.FileOutputFormat == "json"
+	if !isOutputJson {
+		types.PrintCsvHeader()
+	}
+
 	for {
 		select {
 		case data := <-fConfig.ResultChannel:
@@ -63,9 +75,13 @@ func FileOutput(fConfig types.FileConfig) {
 					continue
 				}
 				fileoutstats.SentToOutput++
-
-				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
-				util.ErrorHandler(err)
+				if isOutputJson {
+					_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
+					util.ErrorHandler(err)
+				} else {
+					_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.CsvRow()))
+					util.ErrorHandler(err)
+				}
 			}
 
 		case <-printStatsTicker.C:

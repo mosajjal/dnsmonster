@@ -1,15 +1,29 @@
 package types
 
-import "fmt"
+import (
+	"encoding/binary"
+	"fmt"
+)
 
 func (d *DNSResult) CsvRow() string {
 	//	timestamp, Server, IPVersion, SrcIP, DstIP, Protocol, QR, OpCode, Class, Type, ResponseCode, Question, Size, Edns0Present, DoBit,FullQuery, ID
 	timestamp := fmt.Sprintf("%d,%d,%d,%d,%d,%d,%d", d.Timestamp.Year(), d.Timestamp.Month(), d.Timestamp.Day(), d.Timestamp.Hour(), d.Timestamp.Minute(), d.Timestamp.Second(), d.Timestamp.Nanosecond())
 	server := fmt.Sprintf("%s", "dnsmonster") //todo: change this to flag parameter
 	ipVersion := fmt.Sprintf("%d", d.IPVersion)
-	srcIP := fmt.Sprintf("%s", d.SrcIP)
-	dstIP := fmt.Sprintf("%s", d.DstIP)
-	protocol := fmt.Sprintf("%s", d.Protocol)
+
+	var SrcIP, DstIP uint64
+
+	if d.IPVersion == 4 {
+		SrcIP = uint64(binary.BigEndian.Uint32(d.SrcIP))
+		DstIP = uint64(binary.BigEndian.Uint32(d.DstIP))
+	} else {
+		SrcIP = binary.BigEndian.Uint64(d.SrcIP[8:]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+		DstIP = binary.BigEndian.Uint64(d.DstIP[8:])
+	}
+
+	srcIP := fmt.Sprintf("%d", SrcIP)
+	dstIP := fmt.Sprintf("%d", DstIP)
+	protocol := fmt.Sprintf("%s", d.Protocol) // todo: for ML, it's better to use an integer for this
 	QR := uint8(0)
 	if d.DNS.Response {
 		QR = 1

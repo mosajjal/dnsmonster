@@ -95,14 +95,16 @@ type SyslogConfig struct {
 }
 
 type FileConfig struct {
-	ResultChannel  chan DNSResult
-	FileOutputPath string
-	FileOutputType uint
-	General        GeneralConfig
+	ResultChannel    chan DNSResult
+	FileOutputPath   string
+	FileOutputType   uint
+	FileOutputFormat string
+	General          GeneralConfig
 }
 
 type StdoutConfig struct {
-	ResultChannel    chan DNSResult
-	StdoutOutputType uint
-	General          GeneralConfig
+	ResultChannel      chan DNSResult
+	StdoutOutputType   uint
+	StdoutOutputFormat string
+	General            GeneralConfig
 }

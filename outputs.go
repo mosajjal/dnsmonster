@@ -25,10 +25,11 @@ func setupOutputs() {
 	if util.OutputFlags.FileOutputType > 0 {
 		log.Info("Creating File Output Channel")
 		fConfig := types.FileConfig{
-			ResultChannel:  fileResultChannel,
-			FileOutputPath: string(util.OutputFlags.FileOutputPath),
-			FileOutputType: util.OutputFlags.FileOutputType,
-			General:        generalConfig,
+			ResultChannel:    fileResultChannel,
+			FileOutputPath:   string(util.OutputFlags.FileOutputPath),
+			FileOutputType:   util.OutputFlags.FileOutputType,
+			FileOutputFormat: util.OutputFlags.FileOutputFormat,
+			General:          generalConfig,
 		}
 
 		go output.FileOutput(fConfig)
@@ -37,9 +38,10 @@ func setupOutputs() {
 	if util.OutputFlags.StdoutOutputType > 0 {
 		log.Info("Creating stdout Output Channel")
 		stdConfig := types.StdoutConfig{
-			ResultChannel:    stdoutResultChannel,
-			StdoutOutputType: util.OutputFlags.StdoutOutputType,
-			General:          generalConfig,
+			ResultChannel:      stdoutResultChannel,
+			StdoutOutputType:   util.OutputFlags.StdoutOutputType,
+			StdoutOutputFormat: util.OutputFlags.StdoutOutputFormat,
+			General:            generalConfig,
 		}
 
 		go output.StdoutOutput(stdConfig)

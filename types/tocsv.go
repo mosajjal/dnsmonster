@@ -17,13 +17,19 @@ func (d *DNSResult) CsvRow() string {
 		SrcIP = uint64(binary.BigEndian.Uint32(d.SrcIP))
 		DstIP = uint64(binary.BigEndian.Uint32(d.DstIP))
 	} else {
-		SrcIP = binary.BigEndian.Uint64(d.SrcIP[8:]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
-		DstIP = binary.BigEndian.Uint64(d.DstIP[8:])
+		SrcIP = binary.BigEndian.Uint64(d.SrcIP[:8]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+		DstIP = binary.BigEndian.Uint64(d.DstIP[:8])
 	}
 
 	srcIP := fmt.Sprintf("%d", SrcIP)
 	dstIP := fmt.Sprintf("%d", DstIP)
-	protocol := fmt.Sprintf("%s", d.Protocol) // todo: for ML, it's better to use an integer for this
+	protocolNumber := 0
+	if d.Protocol == "udp" {
+		protocolNumber = 17
+	} else {
+		protocolNumber = 6
+	}
+	protocol := fmt.Sprintf("%d", protocolNumber)
 	QR := uint8(0)
 	if d.DNS.Response {
 		QR = 1

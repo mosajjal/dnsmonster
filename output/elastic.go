@@ -7,13 +7,13 @@ import (
 
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
+	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/olivere/elastic"
 )
 
 // var elasticUuidGen = fastuuid.MustNewGenerator()
-var elasticstats = types.OutputStats{Name: "elastic", SentToOutput: 0, Skipped: 0}
 var ctx = context.Background()
 
 func connectelasticRetry(esConfig types.ElasticConfig) *elastic.Client {
@@ -61,7 +61,6 @@ func ElasticOutput(esConfig types.ElasticConfig) {
 	batch := make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 
 	ticker := time.NewTicker(esConfig.ElasticBatchDelay)
-	printStatsTicker := time.NewTicker(esConfig.General.PrintStatsDelay)
 
 	// Use the IndexExists service to check if a specified index exists.
 	exists, err := client.IndexExists(esConfig.ElasticOutputIndex).Do(ctx)
@@ -90,20 +89,22 @@ func ElasticOutput(esConfig types.ElasticConfig) {
 			} else {
 				batch = make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 			}
-		case <-printStatsTicker.C:
-			log.Infof("output: %+v", elasticstats)
+
 		}
 	}
 }
 
 func elasticSendData(client *elastic.Client, batch []types.DNSResult, esConfig types.ElasticConfig) error {
+	elasticSentToOutput := metrics.GetOrRegisterCounter("elasticSentToOutput", metrics.DefaultRegistry)
+	elasticSkipped := metrics.GetOrRegisterCounter("elasticSkipped", metrics.DefaultRegistry)
+
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
 			if util.CheckIfWeSkip(esConfig.ElasticOutputType, dnsQuery.Name) {
-				elasticstats.Skipped++
+				elasticSkipped.Inc(1)
 				continue
 			}
-			elasticstats.SentToOutput++
+			elasticSentToOutput.Inc(1)
 
 			// batch[i].UUID = elasticUuidGen.Hex128()
 

@@ -135,7 +135,7 @@ func (encoder *packetEncoder) run() {
 
 	var handlerChanList []chan rawPacketBytes
 	for i := 0; i < int(encoder.handlerCount); i++ {
-		log.Infof("Creating handler #%d\n", i)
+		log.Infof("Creating handler #%d", i)
 		handlerChanList = append(handlerChanList, make(chan rawPacketBytes, 10000)) //todo: parameter for size of this channel needs to be defined as a flag
 		go encoder.inputHandlerWorker(handlerChanList[i])
 	}

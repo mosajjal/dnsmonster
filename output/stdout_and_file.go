@@ -3,53 +3,46 @@ package output
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
-	log "github.com/sirupsen/logrus"
+	metrics "github.com/rcrowley/go-metrics"
 )
 
-var stdoutstats = types.OutputStats{Name: "Stdout", SentToOutput: 0, Skipped: 0}
-var fileoutstats = types.OutputStats{Name: "File", SentToOutput: 0, Skipped: 0}
-
 func stdoutOutputWorker(stdConfig types.StdoutConfig) {
-	printStatsTicker := time.NewTicker(stdConfig.General.PrintStatsDelay)
+	stdoutSentToOutput := metrics.GetOrRegisterCounter("stdoutSentToOutput", metrics.DefaultRegistry)
+	stdoutSkipped := metrics.GetOrRegisterCounter("stdoutSkipped", metrics.DefaultRegistry)
 	isOutputJson := stdConfig.StdoutOutputFormat == "json"
-	for {
-		select {
-		case data := <-stdConfig.ResultChannel:
-			for _, dnsQuery := range data.DNS.Question {
+	for data := range stdConfig.ResultChannel {
+		for _, dnsQuery := range data.DNS.Question {
 
-				if util.CheckIfWeSkip(stdConfig.StdoutOutputType, dnsQuery.Name) {
-					stdoutstats.Skipped++
-					continue
-				}
-				stdoutstats.SentToOutput++
-				if isOutputJson {
-					fmt.Printf("%s\n", data.String())
-				} else {
-					fmt.Printf("%s\n", data.CsvRow())
-				}
+			if util.CheckIfWeSkip(stdConfig.StdoutOutputType, dnsQuery.Name) {
+				stdoutSkipped.Inc(1)
+				continue
 			}
-
-		case <-printStatsTicker.C:
-			log.Infof("output: %+v", stdoutstats)
+			stdoutSentToOutput.Inc(1)
+			if isOutputJson {
+				fmt.Printf("%s\n", data.String())
+			} else {
+				fmt.Printf("%s\n", data.CsvRow())
+			}
 		}
 	}
+
 }
 
 func StdoutOutput(stdConfig types.StdoutConfig) {
-	isOutputJson := stdConfig.StdoutOutputFormat == "json"
-	if !isOutputJson {
+	if stdConfig.StdoutOutputFormat == "csv" {
 		types.PrintCsvHeader()
 	}
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 8; i++ { //todo: make this configurable
 		go stdoutOutputWorker(stdConfig)
 	}
 }
 
 func FileOutput(fConfig types.FileConfig) {
+	fileSentToOutput := metrics.GetOrRegisterCounter("fileSentToOutput", metrics.DefaultRegistry)
+	fileSkipped := metrics.GetOrRegisterCounter("fileSkipped", metrics.DefaultRegistry)
 	var fileObject *os.File
 	if fConfig.FileOutputType > 0 {
 		var err error
@@ -58,34 +51,27 @@ func FileOutput(fConfig types.FileConfig) {
 		util.ErrorHandler(err)
 		defer fileObject.Close()
 	}
-	printStatsTicker := time.NewTicker(fConfig.General.PrintStatsDelay)
 
 	isOutputJson := fConfig.FileOutputFormat == "json"
 	if !isOutputJson {
 		types.PrintCsvHeader()
 	}
 
-	for {
-		select {
-		case data := <-fConfig.ResultChannel:
-			for _, dnsQuery := range data.DNS.Question {
+	for data := range fConfig.ResultChannel {
+		for _, dnsQuery := range data.DNS.Question {
 
-				if util.CheckIfWeSkip(fConfig.FileOutputType, dnsQuery.Name) {
-					fileoutstats.Skipped++
-					continue
-				}
-				fileoutstats.SentToOutput++
-				if isOutputJson {
-					_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
-					util.ErrorHandler(err)
-				} else {
-					_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.CsvRow()))
-					util.ErrorHandler(err)
-				}
+			if util.CheckIfWeSkip(fConfig.FileOutputType, dnsQuery.Name) {
+				fileSkipped.Inc(1)
+				continue
 			}
-
-		case <-printStatsTicker.C:
-			log.Infof("output: %+v", fileoutstats)
+			fileSentToOutput.Inc(1)
+			if isOutputJson {
+				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
+				util.ErrorHandler(err)
+			} else {
+				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.CsvRow()))
+				util.ErrorHandler(err)
+			}
 		}
 	}
 }

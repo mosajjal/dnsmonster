@@ -9,6 +9,7 @@ import (
 
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
+	metrics "github.com/rcrowley/go-metrics"
 	"github.com/rogpeppe/fastuuid"
 	log "github.com/sirupsen/logrus"
 
@@ -16,7 +17,6 @@ import (
 	data "github.com/ClickHouse/clickhouse-go/lib/data"
 )
 
-var chstats = types.OutputStats{Name: "Clickhouse", SentToOutput: 0, Skipped: 0}
 var uuidGen = fastuuid.MustNewGenerator()
 
 func connectClickhouseRetry(chConfig types.ClickHouseConfig) clickhouse.Clickhouse {
@@ -66,33 +66,19 @@ func min(a, b int) int {
 // needs to make sure that there is proper Database connection and table are present. Refer to the project's
 // clickhouse folder for the file tables.sql
 func ClickhouseOutput(chConfig types.ClickHouseConfig) {
-	printStatsTicker := time.NewTicker(chConfig.General.PrintStatsDelay)
-	var workerChannelList []chan types.DNSResult
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
-		workerChannelList = append(workerChannelList, make(chan types.DNSResult, chConfig.ClickhouseWorkerChannelSize))
-		go clickhouseOutputWorker(chConfig, workerChannelList[i])
-	}
-	var cnt uint
-	for {
-		cnt++
-		select {
-		case data := <-chConfig.ResultChannel:
-			//fantout is a round-robin logic
-			workerChannelList[cnt%chConfig.ClickhouseWorkers] <- data
-		case <-printStatsTicker.C:
-			log.Infof("output: %+v", chstats)
-		}
+		go clickhouseOutputWorker(chConfig)
 	}
 }
 
-func clickhouseOutputWorker(chConfig types.ClickHouseConfig, workerchannel chan types.DNSResult) {
+func clickhouseOutputWorker(chConfig types.ClickHouseConfig) {
 	connect := connectClickhouseRetry(chConfig)
 	batch := make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
 
 	ticker := time.NewTicker(chConfig.ClickhouseDelay)
 	for {
 		select {
-		case data := <-workerchannel:
+		case data := <-chConfig.ResultChannel:
 			if chConfig.General.PacketLimit == 0 || len(batch) < chConfig.General.PacketLimit {
 				batch = append(batch, data)
 			}
@@ -109,6 +95,9 @@ func clickhouseOutputWorker(chConfig types.ClickHouseConfig, workerchannel chan 
 }
 
 func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, chConfig types.ClickHouseConfig) error {
+	clickhouseSentToOutput := metrics.GetOrRegisterCounter("clickhouseSentToOutput", metrics.DefaultRegistry)
+	clickhouseSkipped := metrics.GetOrRegisterCounter("clickhouseSkipped", metrics.DefaultRegistry)
+
 	if len(batch) == 0 {
 		return nil
 	}
@@ -154,14 +143,14 @@ func clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult, 
 				for _, dnsQuery := range batch[k].DNS.Question {
 
 					if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {
-						chstats.Skipped++
+						clickhouseSkipped.Inc(1)
 						continue
 					}
-					chstats.SentToOutput++
+					clickhouseSentToOutput.Inc(1)
 
 					var fullQuery []byte
 					if chConfig.ClickhouseSaveFullQuery {
-						fullQuery = []byte(batch[k].String()) //todo: check this
+						fullQuery = []byte(batch[k].String())
 					}
 					var SrcIP, DstIP uint64
 

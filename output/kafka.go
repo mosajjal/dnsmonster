@@ -7,6 +7,7 @@ import (
 
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
+	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rogpeppe/fastuuid"
@@ -14,7 +15,6 @@ import (
 )
 
 var kafkaUuidGen = fastuuid.MustNewGenerator()
-var kafkastats = types.OutputStats{Name: "Kafka", SentToOutput: 0, Skipped: 0}
 
 func connectKafkaRetry(kafConfig types.KafkaConfig) *kafka.Conn {
 	tick := time.NewTicker(5 * time.Second)
@@ -53,7 +53,6 @@ func KafkaOutput(kafConfig types.KafkaConfig) {
 	batch := make([]types.DNSResult, 0, kafConfig.KafkaBatchSize)
 
 	ticker := time.NewTicker(kafConfig.KafkaBatchDelay)
-	printStatsTicker := time.NewTicker(kafConfig.General.PrintStatsDelay)
 
 	for {
 		select {
@@ -69,21 +68,21 @@ func KafkaOutput(kafConfig types.KafkaConfig) {
 				batch = make([]types.DNSResult, 0, kafConfig.KafkaBatchSize)
 			}
 
-		case <-printStatsTicker.C:
-			log.Infof("output: %+v", kafkastats)
 		}
 	}
 }
 
 func kafkaSendData(connect *kafka.Conn, batch []types.DNSResult, kafConfig types.KafkaConfig) error {
+	kafkaSentToOutput := metrics.GetOrRegisterCounter("kafkaSentToOutput", metrics.DefaultRegistry)
+	kafkaSkipped := metrics.GetOrRegisterCounter("stdoutSkipped", metrics.DefaultRegistry)
 	var msg []kafka.Message
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
 			if util.CheckIfWeSkip(kafConfig.KafkaOutputType, dnsQuery.Name) {
-				kafkastats.Skipped++
+				kafkaSkipped.Inc(1)
 				continue
 			}
-			kafkastats.SentToOutput++
+			kafkaSentToOutput.Inc(1)
 
 			myUUID := kafkaUuidGen.Hex128()
 

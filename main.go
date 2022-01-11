@@ -16,6 +16,7 @@ import (
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	"github.com/pkg/profile"
+	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -56,6 +57,9 @@ func main() {
 
 	// Setup our output channels
 	setupOutputs()
+
+	// todo: this needs to be its own file with configurable output formats and endpoints (stdout, file, syslog, prometheus, etc)
+	go metrics.Log(metrics.DefaultRegistry, util.GeneralFlags.PrintStatsDelay, log.StandardLogger())
 
 	// Start listening if we're using pcap or afpacket
 	if util.CaptureFlags.DnstapSocket == "" {

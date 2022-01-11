@@ -3,7 +3,9 @@ module github.com/mosajjal/dnsmonster
 go 1.17
 
 require (
+	github.com/cactus/go-statsd-client/v5 v5.0.0
 	github.com/google/gopacket v1.1.19
+	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 

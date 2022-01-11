@@ -117,6 +117,7 @@ func (capturer *DNSCapturer) Start() {
 				if ratioCnt > util.RatioB*util.RatioA { //reset ratiocount before it goes to an absurdly high number
 					ratioCnt = 0
 				}
+				totalCnt++
 				capturer.processing <- packetRawBytes
 			}
 

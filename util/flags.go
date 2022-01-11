@@ -183,7 +183,7 @@ func ProcessFlags() {
 	}
 
 	//TODO: log format needs to be a configurable parameter
-	// log.SetFormatter(&log.JSONFormatter{})
+	log.SetFormatter(&log.JSONFormatter{})
 
 	if GeneralFlags.SkipDomainsFile != "" {
 		log.Info("skipDomainsFile is provided")

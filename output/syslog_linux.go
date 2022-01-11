@@ -8,10 +8,9 @@ import (
 
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
+	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
-
-var syslogstats = types.OutputStats{Name: "Syslog", SentToOutput: 0, Skipped: 0}
 
 func connectSyslogRetry(sysConfig types.SyslogConfig) *syslog.Writer {
 	tick := time.NewTicker(5 * time.Second)
@@ -49,8 +48,8 @@ func connectSyslog(sysConfig types.SyslogConfig) (*syslog.Writer, error) {
 
 func SyslogOutput(sysConfig types.SyslogConfig) {
 	writer := connectSyslogRetry(sysConfig)
-
-	printStatsTicker := time.NewTicker(sysConfig.General.PrintStatsDelay)
+	syslogSentToOutput := metrics.GetOrRegisterCounter("syslogSentToOutput", metrics.DefaultRegistry)
+	syslogSkipped := metrics.GetOrRegisterCounter("syslogSkipped", metrics.DefaultRegistry)
 
 	for {
 		select {
@@ -58,10 +57,10 @@ func SyslogOutput(sysConfig types.SyslogConfig) {
 			for _, dnsQuery := range data.DNS.Question {
 
 				if util.CheckIfWeSkip(sysConfig.SyslogOutputType, dnsQuery.Name) {
-					syslogstats.Skipped++
+					syslogSkipped.Inc(1)
 					continue
 				}
-				syslogstats.SentToOutput++
+				syslogSentToOutput.Inc(1)
 
 				err := writer.Alert(data.String())
 				// don't exit on connection failure, try to connect again if need be
@@ -71,9 +70,6 @@ func SyslogOutput(sysConfig types.SyslogConfig) {
 				// we should skip to the next data since we've already saved all the questions. Multi-Question DNS queries are not common
 				continue
 			}
-
-		case <-printStatsTicker.C:
-			log.Infof("output: %+v", syslogstats)
 		}
 	}
 }

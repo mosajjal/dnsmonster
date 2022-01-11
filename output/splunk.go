@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
@@ -15,7 +16,6 @@ import (
 	"github.com/mosajjal/dnsmonster/util"
 )
 
-var splunkStats = types.OutputStats{Name: "splunk", SentToOutput: 0, Skipped: 0}
 var splunkConnectionList = make(map[string]types.SplunkConnection)
 
 func connectMultiSplunkRetry(spConfig types.SplunkConfig) {
@@ -91,13 +91,14 @@ func selectHealthyConnection() string {
 }
 
 func SplunkOutput(spConfig types.SplunkConfig) {
+	splunkFailed := metrics.GetOrRegisterCounter("splunkFailed", metrics.DefaultRegistry)
+
 	log.Infof("Connecting to Splunk endpoints")
 	connectMultiSplunkRetry(spConfig)
 
 	batch := make([]types.DNSResult, 0, spConfig.SplunkBatchSize)
 	rand.Seed(time.Now().Unix())
 	ticker := time.NewTicker(spConfig.SplunkBatchDelay)
-	printStatsTicker := time.NewTicker(spConfig.General.PrintStatsDelay)
 
 	for {
 		select {
@@ -114,30 +115,31 @@ func SplunkOutput(spConfig types.SplunkConfig) {
 					log.Warnf("marking connection as unhealthy: %+v", conn)
 					conn.Unhealthy += 1
 					splunkConnectionList[healthyId] = conn
-					splunkStats.Skipped += len(batch)
+					splunkFailed.Inc(int64(len(batch)))
 				} else {
 					batch = make([]types.DNSResult, 0, spConfig.SplunkBatchSize)
 				}
 			} else {
 				log.Warn("Splunk Connection not found")
-				splunkStats.Skipped += len(batch)
+				splunkFailed.Inc(int64(len(batch)))
 			}
 
-		case <-printStatsTicker.C:
-			log.Infof("output: %+v", splunkStats)
 		}
 	}
 }
 
 func splunkSendData(client *splunk.Client, batch []types.DNSResult, spConfig types.SplunkConfig) error {
+	splunkSentToOutput := metrics.GetOrRegisterCounter("splunkSentToOutput", metrics.DefaultRegistry)
+	splunkSkipped := metrics.GetOrRegisterCounter("splunkSkipped", metrics.DefaultRegistry)
 	var events []*splunk.Event
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
 			if util.CheckIfWeSkip(spConfig.SplunkOutputType, dnsQuery.Name) {
-				splunkStats.Skipped++
+
+				splunkSkipped.Inc(1)
 				continue
 			}
-			splunkStats.SentToOutput++
+			splunkSentToOutput.Inc(1)
 			events = append(
 				events,
 				client.NewEventWithTime(batch[i].Timestamp, batch[i].String(), spConfig.SplunkOutputSource, spConfig.SplunkOutputSourceType, spConfig.SplunkOutputIndex),

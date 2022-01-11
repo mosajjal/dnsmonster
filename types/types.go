@@ -20,12 +20,6 @@ type DNSResult struct {
 	PacketLength uint16
 }
 
-type OutputStats struct {
-	Name         string
-	SentToOutput int
-	Skipped      int
-}
-
 type GeneralConfig struct {
 	MaskSize4           int
 	MaskSize6           int

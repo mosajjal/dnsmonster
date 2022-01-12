@@ -4,13 +4,12 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/util"
+	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 
 	"os"
 	"os/signal"
 )
-
-var pcapStats captureStats
 
 func handleInterrupt() {
 	c := make(chan os.Signal, 1)
@@ -67,6 +66,9 @@ func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 }
 
 func (capturer *DNSCapturer) Start() {
+	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
+	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
+	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
 
 	var myHandler genericHandler
 
@@ -99,10 +101,9 @@ func (capturer *DNSCapturer) Start() {
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
-	printStatsTicker := time.NewTicker(util.GeneralFlags.PrintStatsDelay)
 
 	var ratioCnt = 0
-	var totalCnt = uint(0)
+	var totalCnt = int64(0)
 	for {
 		ratioCnt++
 
@@ -125,16 +126,12 @@ func (capturer *DNSCapturer) Start() {
 
 			packets, drop := myHandler.Stat()
 			if packets == 0 { // to make up for pcap not being able to get stats
-				pcapStats.PacketsGot = totalCnt
+				packetsCaptured.Update(totalCnt)
 			} else {
-				pcapStats.PacketsGot = packets
-				pcapStats.PacketsLost = drop
+				packetsCaptured.Update(int64(packets))
+				packetsCaptured.Update(int64(drop))
 			}
-
-			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
-
-		case <-printStatsTicker.C:
-			log.Infof("%+v", pcapStats)
+			packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
 
 		}
 

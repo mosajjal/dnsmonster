@@ -133,11 +133,10 @@ func (encoder *packetEncoder) run() {
 	)
 	foundLayerTypes := []gopacket.LayerType{}
 
-	var handlerChanList []chan rawPacketBytes
+	handlerChannel := make(chan rawPacketBytes) //todo: test this with a sized channel to see if it makes a difference
 	for i := 0; i < int(encoder.handlerCount); i++ {
 		log.Infof("Creating handler #%d", i)
-		handlerChanList = append(handlerChanList, make(chan rawPacketBytes, 10000)) //todo: parameter for size of this channel needs to be defined as a flag
-		go encoder.inputHandlerWorker(handlerChanList[i])
+		go encoder.inputHandlerWorker(handlerChannel)
 	}
 
 	for {
@@ -179,7 +178,7 @@ func (encoder *packetEncoder) run() {
 			}
 			encoder.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
 		case packet := <-encoder.input:
-			handlerChanList[rand.Intn(int(encoder.handlerCount))] <- packet
+			handlerChannel <- packet
 		}
 	}
 }

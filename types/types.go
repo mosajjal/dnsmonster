@@ -25,7 +25,6 @@ type GeneralConfig struct {
 	MaskSize6           int
 	PacketLimit         int
 	ServerName          string
-	PrintStatsDelay     time.Duration
 	SkipTlsVerification bool
 }
 

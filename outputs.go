@@ -15,7 +15,6 @@ func setupOutputs() {
 		MaskSize6:           util.GeneralFlags.MaskSize6,
 		PacketLimit:         util.GeneralFlags.PacketLimit,
 		ServerName:          util.GeneralFlags.ServerName,
-		PrintStatsDelay:     util.GeneralFlags.PrintStatsDelay,
 		SkipTlsVerification: util.GeneralFlags.SkipTLSVerification,
 	}
 	log.Info("Creating the dispatch Channel")

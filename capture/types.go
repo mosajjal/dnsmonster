@@ -101,13 +101,6 @@ type DNSCapturer struct {
 	processing chan rawPacketBytes
 }
 
-// captureStats is capturing statistics about our current live captures. At this point it's not accurate for PCAP files.
-type captureStats struct {
-	PacketsGot        uint
-	PacketsLost       uint
-	PacketLossPercent float32
-}
-
 // ipv6 is a struct to be used as a key.
 type ipv6 struct {
 	ip4 gopacket.Flow

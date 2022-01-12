@@ -11,6 +11,7 @@ import (
 
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
+	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 
 	dnstap "github.com/dnstap/golang-dnstap"
@@ -86,19 +87,23 @@ func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
 
 func StartDNSTap(resultChannel chan types.DNSResult) {
 	log.Info("Starting DNStap capture")
+
+	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
+	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
+	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
+
 	input := parseDnstapSocket(util.CaptureFlags.DnstapSocket, util.CaptureFlags.DnstapPermission)
 
 	buf := make(chan []byte, 1024)
 
 	ratioCnt := 0
-	totalCnt := uint(0)
+	totalCnt := int64(0)
 
 	// Setup SIGINT handling
 	handleDNSTapInterrupt(done)
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
-	printStatsTicker := time.NewTicker(util.GeneralFlags.PrintStatsDelay)
 
 	for {
 
@@ -128,11 +133,10 @@ func StartDNSTap(resultChannel chan types.DNSResult) {
 		case <-done:
 			return
 		case <-captureStatsTicker.C:
-			pcapStats.PacketsGot = totalCnt
-			pcapStats.PacketsLost = 0
-			pcapStats.PacketLossPercent = (float32(pcapStats.PacketsLost) * 100.0 / float32(pcapStats.PacketsGot))
-		case <-printStatsTicker.C:
-			log.Infof("%+v", pcapStats)
+			packetsCaptured.Update(totalCnt)
+			packetsDropped.Update(0) //todo: this is not correct, need to fix
+			packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
+
 		}
 	}
 }

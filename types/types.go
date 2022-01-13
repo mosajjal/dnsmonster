@@ -31,6 +31,8 @@ type GeneralConfig struct {
 type ClickHouseConfig struct {
 	ResultChannel               chan DNSResult
 	ClickhouseAddress           string
+	ClickhouseUsername          string
+	ClickhousePassword          string
 	ClickhouseBatchSize         uint
 	ClickhouseOutputType        uint
 	ClickhouseSaveFullQuery     bool

@@ -328,6 +328,12 @@ output:
                                          save the results (default:
                                          localhost:9000)
                                          [$DNSMONSTER_CLICKHOUSEADDRESS]
+      --clickhouseUsername=              Username to connect to the clickhouse
+                                         database
+                                         [$DNSMONSTER_CLICKHOUSEUSERNAME]
+      --clickhousePassword=              Password to connect to the clickhouse
+                                         database
+                                         [$DNSMONSTER_CLICKHOUSEPASSWORD]
       --clickhouseDelay=                 Interval between sending results to
                                          ClickHouse (default: 1s)
                                          [$DNSMONSTER_CLICKHOUSEDELAY]

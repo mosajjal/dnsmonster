@@ -333,6 +333,10 @@ output:
                                          [$DNSMONSTER_CLICKHOUSEDELAY]
       --clickhouseDebug                  Debug Clickhouse connection
                                          [$DNSMONSTER_CLICKHOUSEDEBUG]
+      --clickhouseCompress               Compress Clickhouse connection
+                                         [$DNSMONSTER_CLICKHOUSECOMPRESS]
+      --clickhouseSecure                 Use TLS for Clickhouse connection
+                                         [$DNSMONSTER_CLICKHOUSESECURE]
       --clickhouseSaveFullQuery          Save full packet query and response in
                                          JSON format.
                                          [$DNSMONSTER_CLICKHOUSESAVEFULLQUERY]

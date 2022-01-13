@@ -42,8 +42,8 @@ func connectClickhouseRetry(chConfig types.ClickHouseConfig) clickhouse.Clickhou
 }
 
 func connectClickhouse(chConfig types.ClickHouseConfig) (clickhouse.Clickhouse, error) {
-	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug))
-	//todo: there are many options that needs to be added to this. Compression, TLS, etc.
+	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v&skip_verify=%v&secure=%v&compress=%v", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug, chConfig.General.SkipTlsVerification, chConfig.ClickhouseSecure, chConfig.ClickhouseCompress))
+	//todo: Authentication for Clickhouse is not implemented yet
 	if err != nil {
 		log.Error(err)
 		return nil, err

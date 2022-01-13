@@ -65,6 +65,8 @@ func setupOutputs() {
 			ClickhouseOutputType:        util.OutputFlags.ClickhouseOutputType,
 			ClickhouseSaveFullQuery:     util.OutputFlags.ClickhouseSaveFullQuery,
 			ClickhouseDebug:             util.OutputFlags.ClickhouseDebug,
+			ClickhouseCompress:          util.OutputFlags.ClickhouseCompress,
+			ClickhouseSecure:            util.OutputFlags.ClickhouseSecure,
 			ClickhouseDelay:             util.OutputFlags.ClickhouseDelay,
 			ClickhouseWorkers:           util.OutputFlags.ClickhouseWorkers,
 			ClickhouseWorkerChannelSize: util.OutputFlags.ClickhouseWorkerChannelSize,

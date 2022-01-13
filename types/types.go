@@ -35,6 +35,8 @@ type ClickHouseConfig struct {
 	ClickhouseOutputType        uint
 	ClickhouseSaveFullQuery     bool
 	ClickhouseDebug             bool
+	ClickhouseCompress          bool
+	ClickhouseSecure            bool
 	ClickhouseDelay             time.Duration
 	ClickhouseWorkers           uint
 	ClickhouseWorkerChannelSize uint

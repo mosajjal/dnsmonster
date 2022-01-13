@@ -73,6 +73,8 @@ var GeneralFlags struct {
 
 var OutputFlags struct {
 	ClickhouseAddress           string         `long:"clickhouseAddress"           env:"DNSMONSTER_CLICKHOUSEADDRESS"           default:"localhost:9000"                                          description:"Address of the clickhouse database to save the results"`
+	ClickhouseUsername          string         `long:"clickhouseUsername"          env:"DNSMONSTER_CLICKHOUSEUSERNAME"          default:""                                                        description:"Username to connect to the clickhouse database"`
+	ClickhousePassword          string         `long:"clickhousePassword"          env:"DNSMONSTER_CLICKHOUSEPASSWORD"          default:""                                                        description:"Password to connect to the clickhouse database"`
 	ClickhouseDelay             time.Duration  `long:"clickhouseDelay"             env:"DNSMONSTER_CLICKHOUSEDELAY"             default:"1s"                                                      description:"Interval between sending results to ClickHouse"`
 	ClickhouseDebug             bool           `long:"clickhouseDebug"             env:"DNSMONSTER_CLICKHOUSEDEBUG"             description:"Debug Clickhouse connection"`
 	ClickhouseCompress          bool           `long:"clickhouseCompress"          env:"DNSMONSTER_CLICKHOUSECOMPRESS"          description:"Compress Clickhouse connection"`

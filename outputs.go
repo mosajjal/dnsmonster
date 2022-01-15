@@ -118,6 +118,24 @@ func setupOutputs() {
 
 		go output.SplunkOutput(spConfig)
 	}
+
+	if util.OutputFlags.SentinelOutputType > 0 {
+		log.Info("Creating Sentinel Output Channel")
+		seConfig := types.SentinelConfig{
+			ResultChannel:            sentinelResultChannel,
+			SentinelOutputType:       util.OutputFlags.SentinelOutputType,
+			SentinelOutputSharedKey:  util.OutputFlags.SentinelOutputSharedKey,
+			SentinelOutputCustomerId: util.OutputFlags.SentinelOutputCustomerId,
+			SentinelOutputLogType:    util.OutputFlags.SentinelOutputLogType,
+			SentinelOutputProxy:      util.OutputFlags.SentinelOutputProxy,
+			SentinelBatchSize:        util.OutputFlags.SentinelBatchSize,
+			SentinelBatchDelay:       util.OutputFlags.SentinelBatchDelay,
+			General:                  generalConfig,
+		}
+
+		go output.SentinelOutput(seConfig)
+	}
+
 }
 
 func dispatchOutput(resultChannel chan types.DNSResult) {
@@ -160,6 +178,9 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			}
 			if util.OutputFlags.SplunkOutputType > 0 {
 				splunkResultChannel <- data
+			}
+			if util.OutputFlags.SentinelOutputType > 0 {
+				sentinelResultChannel <- data
 			}
 
 		case <-skipDomainsFileTickerChan:

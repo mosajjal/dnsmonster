@@ -1,5 +1,3 @@
-// this project has a simple function: get a stream of JSONL from stdin, and send them to Azure Sentinel
-// in batches using the HTTP API Endpoint
 package output
 
 import (
@@ -56,7 +54,7 @@ x-ms-date:{{.Date}}
 func sendBatch(batch string, count int, seConfig types.SentinelConfig) {
 	sentinelSentToOutput := metrics.GetOrRegisterCounter("sentinelSentToOutput", metrics.DefaultRegistry)
 	sentinelFailed := metrics.GetOrRegisterCounter("sentinelFailed", metrics.DefaultRegistry)
-	// send batch to Azure Sentinel
+	// send batch to Microsoft Sentinel
 	// build signature
 	location, _ := time.LoadLocation("GMT")
 	s := SignatureElements{

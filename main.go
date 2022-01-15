@@ -24,6 +24,7 @@ var clickhouseResultChannel = make(chan types.DNSResult, util.GeneralFlags.Resul
 var kafkaResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var elasticResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var splunkResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+var sentinelResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var stdoutResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var fileResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var syslogResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)

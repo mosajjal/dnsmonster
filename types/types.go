@@ -78,6 +78,18 @@ type SplunkConfig struct {
 	General                GeneralConfig
 }
 
+type SentinelConfig struct {
+	ResultChannel            chan DNSResult
+	SentinelOutputType       uint
+	SentinelOutputSharedKey  string
+	SentinelOutputCustomerId string
+	SentinelOutputLogType    string
+	SentinelOutputProxy      string
+	SentinelBatchSize        uint
+	SentinelBatchDelay       time.Duration
+	General                  GeneralConfig
+}
+
 type SplunkConnection struct {
 	Client    *splunk.Client
 	Unhealthy uint

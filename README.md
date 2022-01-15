@@ -503,7 +503,7 @@ output:
                                          HEC if Batch size is not filled
                                          (default: 1s)
                                          [$DNSMONSTER_SPLUNKBATCHDELAY]
-      --sentinelOutputType=[0|1|2|3|4]   What should be written to Azure
+      --sentinelOutputType=[0|1|2|3|4]   What should be written to Microsoft
                                          Sentinel. options:
                                          ;	0: Disable Output
                                          ;	1: Enable Output without any filters

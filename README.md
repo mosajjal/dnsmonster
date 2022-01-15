@@ -609,6 +609,7 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 * Stdout
 * File
 * Syslog (Linux Only)
+* Azure Sentinel
 
 
 # Roadmap

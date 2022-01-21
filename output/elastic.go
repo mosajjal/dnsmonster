@@ -30,10 +30,9 @@ func connectelasticRetry(esConfig types.ElasticConfig) *elastic.Client {
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
-		select {
-		case <-tick.C:
-			continue
-		}
+		<-tick.C
+		continue
+
 	}
 }
 

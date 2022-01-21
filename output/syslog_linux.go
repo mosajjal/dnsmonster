@@ -28,11 +28,9 @@ func connectSyslogRetry(sysConfig types.SyslogConfig) *syslog.Writer {
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
-		select {
+		<-tick.C
+		continue
 
-		case <-tick.C:
-			continue
-		}
 	}
 }
 
@@ -51,25 +49,22 @@ func SyslogOutput(sysConfig types.SyslogConfig) {
 	syslogSentToOutput := metrics.GetOrRegisterCounter("syslogSentToOutput", metrics.DefaultRegistry)
 	syslogSkipped := metrics.GetOrRegisterCounter("syslogSkipped", metrics.DefaultRegistry)
 
-	for {
-		select {
-		case data := <-sysConfig.ResultChannel:
-			for _, dnsQuery := range data.DNS.Question {
+	for data := range sysConfig.ResultChannel {
+		for _, dnsQuery := range data.DNS.Question {
 
-				if util.CheckIfWeSkip(sysConfig.SyslogOutputType, dnsQuery.Name) {
-					syslogSkipped.Inc(1)
-					continue
-				}
-				syslogSentToOutput.Inc(1)
-
-				err := writer.Alert(data.String())
-				// don't exit on connection failure, try to connect again if need be
-				if err != nil {
-					log.Info(err)
-				}
-				// we should skip to the next data since we've already saved all the questions. Multi-Question DNS queries are not common
+			if util.CheckIfWeSkip(sysConfig.SyslogOutputType, dnsQuery.Name) {
+				syslogSkipped.Inc(1)
 				continue
 			}
+			syslogSentToOutput.Inc(1)
+
+			err := writer.Alert(data.String())
+			// don't exit on connection failure, try to connect again if need be
+			if err != nil {
+				log.Info(err)
+			}
+			// we should skip to the next data since we've already saved all the questions. Multi-Question DNS queries are not common
+			continue
 		}
 	}
 }

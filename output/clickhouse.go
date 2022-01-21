@@ -33,11 +33,8 @@ func connectClickhouseRetry(chConfig types.ClickHouseConfig) clickhouse.Clickhou
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
-		select {
-
-		case <-tick.C:
-			continue
-		}
+		<-tick.C
+		continue
 	}
 }
 

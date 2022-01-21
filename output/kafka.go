@@ -30,11 +30,9 @@ func connectKafkaRetry(kafConfig types.KafkaConfig) *kafka.Conn {
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
-		select {
+		<-tick.C
+		continue
 
-		case <-tick.C:
-			continue
-		}
 	}
 }
 

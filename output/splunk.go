@@ -24,30 +24,26 @@ func connectMultiSplunkRetry(spConfig types.SplunkConfig) {
 	}
 }
 
-func connectSplunkRetry(spConfig types.SplunkConfig, splunkEndpoint string) types.SplunkConnection {
+func connectSplunkRetry(spConfig types.SplunkConfig, splunkEndpoint string) {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if spConfig.SplunkOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
-	for {
-		// Error getting connection, wait the timer or check if we are exiting
-		select {
-
-		case <-tick.C:
-			// check to see if the connection exists
-			if conn, ok := splunkConnectionList[splunkEndpoint]; ok {
-				if conn.Unhealthy != 0 {
-					log.Warnf("Connection is unhealthy: %v", conn.Err)
-					splunkConnectionList[splunkEndpoint] = connectSplunk(spConfig, splunkEndpoint)
-				}
-			} else {
-				log.Warnf("new splunk endpoint %s", splunkEndpoint)
+	for range tick.C {
+		// check to see if the connection exists
+		if conn, ok := splunkConnectionList[splunkEndpoint]; ok {
+			if conn.Unhealthy != 0 {
+				log.Warnf("Connection is unhealthy: %v", conn.Err)
 				splunkConnectionList[splunkEndpoint] = connectSplunk(spConfig, splunkEndpoint)
 			}
+		} else {
+			log.Warnf("new splunk endpoint %s", splunkEndpoint)
+			splunkConnectionList[splunkEndpoint] = connectSplunk(spConfig, splunkEndpoint)
 		}
 	}
+
 }
 
 func connectSplunk(spConfig types.SplunkConfig, splunkEndpoint string) types.SplunkConnection {

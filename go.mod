@@ -13,30 +13,32 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	golang.org/x/mod v0.4.2 // indirect
+	golang.org/x/tools v0.1.6-0.20210726203631-07bc1bf47fb2 // indirect
 )
 
 require (
-	github.com/ClickHouse/clickhouse-go v1.5.1
-	github.com/bytedance/sonic v1.0.0-rc.3
-	github.com/chenzhuoyu/base64x v0.0.0-20211104044242-0b57a1ee6b0c // indirect
+	github.com/ClickHouse/clickhouse-go v1.5.2
+	github.com/bytedance/sonic v1.0.0
+	github.com/chenzhuoyu/base64x v0.0.0-20211229061535-45e1f0233683 // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/klauspost/compress v1.13.6 // indirect
+	github.com/klauspost/compress v1.14.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/miekg/dns v1.1.43
+	github.com/miekg/dns v1.1.45
 	github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.7
 	github.com/olivere/elastic v6.2.37+incompatible
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0
 	github.com/rogpeppe/fastuuid v1.2.0
-	github.com/segmentio/kafka-go v0.4.25
+	github.com/segmentio/kafka-go v0.4.27
 	github.com/sirupsen/logrus v1.8.1
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
-	golang.org/x/net v0.0.0-20211215060638-4ddde0e984e9
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce // indirect
+	golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

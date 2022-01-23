@@ -183,6 +183,88 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ```
   dnsmonster
 
+clickhouse_output:
+      --clickhouseAddress=               Address of the clickhouse database to
+                                         save the results (default:
+                                         localhost:9000)
+                                         [$DNSMONSTER_CLICKHOUSEADDRESS]
+      --clickhouseUsername=              Username to connect to the clickhouse
+                                         database
+                                         [$DNSMONSTER_CLICKHOUSEUSERNAME]
+      --clickhousePassword=              Password to connect to the clickhouse
+                                         database
+                                         [$DNSMONSTER_CLICKHOUSEPASSWORD]
+      --clickhouseDelay=                 Interval between sending results to
+                                         ClickHouse (default: 1s)
+                                         [$DNSMONSTER_CLICKHOUSEDELAY]
+      --clickhouseDebug                  Debug Clickhouse connection
+                                         [$DNSMONSTER_CLICKHOUSEDEBUG]
+      --clickhouseCompress               Compress Clickhouse connection
+                                         [$DNSMONSTER_CLICKHOUSECOMPRESS]
+      --clickhouseSecure                 Use TLS for Clickhouse connection
+                                         [$DNSMONSTER_CLICKHOUSESECURE]
+      --clickhouseSaveFullQuery          Save full packet query and response in
+                                         JSON format.
+                                         [$DNSMONSTER_CLICKHOUSESAVEFULLQUERY]
+      --clickhouseOutputType=[0|1|2|3|4] What should be written to clickhouse.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_CLICKHOUSEOUTPUTTYPE]
+      --clickhouseBatchSize=             Minimun capacity of the cache array
+                                         used to send data to clickhouse. Set
+                                         close to the queries per second
+                                         received to prevent allocations
+                                         (default: 100000)
+                                         [$DNSMONSTER_CLICKHOUSEBATCHSIZE]
+      --clickhouseWorkers=               Number of Clickhouse output Workers
+                                         (default: 1)
+                                         [$DNSMONSTER_CLICKHOUSEWORKERS]
+      --clickhouseWorkerChannelSize=     Channel Size for each Clickhouse
+                                         Worker (default: 100000)
+                                         [$DNSMONSTER_CLICKHOUSEWORKERCHANNELSI-
+
+                                         ZE]
+
+sentinel_output:
+      --sentinelOutputType=[0|1|2|3|4]   What should be written to Microsoft
+                                         Sentinel. options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_SENTINELOUTPUTTYPE]
+      --sentinelOutputSharedKey=         Sentinel Shared Key, either the
+                                         primary or secondary, can be found in
+                                         Agents Management page under Log
+                                         Analytics workspace
+                                         [$DNSMONSTER_SENTINELOUTPUTSHAREDKEY]
+      --sentinelOutputCustomerId=        Sentinel Customer Id. can be found in
+                                         Agents Management page under Log
+                                         Analytics workspace
+                                         [$DNSMONSTER_SENTINELOUTPUTCUSTOMERID]
+      --sentinelOutputLogType=           Sentinel Output LogType (default:
+                                         dnsmonster)
+                                         [$DNSMONSTER_SENTINELOUTPUTLOGTYPE]
+      --sentinelOutputProxy=             Sentinel Output Proxy in URI format
+                                         [$DNSMONSTER_SENTINELOUTPUTPROXY]
+      --sentinelBatchSize=               Sentinel Batch Size (default: 100)
+                                         [$DNSMONSTER_SENTINELBATCHSIZE]
+      --sentinelBatchDelay=              Interval between sending results to
+                                         Sentinel if Batch size is not filled
+                                         (default: 1s)
+                                         [$DNSMONSTER_SENTINELBATCHDELAY]
+
 general:
       --config=                          path to config file
                                          [$DNSMONSTER_CONFIG]
@@ -324,53 +406,6 @@ capture:
                                          [$DNSMONSTER_NOETHERFRAME]
 
 output:
-      --clickhouseAddress=               Address of the clickhouse database to
-                                         save the results (default:
-                                         localhost:9000)
-                                         [$DNSMONSTER_CLICKHOUSEADDRESS]
-      --clickhouseUsername=              Username to connect to the clickhouse
-                                         database
-                                         [$DNSMONSTER_CLICKHOUSEUSERNAME]
-      --clickhousePassword=              Password to connect to the clickhouse
-                                         database
-                                         [$DNSMONSTER_CLICKHOUSEPASSWORD]
-      --clickhouseDelay=                 Interval between sending results to
-                                         ClickHouse (default: 1s)
-                                         [$DNSMONSTER_CLICKHOUSEDELAY]
-      --clickhouseDebug                  Debug Clickhouse connection
-                                         [$DNSMONSTER_CLICKHOUSEDEBUG]
-      --clickhouseCompress               Compress Clickhouse connection
-                                         [$DNSMONSTER_CLICKHOUSECOMPRESS]
-      --clickhouseSecure                 Use TLS for Clickhouse connection
-                                         [$DNSMONSTER_CLICKHOUSESECURE]
-      --clickhouseSaveFullQuery          Save full packet query and response in
-                                         JSON format.
-                                         [$DNSMONSTER_CLICKHOUSESAVEFULLQUERY]
-      --clickhouseOutputType=[0|1|2|3|4] What should be written to clickhouse.
-                                         options:
-                                         ;	0: Disable Output
-                                         ;	1: Enable Output without any filters
-                                         ;	2: Enable Output and apply
-                                         skipdomains logic
-                                         ;	3: Enable Output and apply
-                                         allowdomains logic
-                                         ;	4: Enable Output and apply both skip
-                                         and allow domains logic (default: 0)
-                                         [$DNSMONSTER_CLICKHOUSEOUTPUTTYPE]
-      --clickhouseBatchSize=             Minimun capacity of the cache array
-                                         used to send data to clickhouse. Set
-                                         close to the queries per second
-                                         received to prevent allocations
-                                         (default: 100000)
-                                         [$DNSMONSTER_CLICKHOUSEBATCHSIZE]
-      --clickhouseWorkers=               Number of Clickhouse output Workers
-                                         (default: 1)
-                                         [$DNSMONSTER_CLICKHOUSEWORKERS]
-      --clickhouseWorkerChannelSize=     Channel Size for each Clickhouse
-                                         Worker (default: 100000)
-                                         [$DNSMONSTER_CLICKHOUSEWORKERCHANNELSI-
-
-                                         ZE]
       --fileOutputType=[0|1|2|3|4]       What should be written to file.
                                          options:
                                          ;	0: Disable Output
@@ -503,37 +538,6 @@ output:
                                          HEC if Batch size is not filled
                                          (default: 1s)
                                          [$DNSMONSTER_SPLUNKBATCHDELAY]
-      --sentinelOutputType=[0|1|2|3|4]   What should be written to Microsoft
-                                         Sentinel. options:
-                                         ;	0: Disable Output
-                                         ;	1: Enable Output without any filters
-                                         ;	2: Enable Output and apply
-                                         skipdomains logic
-                                         ;	3: Enable Output and apply
-                                         allowdomains logic
-                                         ;	4: Enable Output and apply both skip
-                                         and allow domains logic (default: 0)
-                                         [$DNSMONSTER_SENTINELOUTPUTTYPE]
-      --sentinelOutputSharedKey=         Sentinel Shared Key, either the
-                                         primary or secondary, can be found in
-                                         Agents Management page under Log
-                                         Analytics workspace
-                                         [$DNSMONSTER_SENTINELOUTPUTSHAREDKEY]
-      --sentinelOutputCustomerId=        Sentinel Customer Id. can be found in
-                                         Agents Management page under Log
-                                         Analytics workspace
-                                         [$DNSMONSTER_SENTINELOUTPUTCUSTOMERID]
-      --sentinelOutputLogType=           Sentinel Output LogType (default:
-                                         dnsmonster)
-                                         [$DNSMONSTER_SENTINELOUTPUTLOGTYPE]
-      --sentinelOutputProxy=             Sentinel Output Proxy in URI format
-                                         [$DNSMONSTER_SENTINELOUTPUTPROXY]
-      --sentinelBatchSize=               Sentinel Batch Size (default: 100)
-                                         [$DNSMONSTER_SENTINELBATCHSIZE]
-      --sentinelBatchDelay=              Interval between sending results to
-                                         Sentinel if Batch size is not filled
-                                         (default: 1s)
-                                         [$DNSMONSTER_SENTINELBATCHDELAY]
 ```
 [//]: <> (end of command line options)
 

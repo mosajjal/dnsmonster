@@ -46,16 +46,6 @@ func setupOutputs() {
 		go output.StdoutOutput(stdConfig)
 		// go stdoutOutput(stdoutResultChannel, exiting, &wg)
 	}
-	if util.OutputFlags.SyslogOutputType > 0 {
-		log.Info("Creating syslog Output Channel")
-		sysConfig := types.SyslogConfig{
-			ResultChannel:        syslogResultChannel,
-			SyslogOutputEndpoint: util.OutputFlags.SyslogOutputEndpoint,
-			SyslogOutputType:     util.OutputFlags.SyslogOutputType,
-			General:              generalConfig,
-		}
-		go output.SyslogOutput(sysConfig)
-	}
 
 }
 
@@ -66,13 +56,15 @@ func RemoveIndex(s []types.GenericOutput, index int) []types.GenericOutput {
 func dispatchOutput(resultChannel chan types.DNSResult) {
 
 	// the new simplified output method
-	for i, o := range types.GlobalDispatchList {
-		err := o.Initialize()
+	for i := 0; i < len(types.GlobalDispatchList); i++ {
+		err := types.GlobalDispatchList[i].Initialize()
 		if err != nil {
 			// the output does not exist, time to remove the item from our globaldispatcher
-			log.Warnf("here") //todo:remove
 			types.GlobalDispatchList = RemoveIndex(types.GlobalDispatchList, i)
+			// since we just removed the last item, we should go back one index to keep it consistent
+			i--
 		}
+
 	}
 
 	// Set up various tickers for different tasks
@@ -100,13 +92,10 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			if util.OutputFlags.FileOutputType > 0 {
 				fileResultChannel <- data
 			}
-			if util.OutputFlags.SyslogOutputType > 0 {
-				syslogResultChannel <- data
-			}
 
 			// new simplified output method. only works with Sentinel
 			for _, o := range types.GlobalDispatchList {
-				// todo: this blocks on type0 outputs
+				// todo: this blocks on type0 outputs. This is still blocking for some reason
 				o.OutputChannel() <- data
 			}
 

@@ -20,9 +20,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var stdoutResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
-var fileResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
-var syslogResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 
 func main() {

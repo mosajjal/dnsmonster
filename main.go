@@ -20,7 +20,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var elasticResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var stdoutResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var fileResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 var syslogResultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)

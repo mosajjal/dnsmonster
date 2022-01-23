@@ -2,6 +2,7 @@ package output
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,10 +14,51 @@ import (
 	"github.com/olivere/elastic"
 )
 
+type ElasticConfig struct {
+	ElasticOutputType     uint          `long:"elasticOutputType"           env:"DNSMONSTER_ELASTICOUTPUTTYPE"           default:"0"                                                       description:"What should be written to elastic. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"       choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
+	ElasticOutputEndpoint string        `long:"elasticOutputEndpoint"       env:"DNSMONSTER_ELASTICOUTPUTENDPOINT"       default:""                                                        description:"elastic endpoint address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none"`
+	ElasticOutputIndex    string        `long:"elasticOutputIndex"          env:"DNSMONSTER_ELASTICOUTPUTINDEX"          default:"default"                                                 description:"elastic index"`
+	ElasticBatchSize      uint          `long:"elasticBatchSize"            env:"DNSMONSTER_ELASTICBATCHSIZE"            default:"1000"                                                    description:"Send data to Elastic in batch sizes"`
+	ElasticBatchDelay     time.Duration `long:"elasticBatchDelay"           env:"DNSMONSTER_ELASTICBATCHDELAY"           default:"1s"                                                      description:"Interval between sending results to Elastic if Batch size is not filled"`
+	outputChannel         chan types.DNSResult
+	closeChannel          chan bool
+}
+
+func (config ElasticConfig) initializeFlags() error {
+	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
+	_, err := util.GlobalParser.AddGroup("elastic_output", "Elastic Output", &config)
+
+	config.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+
+	types.GlobalDispatchList = append(types.GlobalDispatchList, &config)
+	return err
+}
+
+// initialize function should not block. otherwise the dispatcher will get stuck
+func (config ElasticConfig) Initialize() error {
+	if config.ElasticOutputType > 0 && config.ElasticOutputType < 5 {
+		log.Info("Creating Elastic Output Channel")
+		go config.Output()
+	} else {
+		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
+		return errors.New("no output")
+	}
+	return nil
+}
+
+func (config ElasticConfig) Close() {
+	//todo: implement this
+	<-config.closeChannel
+}
+
+func (config ElasticConfig) OutputChannel() chan types.DNSResult {
+	return config.outputChannel
+}
+
 // var elasticUuidGen = fastuuid.MustNewGenerator()
 var ctx = context.Background()
 
-func connectelasticRetry(esConfig types.ElasticConfig) *elastic.Client {
+func (esConfig ElasticConfig) connectelasticRetry() *elastic.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if esConfig.ElasticOutputType == 0 {
@@ -24,7 +66,7 @@ func connectelasticRetry(esConfig types.ElasticConfig) *elastic.Client {
 	}
 	defer tick.Stop()
 	for {
-		conn, err := connectelastic(esConfig)
+		conn, err := esConfig.connectelastic()
 		if err == nil {
 			return conn
 		}
@@ -36,7 +78,7 @@ func connectelasticRetry(esConfig types.ElasticConfig) *elastic.Client {
 	}
 }
 
-func connectelastic(esConfig types.ElasticConfig) (*elastic.Client, error) {
+func (esConfig ElasticConfig) connectelastic() (*elastic.Client, error) {
 	client, err := elastic.NewClient(
 		elastic.SetURL(esConfig.ElasticOutputEndpoint),
 		elastic.SetSniff(false),
@@ -55,8 +97,8 @@ func connectelastic(esConfig types.ElasticConfig) (*elastic.Client, error) {
 	return client, err
 }
 
-func ElasticOutput(esConfig types.ElasticConfig) {
-	client := connectelasticRetry(esConfig)
+func (esConfig ElasticConfig) Output() {
+	client := esConfig.connectelasticRetry()
 	batch := make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 
 	ticker := time.NewTicker(esConfig.ElasticBatchDelay)
@@ -77,14 +119,14 @@ func ElasticOutput(esConfig types.ElasticConfig) {
 
 	for {
 		select {
-		case data := <-esConfig.ResultChannel:
-			if esConfig.General.PacketLimit == 0 || len(batch) < esConfig.General.PacketLimit {
+		case data := <-esConfig.outputChannel:
+			if util.GeneralFlags.PacketLimit == 0 || len(batch) < util.GeneralFlags.PacketLimit {
 				batch = append(batch, data)
 			}
 		case <-ticker.C:
-			if err := elasticSendData(client, batch, esConfig); err != nil {
+			if err := esConfig.elasticSendData(client, batch); err != nil {
 				log.Info(err)
-				client = connectelasticRetry(esConfig)
+				client = esConfig.connectelasticRetry()
 			} else {
 				batch = make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
 			}
@@ -93,7 +135,7 @@ func ElasticOutput(esConfig types.ElasticConfig) {
 	}
 }
 
-func elasticSendData(client *elastic.Client, batch []types.DNSResult, esConfig types.ElasticConfig) error {
+func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []types.DNSResult) error {
 	elasticSentToOutput := metrics.GetOrRegisterCounter("elasticSentToOutput", metrics.DefaultRegistry)
 	elasticSkipped := metrics.GetOrRegisterCounter("elasticSkipped", metrics.DefaultRegistry)
 
@@ -120,3 +162,6 @@ func elasticSendData(client *elastic.Client, batch []types.DNSResult, esConfig t
 	return err
 
 }
+
+// actually run this as a goroutine
+var _ = ElasticConfig{}.initializeFlags()

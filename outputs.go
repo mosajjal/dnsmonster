@@ -57,21 +57,6 @@ func setupOutputs() {
 		go output.SyslogOutput(sysConfig)
 	}
 
-	if util.OutputFlags.ElasticOutputType > 0 {
-		log.Info("Creating Elastic Output Channel")
-		esConfig := types.ElasticConfig{
-			ResultChannel:         elasticResultChannel,
-			ElasticOutputEndpoint: util.OutputFlags.ElasticOutputEndpoint,
-			ElasticOutputIndex:    util.OutputFlags.ElasticOutputIndex,
-			ElasticOutputType:     util.OutputFlags.ElasticOutputType,
-			ElasticBatchSize:      util.OutputFlags.ElasticBatchSize,
-			ElasticBatchDelay:     util.OutputFlags.ElasticBatchDelay,
-			General:               generalConfig,
-		}
-
-		go output.ElasticOutput(esConfig)
-	}
-
 }
 
 func RemoveIndex(s []types.GenericOutput, index int) []types.GenericOutput {
@@ -118,9 +103,7 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			if util.OutputFlags.SyslogOutputType > 0 {
 				syslogResultChannel <- data
 			}
-			if util.OutputFlags.ElasticOutputType > 0 {
-				elasticResultChannel <- data
-			}
+
 			// new simplified output method. only works with Sentinel
 			for _, o := range types.GlobalDispatchList {
 				// todo: this blocks on type0 outputs

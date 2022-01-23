@@ -232,6 +232,32 @@ clickhouse_output:
 
                                          ZE]
 
+elastic_output:
+      --elasticOutputType=[0|1|2|3|4]    What should be written to elastic.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_ELASTICOUTPUTTYPE]
+      --elasticOutputEndpoint=           elastic endpoint address, example:
+                                         http://127.0.0.1:9200. Used if
+                                         elasticOutputType is not none
+                                         [$DNSMONSTER_ELASTICOUTPUTENDPOINT]
+      --elasticOutputIndex=              elastic index (default: default)
+                                         [$DNSMONSTER_ELASTICOUTPUTINDEX]
+      --elasticBatchSize=                Send data to Elastic in batch sizes
+                                         (default: 1000)
+                                         [$DNSMONSTER_ELASTICBATCHSIZE]
+      --elasticBatchDelay=               Interval between sending results to
+                                         Elastic if Batch size is not filled
+                                         (default: 1s)
+                                         [$DNSMONSTER_ELASTICBATCHDELAY]
+
 kafka_output:
       --kafkaOutputType=[0|1|2|3|4]      What should be written to kafka.
                                          options:
@@ -518,30 +544,6 @@ output:
                                          tcp://127.0.0.1:514. Used if
                                          syslogOutputType is not none
                                          [$DNSMONSTER_SYSLOGOUTPUTENDPOINT]
-      --elasticOutputType=[0|1|2|3|4]    What should be written to elastic.
-                                         options:
-                                         ;	0: Disable Output
-                                         ;	1: Enable Output without any filters
-                                         ;	2: Enable Output and apply
-                                         skipdomains logic
-                                         ;	3: Enable Output and apply
-                                         allowdomains logic
-                                         ;	4: Enable Output and apply both skip
-                                         and allow domains logic (default: 0)
-                                         [$DNSMONSTER_ELASTICOUTPUTTYPE]
-      --elasticOutputEndpoint=           elastic endpoint address, example:
-                                         http://127.0.0.1:9200. Used if
-                                         elasticOutputType is not none
-                                         [$DNSMONSTER_ELASTICOUTPUTENDPOINT]
-      --elasticOutputIndex=              elastic index (default: default)
-                                         [$DNSMONSTER_ELASTICOUTPUTINDEX]
-      --elasticBatchSize=                Send data to Elastic in batch sizes
-                                         (default: 1000)
-                                         [$DNSMONSTER_ELASTICBATCHSIZE]
-      --elasticBatchDelay=               Interval between sending results to
-                                         Elastic if Batch size is not filled
-                                         (default: 1s)
-                                         [$DNSMONSTER_ELASTICBATCHDELAY]
 ```
 [//]: <> (end of command line options)
 

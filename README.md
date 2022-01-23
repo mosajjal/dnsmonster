@@ -352,6 +352,25 @@ splunk_output:
                                          (default: 1s)
                                          [$DNSMONSTER_SPLUNKBATCHDELAY]
 
+syslog_output:
+      --syslogOutputType=[0|1|2|3|4]     What should be written to Syslog
+                                         server. options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_SYSLOGOUTPUTTYPE]
+      --syslogOutputEndpoint=            Syslog endpoint address, example:
+                                         udp://127.0.0.1:514,
+                                         tcp://127.0.0.1:514. Used if
+                                         syslogOutputType is not none (default:
+                                         udp://127.0.0.1:514)
+                                         [$DNSMONSTER_SYSLOGOUTPUTENDPOINT]
+
 general:
       --config=                          path to config file
                                          [$DNSMONSTER_CONFIG]
@@ -528,22 +547,6 @@ output:
                                          splits the datetime format into
                                          multiple fields (default: json)
                                          [$DNSMONSTER_STDOUTOUTPUTFORMAT]
-      --syslogOutputType=[0|1|2|3|4]     What should be written to Syslog
-                                         server. options:
-                                         ;	0: Disable Output
-                                         ;	1: Enable Output without any filters
-                                         ;	2: Enable Output and apply
-                                         skipdomains logic
-                                         ;	3: Enable Output and apply
-                                         allowdomains logic
-                                         ;	4: Enable Output and apply both skip
-                                         and allow domains logic (default: 0)
-                                         [$DNSMONSTER_SYSLOGOUTPUTTYPE]
-      --syslogOutputEndpoint=            Syslog endpoint address, example:
-                                         udp://127.0.0.1:514,
-                                         tcp://127.0.0.1:514. Used if
-                                         syslogOutputType is not none
-                                         [$DNSMONSTER_SYSLOGOUTPUTENDPOINT]
 ```
 [//]: <> (end of command line options)
 

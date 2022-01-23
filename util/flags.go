@@ -80,11 +80,6 @@ var OutputFlags struct {
 	StdoutOutputFormat    string         `long:"stdoutOutputFormat"          env:"DNSMONSTER_STDOUTOUTPUTFORMAT"          default:"json"                                                    description:"Output format for stdout. options:json,csv. note that the csv splits the datetime format into multiple fields"                                                                                                                                                                        choice:"json" choice:"csv"`
 	SyslogOutputType      uint           `long:"syslogOutputType"            env:"DNSMONSTER_SYSLOGOUTPUTTYPE"            default:"0"                                                       description:"What should be written to Syslog server. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	SyslogOutputEndpoint  string         `long:"syslogOutputEndpoint"        env:"DNSMONSTER_SYSLOGOUTPUTENDPOINT"        default:""                                                        description:"Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none"`
-	KafkaOutputType       uint           `long:"kafkaOutputType"             env:"DNSMONSTER_KAFKAOUTPUTTYPE"             default:"0"                                                       description:"What should be written to kafka. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"         choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	KafkaOutputBroker     string         `long:"kafkaOutputBroker"           env:"DNSMONSTER_KAFKAOUTPUTBROKER"           default:""                                                        description:"kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none"`
-	KafkaOutputTopic      string         `long:"kafkaOutputTopic"            env:"DNSMONSTER_KAFKAOUTPUTTOPIC"            default:"dnsmonster"                                              description:"Kafka topic for logging"`
-	KafkaBatchSize        uint           `long:"kafkaBatchSize"              env:"DNSMONSTER_KAFKABATCHSIZE"              default:"1000"                                                    description:"Minimun capacity of the cache array used to send data to Kafka"`
-	KafkaBatchDelay       time.Duration  `long:"kafkaBatchDelay"             env:"DNSMONSTER_KAFKABATCHDELAY"             default:"1s"                                                      description:"Interval between sending results to Kafka if Batch size is not filled"`
 	ElasticOutputType     uint           `long:"elasticOutputType"           env:"DNSMONSTER_ELASTICOUTPUTTYPE"           default:"0"                                                       description:"What should be written to elastic. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"       choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	ElasticOutputEndpoint string         `long:"elasticOutputEndpoint"       env:"DNSMONSTER_ELASTICOUTPUTENDPOINT"       default:""                                                        description:"elastic endpoint address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none"`
 	ElasticOutputIndex    string         `long:"elasticOutputIndex"          env:"DNSMONSTER_ELASTICOUTPUTINDEX"          default:"default"                                                 description:"elastic index"`
@@ -213,12 +208,6 @@ func ProcessFlags() {
 		}
 	}
 	//todo: move check flags to individual files
-	// if OutputFlags.ClickhouseOutputType >= 5 {
-	// 	log.Fatal("clickhouseOutputType must be one of 0, 1, 2, 3 or 4")
-	// }
-	if OutputFlags.KafkaOutputType >= 5 {
-		log.Fatal("kafkaOutputType must be one of 0, 1, 2, 3 or 4")
-	}
 	if OutputFlags.ElasticOutputType >= 5 {
 		log.Fatal("elasticOutputType must be one of 0, 1, 2, 3 or 4")
 	}

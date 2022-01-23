@@ -72,14 +72,6 @@ var GeneralFlags struct {
 	Version                     bool           `long:"version"                     env:"DNSMONSTER_VERSION"                     description:"show version and quit."  no-ini:"true" `
 }
 
-var OutputFlags struct {
-	FileOutputType     uint           `long:"fileOutputType"              env:"DNSMONSTER_FILEOUTPUTTYPE"              default:"0"                                                       description:"What should be written to file. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"          choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	FileOutputPath     flags.Filename `long:"fileOutputPath"              env:"DNSMONSTER_FILEOUTPUTPATH"              default:""                                                        description:"Path to output file. Used if fileOutputType is not none"`
-	FileOutputFormat   string         `long:"fileOutputFormat"            env:"DNSMONSTER_FILEOUTPUTFORMAT"            default:"json"                                                    description:"Output format for file. options:json,csv. note that the csv splits the datetime format into multiple fields"                                                                                                                                                                          choice:"json" choice:"csv"`
-	StdoutOutputType   uint           `long:"stdoutOutputType"            env:"DNSMONSTER_STDOUTOUTPUTTYPE"            default:"0"                                                       description:"What should be written to stdout. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"        choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	StdoutOutputFormat string         `long:"stdoutOutputFormat"          env:"DNSMONSTER_STDOUTOUTPUTFORMAT"          default:"json"                                                    description:"Output format for stdout. options:json,csv. note that the csv splits the datetime format into multiple fields"                                                                                                                                                                        choice:"json" choice:"csv"`
-}
-
 var helpOptions struct {
 	Help           bool `long:"help"  short:"h" no-ini:"true"      description:"Print this help to stdout"`
 	ManPage        bool `long:"manPage"         no-ini:"true"      description:"Print Manpage for dnsmonster to stdout"`
@@ -96,7 +88,6 @@ func ProcessFlags() {
 	GlobalParser.AddGroup("general", "General Options", &GeneralFlags)
 	GlobalParser.AddGroup("help", "Help Options", &helpOptions)
 	GlobalParser.AddGroup("capture", "Options specific to capture side", &CaptureFlags)
-	GlobalParser.AddGroup("output", "Options specific to output side", &OutputFlags)
 	GlobalParser.Parse()
 
 	// process help options first
@@ -190,16 +181,6 @@ func ProcessFlags() {
 
 	// todo: check to see if there's at least one output is enabled. possibly can add all the types and see if it's a positive number
 
-	if OutputFlags.StdoutOutputType >= 5 {
-		log.Fatal("stdoutOutputType must be one of 0, 1, 2, 3 or 4")
-	}
-	if OutputFlags.FileOutputType >= 5 {
-		log.Fatal("fileOutputType must be one of 0, 1, 2, 3 or 4")
-	} else if OutputFlags.FileOutputType > 0 {
-		if OutputFlags.FileOutputPath == "" {
-			log.Fatal("fileOutputType is set but fileOutputPath is not provided. Exiting")
-		}
-	}
 	if CaptureFlags.Port > 65535 {
 		log.Fatal("--port must be between 1 and 65535")
 	}

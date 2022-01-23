@@ -56,24 +56,6 @@ func setupOutputs() {
 		}
 		go output.SyslogOutput(sysConfig)
 	}
-	if util.OutputFlags.ClickhouseOutputType > 0 {
-		log.Info("Creating Clickhouse Output Channel")
-		chConfig := types.ClickHouseConfig{
-			ResultChannel:               clickhouseResultChannel,
-			ClickhouseAddress:           util.OutputFlags.ClickhouseAddress,
-			ClickhouseBatchSize:         util.OutputFlags.ClickhouseBatchSize,
-			ClickhouseOutputType:        util.OutputFlags.ClickhouseOutputType,
-			ClickhouseSaveFullQuery:     util.OutputFlags.ClickhouseSaveFullQuery,
-			ClickhouseDebug:             util.OutputFlags.ClickhouseDebug,
-			ClickhouseCompress:          util.OutputFlags.ClickhouseCompress,
-			ClickhouseSecure:            util.OutputFlags.ClickhouseSecure,
-			ClickhouseDelay:             util.OutputFlags.ClickhouseDelay,
-			ClickhouseWorkers:           util.OutputFlags.ClickhouseWorkers,
-			ClickhouseWorkerChannelSize: util.OutputFlags.ClickhouseWorkerChannelSize,
-			General:                     generalConfig,
-		}
-		go output.ClickhouseOutput(chConfig)
-	}
 	if util.OutputFlags.KafkaOutputType > 0 {
 		log.Info("Creating Kafka Output Channel")
 		kafConfig := types.KafkaConfig{
@@ -119,26 +101,24 @@ func setupOutputs() {
 		go output.SplunkOutput(spConfig)
 	}
 
-	if util.OutputFlags.SentinelOutputType > 0 {
-		log.Info("Creating Sentinel Output Channel")
-		seConfig := types.SentinelConfig{
-			ResultChannel:            sentinelResultChannel,
-			SentinelOutputType:       util.OutputFlags.SentinelOutputType,
-			SentinelOutputSharedKey:  util.OutputFlags.SentinelOutputSharedKey,
-			SentinelOutputCustomerId: util.OutputFlags.SentinelOutputCustomerId,
-			SentinelOutputLogType:    util.OutputFlags.SentinelOutputLogType,
-			SentinelOutputProxy:      util.OutputFlags.SentinelOutputProxy,
-			SentinelBatchSize:        util.OutputFlags.SentinelBatchSize,
-			SentinelBatchDelay:       util.OutputFlags.SentinelBatchDelay,
-			General:                  generalConfig,
-		}
+}
 
-		go output.SentinelOutput(seConfig)
-	}
-
+func RemoveIndex(s []types.GenericOutput, index int) []types.GenericOutput {
+	return append(s[:index], s[index+1:]...)
 }
 
 func dispatchOutput(resultChannel chan types.DNSResult) {
+
+	// the new simplified output method
+	for i, o := range types.GlobalDispatchList {
+		err := o.Initialize()
+		if err != nil {
+			// the output does not exist, time to remove the item from our globaldispatcher
+			log.Warnf("here") //todo:remove
+			types.GlobalDispatchList = RemoveIndex(types.GlobalDispatchList, i)
+		}
+	}
+
 	// Set up various tickers for different tasks
 	skipDomainsFileTicker := time.NewTicker(util.GeneralFlags.SkipDomainsRefreshInterval)
 	skipDomainsFileTickerChan := skipDomainsFileTicker.C
@@ -167,9 +147,9 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			if util.OutputFlags.SyslogOutputType > 0 {
 				syslogResultChannel <- data
 			}
-			if util.OutputFlags.ClickhouseOutputType > 0 {
-				clickhouseResultChannel <- data
-			}
+			// if util.OutputFlags.ClickhouseOutputType > 0 {
+			// 	clickhouseResultChannel <- data
+			// }
 			if util.OutputFlags.KafkaOutputType > 0 {
 				kafkaResultChannel <- data
 			}
@@ -179,8 +159,10 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			if util.OutputFlags.SplunkOutputType > 0 {
 				splunkResultChannel <- data
 			}
-			if util.OutputFlags.SentinelOutputType > 0 {
-				sentinelResultChannel <- data
+			// new simplified output method. only works with Sentinel
+			for _, o := range types.GlobalDispatchList {
+				// todo: this blocks on type0 outputs
+				o.OutputChannel() <- data
 			}
 
 		case <-skipDomainsFileTickerChan:

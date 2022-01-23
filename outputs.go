@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	_ "github.com/mosajjal/dnsmonster/output" //this will automatically set up all the outputs
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"

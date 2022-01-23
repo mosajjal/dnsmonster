@@ -56,19 +56,7 @@ func setupOutputs() {
 		}
 		go output.SyslogOutput(sysConfig)
 	}
-	if util.OutputFlags.KafkaOutputType > 0 {
-		log.Info("Creating Kafka Output Channel")
-		kafConfig := types.KafkaConfig{
-			ResultChannel:     kafkaResultChannel,
-			KafkaOutputBroker: util.OutputFlags.KafkaOutputBroker,
-			KafkaOutputTopic:  util.OutputFlags.KafkaOutputTopic,
-			KafkaOutputType:   util.OutputFlags.KafkaOutputType,
-			KafkaBatchSize:    util.OutputFlags.KafkaBatchSize,
-			KafkaBatchDelay:   util.OutputFlags.KafkaBatchDelay,
-			General:           generalConfig,
-		}
-		go output.KafkaOutput(kafConfig)
-	}
+
 	if util.OutputFlags.ElasticOutputType > 0 {
 		log.Info("Creating Elastic Output Channel")
 		esConfig := types.ElasticConfig{
@@ -129,9 +117,6 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			}
 			if util.OutputFlags.SyslogOutputType > 0 {
 				syslogResultChannel <- data
-			}
-			if util.OutputFlags.KafkaOutputType > 0 {
-				kafkaResultChannel <- data
 			}
 			if util.OutputFlags.ElasticOutputType > 0 {
 				elasticResultChannel <- data

@@ -3,49 +3,16 @@ package main
 import (
 	"time"
 
-	"github.com/mosajjal/dnsmonster/output"
 	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 )
 
 func setupOutputs() {
-	generalConfig := types.GeneralConfig{
-		MaskSize4:           util.GeneralFlags.MaskSize4,
-		MaskSize6:           util.GeneralFlags.MaskSize6,
-		PacketLimit:         util.GeneralFlags.PacketLimit,
-		ServerName:          util.GeneralFlags.ServerName,
-		SkipTlsVerification: util.GeneralFlags.SkipTLSVerification,
-	}
+
 	log.Info("Creating the dispatch Channel")
 
 	go dispatchOutput(resultChannel)
-
-	if util.OutputFlags.FileOutputType > 0 {
-		log.Info("Creating File Output Channel")
-		fConfig := types.FileConfig{
-			ResultChannel:    fileResultChannel,
-			FileOutputPath:   string(util.OutputFlags.FileOutputPath),
-			FileOutputType:   util.OutputFlags.FileOutputType,
-			FileOutputFormat: util.OutputFlags.FileOutputFormat,
-			General:          generalConfig,
-		}
-
-		go output.FileOutput(fConfig)
-		// go fileOutput(fileResultChannel, exiting, &wg)
-	}
-	if util.OutputFlags.StdoutOutputType > 0 {
-		log.Info("Creating stdout Output Channel")
-		stdConfig := types.StdoutConfig{
-			ResultChannel:      stdoutResultChannel,
-			StdoutOutputType:   util.OutputFlags.StdoutOutputType,
-			StdoutOutputFormat: util.OutputFlags.StdoutOutputFormat,
-			General:            generalConfig,
-		}
-
-		go output.StdoutOutput(stdConfig)
-		// go stdoutOutput(stdoutResultChannel, exiting, &wg)
-	}
 
 }
 
@@ -86,12 +53,6 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 	for {
 		select {
 		case data := <-resultChannel:
-			if util.OutputFlags.StdoutOutputType > 0 {
-				stdoutResultChannel <- data
-			}
-			if util.OutputFlags.FileOutputType > 0 {
-				fileResultChannel <- data
-			}
 
 			// new simplified output method. only works with Sentinel
 			for _, o := range types.GlobalDispatchList {

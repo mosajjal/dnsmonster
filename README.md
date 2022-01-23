@@ -265,6 +265,40 @@ sentinel_output:
                                          (default: 1s)
                                          [$DNSMONSTER_SENTINELBATCHDELAY]
 
+splunk_output:
+      --splunkOutputType=[0|1|2|3|4]     What should be written to HEC. options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_SPLUNKOUTPUTTYPE]
+      --splunkOutputEndpoints=           splunk endpoint address, example:
+                                         http://127.0.0.1:8088. Used if
+                                         splunkOutputType is not none
+                                         [$DNSMONSTER_SPLUNKOUTPUTENDPOINTS]
+      --splunkOutputToken=               Splunk HEC Token (default:
+                                         00000000-0000-0000-0000-000000000000)
+                                         [$DNSMONSTER_SPLUNKOUTPUTTOKEN]
+      --splunkOutputIndex=               Splunk Output Index (default: temp)
+                                         [$DNSMONSTER_SPLUNKOUTPUTINDEX]
+      --splunkOutputSource=              Splunk Output Source (default:
+                                         dnsmonster)
+                                         [$DNSMONSTER_SPLUNKOUTPUTSOURCE]
+      --splunkOutputSourceType=          Splunk Output Sourcetype (default:
+                                         json)
+                                         [$DNSMONSTER_SPLUNKOUTPUTSOURCETYPE]
+      --splunkBatchSize=                 Send data to HEC in batch sizes
+                                         (default: 1000)
+                                         [$DNSMONSTER_SPLUNKBATCHSIZE]
+      --splunkBatchDelay=                Interval between sending results to
+                                         HEC if Batch size is not filled
+                                         (default: 1s)
+                                         [$DNSMONSTER_SPLUNKBATCHDELAY]
+
 general:
       --config=                          path to config file
                                          [$DNSMONSTER_CONFIG]
@@ -506,38 +540,6 @@ output:
                                          Elastic if Batch size is not filled
                                          (default: 1s)
                                          [$DNSMONSTER_ELASTICBATCHDELAY]
-      --splunkOutputType=[0|1|2|3|4]     What should be written to HEC. options:
-                                         ;	0: Disable Output
-                                         ;	1: Enable Output without any filters
-                                         ;	2: Enable Output and apply
-                                         skipdomains logic
-                                         ;	3: Enable Output and apply
-                                         allowdomains logic
-                                         ;	4: Enable Output and apply both skip
-                                         and allow domains logic (default: 0)
-                                         [$DNSMONSTER_SPLUNKOUTPUTTYPE]
-      --splunkOutputEndpoints=           splunk endpoint address, example:
-                                         http://127.0.0.1:8088. Used if
-                                         splunkOutputType is not none
-                                         [$DNSMONSTER_SPLUNKOUTPUTENDPOINTS]
-      --splunkOutputToken=               Splunk HEC Token (default:
-                                         00000000-0000-0000-0000-000000000000)
-                                         [$DNSMONSTER_SPLUNKOUTPUTTOKEN]
-      --splunkOutputIndex=               Splunk Output Index (default: temp)
-                                         [$DNSMONSTER_SPLUNKOUTPUTINDEX]
-      --splunkOutputSource=              Splunk Output Source (default:
-                                         dnsmonster)
-                                         [$DNSMONSTER_SPLUNKOUTPUTSOURCE]
-      --splunkOutputSourceType=          Splunk Output Sourcetype (default:
-                                         json)
-                                         [$DNSMONSTER_SPLUNKOUTPUTSOURCETYPE]
-      --splunkBatchSize=                 Send data to HEC in batch sizes
-                                         (default: 1000)
-                                         [$DNSMONSTER_SPLUNKBATCHSIZE]
-      --splunkBatchDelay=                Interval between sending results to
-                                         HEC if Batch size is not filled
-                                         (default: 1s)
-                                         [$DNSMONSTER_SPLUNKBATCHDELAY]
 ```
 [//]: <> (end of command line options)
 

@@ -232,6 +232,33 @@ clickhouse_output:
 
                                          ZE]
 
+kafka_output:
+      --kafkaOutputType=[0|1|2|3|4]      What should be written to kafka.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_KAFKAOUTPUTTYPE]
+      --kafkaOutputBroker=               kafka broker address, example:
+                                         127.0.0.1:9092. Used if
+                                         kafkaOutputType is not none
+                                         [$DNSMONSTER_KAFKAOUTPUTBROKER]
+      --kafkaOutputTopic=                Kafka topic for logging (default:
+                                         dnsmonster)
+                                         [$DNSMONSTER_KAFKAOUTPUTTOPIC]
+      --kafkaBatchSize=                  Minimun capacity of the cache array
+                                         used to send data to Kafka (default:
+                                         1000) [$DNSMONSTER_KAFKABATCHSIZE]
+      --kafkaBatchDelay=                 Interval between sending results to
+                                         Kafka if Batch size is not filled
+                                         (default: 1s)
+                                         [$DNSMONSTER_KAFKABATCHDELAY]
+
 sentinel_output:
       --sentinelOutputType=[0|1|2|3|4]   What should be written to Microsoft
                                          Sentinel. options:
@@ -491,31 +518,6 @@ output:
                                          tcp://127.0.0.1:514. Used if
                                          syslogOutputType is not none
                                          [$DNSMONSTER_SYSLOGOUTPUTENDPOINT]
-      --kafkaOutputType=[0|1|2|3|4]      What should be written to kafka.
-                                         options:
-                                         ;	0: Disable Output
-                                         ;	1: Enable Output without any filters
-                                         ;	2: Enable Output and apply
-                                         skipdomains logic
-                                         ;	3: Enable Output and apply
-                                         allowdomains logic
-                                         ;	4: Enable Output and apply both skip
-                                         and allow domains logic (default: 0)
-                                         [$DNSMONSTER_KAFKAOUTPUTTYPE]
-      --kafkaOutputBroker=               kafka broker address, example:
-                                         127.0.0.1:9092. Used if
-                                         kafkaOutputType is not none
-                                         [$DNSMONSTER_KAFKAOUTPUTBROKER]
-      --kafkaOutputTopic=                Kafka topic for logging (default:
-                                         dnsmonster)
-                                         [$DNSMONSTER_KAFKAOUTPUTTOPIC]
-      --kafkaBatchSize=                  Minimun capacity of the cache array
-                                         used to send data to Kafka (default:
-                                         1000) [$DNSMONSTER_KAFKABATCHSIZE]
-      --kafkaBatchDelay=                 Interval between sending results to
-                                         Kafka if Batch size is not filled
-                                         (default: 1s)
-                                         [$DNSMONSTER_KAFKABATCHDELAY]
       --elasticOutputType=[0|1|2|3|4]    What should be written to elastic.
                                          options:
                                          ;	0: Disable Output

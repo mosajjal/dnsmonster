@@ -83,23 +83,6 @@ func setupOutputs() {
 
 		go output.ElasticOutput(esConfig)
 	}
-	if util.OutputFlags.SplunkOutputType > 0 {
-		log.Info("Creating Splunk Output Channel")
-		spConfig := types.SplunkConfig{
-			ResultChannel:          splunkResultChannel,
-			SplunkOutputEndpoints:  util.OutputFlags.SplunkOutputEndpoints,
-			SplunkOutputToken:      util.OutputFlags.SplunkOutputToken,
-			SplunkOutputType:       util.OutputFlags.SplunkOutputType,
-			SplunkOutputIndex:      util.OutputFlags.SplunkOutputIndex,
-			SplunkOutputSource:     util.OutputFlags.SplunkOutputSource,
-			SplunkOutputSourceType: util.OutputFlags.SplunkOutputSourceType,
-			SplunkBatchSize:        util.OutputFlags.SplunkBatchSize,
-			SplunkBatchDelay:       util.OutputFlags.SplunkBatchDelay,
-			General:                generalConfig,
-		}
-
-		go output.SplunkOutput(spConfig)
-	}
 
 }
 
@@ -147,17 +130,11 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			if util.OutputFlags.SyslogOutputType > 0 {
 				syslogResultChannel <- data
 			}
-			// if util.OutputFlags.ClickhouseOutputType > 0 {
-			// 	clickhouseResultChannel <- data
-			// }
 			if util.OutputFlags.KafkaOutputType > 0 {
 				kafkaResultChannel <- data
 			}
 			if util.OutputFlags.ElasticOutputType > 0 {
 				elasticResultChannel <- data
-			}
-			if util.OutputFlags.SplunkOutputType > 0 {
-				splunkResultChannel <- data
 			}
 			// new simplified output method. only works with Sentinel
 			for _, o := range types.GlobalDispatchList {

@@ -279,6 +279,38 @@ file_output:
                                          multiple fields (default: json)
                                          [$DNSMONSTER_FILEOUTPUTFORMAT]
 
+influx_output:
+      --influxOutputType=[0|1|2|3|4]     What should be written to influx.
+                                         options:
+                                         ;	0: Disable Output
+                                         ;	1: Enable Output without any filters
+                                         ;	2: Enable Output and apply
+                                         skipdomains logic
+                                         ;	3: Enable Output and apply
+                                         allowdomains logic
+                                         ;	4: Enable Output and apply both skip
+                                         and allow domains logic (default: 0)
+                                         [$DNSMONSTER_INFLUXOUTPUTTYPE]
+      --influxOutputServer=              influx Server address, example:
+                                         http://localhost:8086. Used if
+                                         influxOutputType is not none
+                                         [$DNSMONSTER_INFLUXOUTPUTSERVER]
+      --influxOutputToken=               Influx Server Auth Token (default:
+                                         dnsmonster)
+                                         [$DNSMONSTER_INFLUXOUTPUTTOKEN]
+      --influxOutputBucket=              Influx Server Bucket (default:
+                                         dnsmonster)
+                                         [$DNSMONSTER_INFLUXOUTPUTBUCKET]
+      --influxOutputOrg=                 Influx Server Org (default:
+                                         dnsmonster)
+                                         [$DNSMONSTER_INFLUXOUTPUTORG]
+      --influxOutputWorkers=             Minimun capacity of the cache array
+                                         used to send data to Influx (default:
+                                         8) [$DNSMONSTER_INFLUXOUTPUTWORKERS]
+      --influxBatchSize=                 Minimun capacity of the cache array
+                                         used to send data to Influx (default:
+                                         1000) [$DNSMONSTER_INFLUXBATCHSIZE]
+
 kafka_output:
       --kafkaOutputType=[0|1|2|3|4]      What should be written to kafka.
                                          options:

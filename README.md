@@ -659,6 +659,7 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 * File
 * Syslog (Linux Only)
 * Microsoft Sentinel
+* InfluxDB
 
 
 # Roadmap
@@ -675,11 +676,11 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 - [x] Syslog output support
 - [x] Grafana dashboard performance improvements
 - [x] remove `libpcap` dependency and move to `pcapgo` for packet processing
+- [x] Getting the data ready to be used for ML & Anomaly Detection
 - [ ] Splunk Dashboard
 - [ ] Kibana Dashbaord
 - [ ] Optional SSL for Clickhouse
 - [ ] De-duplication support
-- [ ] Getting the data ready to be used for ML & Anomaly Detection
 - [ ] Clickhouse versioning and migration tool
 - [ ] `statsd` and `Prometheus` support 
 

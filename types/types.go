@@ -5,7 +5,6 @@ import (
 	"time"
 
 	mkdns "github.com/miekg/dns"
-	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
 )
 
 // DNSResult is the middleware that connects the packet encoder to Clickhouse.
@@ -26,84 +25,6 @@ type GeneralConfig struct {
 	PacketLimit         int
 	ServerName          string
 	SkipTlsVerification bool
-}
-
-type ClickHouseConfig struct {
-	ResultChannel               chan DNSResult
-	ClickhouseAddress           string
-	ClickhouseUsername          string
-	ClickhousePassword          string
-	ClickhouseBatchSize         uint
-	ClickhouseOutputType        uint
-	ClickhouseSaveFullQuery     bool
-	ClickhouseDebug             bool
-	ClickhouseCompress          bool
-	ClickhouseSecure            bool
-	ClickhouseDelay             time.Duration
-	ClickhouseWorkers           uint
-	ClickhouseWorkerChannelSize uint
-	General                     GeneralConfig
-}
-
-type ElasticConfig struct {
-	ResultChannel         chan DNSResult
-	ElasticOutputEndpoint string
-	ElasticOutputIndex    string
-	ElasticOutputType     uint
-	ElasticBatchSize      uint
-	ElasticBatchDelay     time.Duration
-	General               GeneralConfig
-}
-
-type KafkaConfig struct {
-	ResultChannel     chan DNSResult
-	KafkaOutputBroker string
-	KafkaOutputTopic  string
-	KafkaOutputType   uint
-	KafkaBatchSize    uint
-	KafkaBatchDelay   time.Duration
-	General           GeneralConfig
-}
-
-type SplunkConfig struct {
-	ResultChannel          chan DNSResult
-	SplunkOutputEndpoints  []string
-	SplunkOutputToken      string
-	SplunkOutputType       uint
-	SplunkOutputIndex      string
-	SplunkOutputSource     string
-	SplunkOutputSourceType string
-	SplunkBatchSize        uint
-	SplunkBatchDelay       time.Duration
-	General                GeneralConfig
-}
-
-type SplunkConnection struct {
-	Client    *splunk.Client
-	Unhealthy uint
-	Err       error
-}
-
-type SyslogConfig struct {
-	ResultChannel        chan DNSResult
-	SyslogOutputEndpoint string
-	SyslogOutputType     uint
-	General              GeneralConfig
-}
-
-type FileConfig struct {
-	ResultChannel    chan DNSResult
-	FileOutputPath   string
-	FileOutputType   uint
-	FileOutputFormat string
-	General          GeneralConfig
-}
-
-type StdoutConfig struct {
-	ResultChannel      chan DNSResult
-	StdoutOutputType   uint
-	StdoutOutputFormat string
-	General            GeneralConfig
 }
 
 type GenericOutput interface {

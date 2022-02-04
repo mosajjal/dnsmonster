@@ -9,8 +9,6 @@ import (
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/rogpeppe/fastuuid"
 )
 
 type InfluxConfig struct {
@@ -55,8 +53,6 @@ func (config InfluxConfig) Close() {
 func (config InfluxConfig) OutputChannel() chan types.DNSResult {
 	return config.outputChannel
 }
-
-var influxUuidGen = fastuuid.MustNewGenerator()
 
 func (influxConfig InfluxConfig) connectInfluxRetry() influxdb2.Client {
 	tick := time.NewTicker(5 * time.Second)

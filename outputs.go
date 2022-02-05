@@ -9,20 +9,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func setupOutputs() {
-
-	log.Info("Creating the dispatch Channel")
-
-	go dispatchOutput(resultChannel)
-
-}
-
 func removeIndex(s []types.GenericOutput, index int) []types.GenericOutput {
 	return append(s[:index], s[index+1:]...)
 }
 
-func dispatchOutput(resultChannel chan types.DNSResult) {
-
+func setupOutputs(resultChannel chan types.DNSResult) {
+	log.Info("Creating the dispatch Channel")
 	// go through all the registered outputs, and see if they are configured to push data, otherwise, remove them from the dispatch list
 	for i := 0; i < len(types.GlobalDispatchList); i++ {
 		err := types.GlobalDispatchList[i].Initialize()
@@ -38,13 +30,16 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 	skipDomainsFileTicker := time.NewTicker(util.GeneralFlags.SkipDomainsRefreshInterval)
 	skipDomainsFileTickerChan := skipDomainsFileTicker.C
 	if util.GeneralFlags.SkipDomainsFile == "" {
+		log.Infof("skipping skipDomains refresh since it's not provided")
 		skipDomainsFileTicker.Stop()
+	} else {
+		log.Infof("skipDomains refresh interval is %s", util.GeneralFlags.SkipDomainsRefreshInterval)
 	}
 
 	allowDomainsFileTicker := time.NewTicker(util.GeneralFlags.AllowDomainsRefreshInterval)
 	allowDomainsFileTickerChan := allowDomainsFileTicker.C
 	if util.GeneralFlags.AllowDomainsFile == "" {
-		log.Infof("skipping allowDomains refresh since it's empty")
+		log.Infof("skipping allowDomains refresh since it's not provided")
 		allowDomainsFileTicker.Stop()
 	} else {
 		log.Infof("allowDomains refresh interval is %s", util.GeneralFlags.AllowDomainsRefreshInterval)
@@ -60,14 +55,12 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 			}
 
 		case <-skipDomainsFileTickerChan:
-			log.Infof("reached skipDomains tick")
 			if util.SkipDomainMapBool {
 				util.SkipDomainMap = util.LoadDomainsToMap(util.GeneralFlags.SkipDomainsFile)
 			} else {
 				util.SkipDomainList = util.LoadDomainsToList(util.GeneralFlags.SkipDomainsFile)
 			}
 		case <-allowDomainsFileTickerChan:
-			log.Infof("reached allowDomains tick")
 			if util.AllowDomainMapBool {
 				util.AllowDomainMap = util.LoadDomainsToMap(util.GeneralFlags.AllowDomainsFile)
 			} else {

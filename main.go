@@ -8,6 +8,7 @@ package main
 
 import (
 	"os"
+	"os/signal"
 	"runtime"
 	"runtime/pprof"
 	"time"
@@ -20,7 +21,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+func handleInterrupt() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			for {
+				log.Infof("SIGINT Received. Stopping capture...")
+
+				<-time.After(10 * time.Second)
+				log.Fatal("emergency exit")
+				return
+			}
+		}
+	}()
+}
 
 func main() {
 
@@ -49,7 +64,11 @@ func main() {
 	}
 
 	// Setup our output channels
-	setupOutputs()
+	resultChannel := make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	setupOutputs(resultChannel)
+
+	// Setup SIGINT handling
+	handleInterrupt()
 
 	// todo: this needs to be its own file with configurable output formats and endpoints (stdout, file, syslog, prometheus, etc)
 	go metrics.Log(metrics.DefaultRegistry, util.GeneralFlags.PrintStatsDelay, log.StandardLogger())

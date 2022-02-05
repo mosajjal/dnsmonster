@@ -6,26 +6,7 @@ import (
 	"github.com/mosajjal/dnsmonster/util"
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
-
-	"os"
-	"os/signal"
 )
-
-func handleInterrupt() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			for {
-				log.Infof("SIGINT Received. Stopping capture...")
-
-				<-time.After(10 * time.Second)
-				log.Fatal("emergency exit")
-				return
-			}
-		}
-	}()
-}
 
 func NewDNSCapturer(options CaptureOptions) DNSCapturer {
 	if options.DevName != "" && options.PcapFile != "" {
@@ -70,7 +51,7 @@ func (capturer *DNSCapturer) Start() {
 	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
 	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
 
-	var myHandler genericHandler
+	var myHandler genericPacketHandler
 
 	options := capturer.options
 	packetBytesChannel := make(chan rawPacketBytes, options.PacketChannelSize)
@@ -95,9 +76,6 @@ func (capturer *DNSCapturer) Start() {
 			packetBytesChannel <- rawPacketBytes{data, ci}
 		}
 	}()
-
-	// Setup SIGINT handling
-	handleInterrupt()
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)

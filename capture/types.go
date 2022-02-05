@@ -134,7 +134,7 @@ type DetectIP struct {
 	family layers.EthernetType
 }
 
-type genericHandler interface {
+type genericPacketHandler interface {
 	ReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	ZeroCopyReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	Close()

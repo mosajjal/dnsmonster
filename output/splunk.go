@@ -30,6 +30,12 @@ type SplunkConfig struct {
 	closeChannel           chan bool
 }
 
+type SplunkConnection struct {
+	Client    *splunk.Client
+	Unhealthy uint
+	Err       error
+}
+
 func (config SplunkConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("splunk_output", "Splunk Output", &config)
@@ -61,7 +67,7 @@ func (config SplunkConfig) OutputChannel() chan types.DNSResult {
 	return config.outputChannel
 }
 
-var splunkConnectionList = make(map[string]types.SplunkConnection)
+var splunkConnectionList = make(map[string]SplunkConnection)
 
 func (spConfig SplunkConfig) connectMultiSplunkRetry() {
 	for _, splunkEndpoint := range spConfig.SplunkOutputEndpoints {
@@ -91,7 +97,7 @@ func (spConfig SplunkConfig) connectSplunkRetry(splunkEndpoint string) {
 
 }
 
-func (spConfig SplunkConfig) connectSplunk(splunkEndpoint string) types.SplunkConnection {
+func (spConfig SplunkConfig) connectSplunk(splunkEndpoint string) SplunkConnection {
 
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification}}
 	httpClient := &http.Client{Timeout: time.Second * 20, Transport: tr}
@@ -115,7 +121,7 @@ func (spConfig SplunkConfig) connectSplunk(splunkEndpoint string) types.SplunkCo
 	if err != nil {
 		unhealthy += 1
 	}
-	myConn := types.SplunkConnection{Client: client, Unhealthy: unhealthy, Err: err}
+	myConn := SplunkConnection{Client: client, Unhealthy: unhealthy, Err: err}
 	log.Warnf("new splunk connection %v", myConn)
 	return myConn
 }

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	mkdns "github.com/miekg/dns"
-	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
 )
 
 // DNSResult is the middleware that connects the packet encoder to Clickhouse.
@@ -28,11 +27,6 @@ type GeneralConfig struct {
 	SkipTlsVerification bool
 }
 
-type SplunkConnection struct {
-	Client    *splunk.Client
-	Unhealthy uint
-	Err       error
-}
 type GenericOutput interface {
 	Initialize() error             // try to initialize the output by checking flags and connections
 	Output()                       // the output is a goroutine that fetches data from the registered channel and pushes it to output, possibly in multiple workers

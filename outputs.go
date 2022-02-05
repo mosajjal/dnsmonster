@@ -17,25 +17,24 @@ func setupOutputs() {
 
 }
 
-func RemoveIndex(s []types.GenericOutput, index int) []types.GenericOutput {
+func removeIndex(s []types.GenericOutput, index int) []types.GenericOutput {
 	return append(s[:index], s[index+1:]...)
 }
 
 func dispatchOutput(resultChannel chan types.DNSResult) {
 
-	// the new simplified output method
+	// go through all the registered outputs, and see if they are configured to push data, otherwise, remove them from the dispatch list
 	for i := 0; i < len(types.GlobalDispatchList); i++ {
 		err := types.GlobalDispatchList[i].Initialize()
 		if err != nil {
 			// the output does not exist, time to remove the item from our globaldispatcher
-			types.GlobalDispatchList = RemoveIndex(types.GlobalDispatchList, i)
+			types.GlobalDispatchList = removeIndex(types.GlobalDispatchList, i)
 			// since we just removed the last item, we should go back one index to keep it consistent
 			i--
 		}
 
 	}
 
-	// Set up various tickers for different tasks
 	skipDomainsFileTicker := time.NewTicker(util.GeneralFlags.SkipDomainsRefreshInterval)
 	skipDomainsFileTickerChan := skipDomainsFileTicker.C
 	if util.GeneralFlags.SkipDomainsFile == "" {
@@ -55,7 +54,6 @@ func dispatchOutput(resultChannel chan types.DNSResult) {
 		select {
 		case data := <-resultChannel:
 
-			// new simplified output method. only works with Sentinel
 			for _, o := range types.GlobalDispatchList {
 				// todo: this blocks on type0 outputs. This is still blocking for some reason
 				o.OutputChannel() <- data

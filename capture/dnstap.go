@@ -28,18 +28,31 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 		ln, err = net.Listen(uri.Scheme, uri.Host)
 		util.ErrorHandler(err)
 	} else {
+		log.Infof("listening on DNStap socket %v", socketString)
+		// see if the socket exists
+		if _, err := os.Stat(uri.Path); err == nil {
+			log.Infof("socket exists, will try to overwrite the socket")
+			os.Remove(uri.Path)
+		}
 		ln, err = net.Listen(uri.Scheme, uri.Path)
+		if uri.Scheme == "unix" {
+			permission := 0
+			if len(socketChmod) > 3 {
+				log.Fatal("Chmod is not in the correct format")
+			}
+			for _, c := range socketChmod {
+				permBit, _ := strconv.Atoi(string(c))
+				if permBit > 7 || permBit < 0 || err != nil {
+					log.Fatal("Chmod string is not valid")
+				}
+				permission = permission*8 + permBit
+			}
+			err = os.Chmod(uri.Path, os.FileMode(permission))
+			util.ErrorHandler(err)
+		}
 		util.ErrorHandler(err)
 	}
-	log.Infof("listening on DNStap socket %v", socketString)
 
-	if uri.Scheme == "unix" {
-		//Chmod is defined in 8 bits not 10 bits, needs to be converter then passed on to the program
-		permission, err := strconv.ParseInt(socketChmod, 8, 0)
-		util.ErrorHandler(err)
-		err = os.Chmod(uri.Path, os.FileMode(permission))
-		util.ErrorHandler(err)
-	}
 	return dnstap.NewFrameStreamSockInput(ln)
 
 }

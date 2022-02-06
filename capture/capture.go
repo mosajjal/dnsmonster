@@ -18,28 +18,33 @@ import (
 )
 
 type CaptureConfig struct {
-	DevName              string `long:"devName"              env:"DNSMONSTER_DEVNAME"              default:""                                                                                                  description:"Device used to capture"`
-	PcapFile             string `long:"pcapFile"             env:"DNSMONSTER_PCAPFILE"             default:""                                                                                                  description:"Pcap filename to run"`
-	DnstapSocket         string `long:"dnstapSocket"         env:"DNSMONSTER_DNSTAPSOCKET"         default:""                                                                                                  description:"dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
-	Port                 uint   `long:"port"                 env:"DNSMONSTER_PORT"                 default:"53"                                                                                                description:"Port selected to filter packets"`
-	SampleRatio          string `long:"sampleRatio"          env:"DNSMONSTER_SAMPLERATIO"          default:"1:1"                                                                                               description:"Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets"`
-	DnstapPermission     string `long:"dnstapPermission"     env:"DNSMONSTER_DNSTAPPERMISSION"     default:"755"                                                                                               description:"Set the dnstap socket permission, only applicable when unix:// is used"`
-	PacketHandlerCount   uint   `long:"packetHandlerCount"   env:"DNSMONSTER_PACKETHANDLERCOUNT"   default:"2"                                                                                                 description:"Number of routines used to handle received packets"`
-	PacketChannelSize    uint   `long:"packetChannelSize"    env:"DNSMONSTER_PACKETCHANNELSIZE"    default:"1000"                                                                                              description:"Size of the packet handler channel"`
-	AfpacketBuffersizeMb uint   `long:"afpacketBuffersizeMb" env:"DNSMONSTER_AFPACKETBUFFERSIZEMB" default:"64"                                                                                                description:"Afpacket Buffersize in MB"`
-	Filter               string `long:"filter"               env:"DNSMONSTER_FILTER"               default:"((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))" description:"BPF filter applied to the packet stream. If port is selected, the packets will not be defragged."`
-	UseAfpacket          bool   `long:"useAfpacket"          env:"DNSMONSTER_USEAFPACKET"          description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
-	NoEthernetframe      bool   `long:"noEtherframe"         env:"DNSMONSTER_NOETHERFRAME"         description:"The PCAP capture does not contain ethernet frames"`
-	processingChannel    chan rawPacketBytes
-	ip4Defrgger          chan ipv4ToDefrag
-	ip6Defrgger          chan ipv6FragmentInfo
-	ip4DefrggerReturn    chan ipv4Defragged
-	ip6DefrggerReturn    chan ipv6Defragged
-	tcpAssembly          []chan tcpPacket
-	tcpReturnChannel     chan tcpData
-	resultChannel        chan types.DNSResult
-	ratioA               int
-	ratioB               int
+	DevName                    string `long:"devName"                    env:"DNSMONSTER_DEVNAME"                    default:""                                                                                                  description:"Device used to capture"`
+	PcapFile                   string `long:"pcapFile"                   env:"DNSMONSTER_PCAPFILE"                   default:""                                                                                                  description:"Pcap filename to run"`
+	DnstapSocket               string `long:"dnstapSocket"               env:"DNSMONSTER_DNSTAPSOCKET"               default:""                                                                                                  description:"dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
+	Port                       uint   `long:"port"                       env:"DNSMONSTER_PORT"                       default:"53"                                                                                                description:"Port selected to filter packets"`
+	SampleRatio                string `long:"sampleRatio"                env:"DNSMONSTER_SAMPLERATIO"                default:"1:1"                                                                                               description:"Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets"`
+	DnstapPermission           string `long:"dnstapPermission"           env:"DNSMONSTER_DNSTAPPERMISSION"           default:"755"                                                                                               description:"Set the dnstap socket permission, only applicable when unix:// is used"`
+	PacketHandlerCount         uint   `long:"packetHandlerCount"         env:"DNSMONSTER_PACKETHANDLERCOUNT"         default:"2"                                                                                                 description:"Number of routines used to handle received packets"`
+	TcpAssemblyChannelSize     uint   `long:"tcpAssemblyChannelSize"     env:"DNSMONSTER_TCPASSEMBLYCHANNELSIZE"     default:"10000"                                                                                             description:"Size of the tcp assembler"`
+	TcpResultChannelSize       uint   `long:"tcpResultChannelSize"       env:"DNSMONSTER_TCPRESULTCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the tcp result channel"`
+	TcpHandlerCount            uint   `long:"tcpHandlerCount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                                                                                                 description:"Number of routines used to handle tcp assembly"`
+	DefraggerChannelSize       uint   `long:"defraggerChannelSize"       env:"DNSMONSTER_DEFRAGGERCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the channel to send packets to be defragged"`
+	DefraggerChannelReturnSize uint   `long:"defraggerChannelReturnSize" env:"DNSMONSTER_DEFRAGGERCHANNELRETURNSIZE" default:"10000"                                                                                             description:"Size of the channel where the defragged packets are returned"`
+	PacketChannelSize          uint   `long:"packetChannelSize"          env:"DNSMONSTER_PACKETCHANNELSIZE"          default:"1000"                                                                                              description:"Size of the packet handler channel"`
+	AfpacketBuffersizeMb       uint   `long:"afpacketBuffersizeMb"       env:"DNSMONSTER_AFPACKETBUFFERSIZEMB"       default:"64"                                                                                                description:"Afpacket Buffersize in MB"`
+	Filter                     string `long:"filter"                     env:"DNSMONSTER_FILTER"                     default:"((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))" description:"BPF filter applied to the packet stream. If port is selected, the packets will not be defragged."`
+	UseAfpacket                bool   `long:"useAfpacket"                env:"DNSMONSTER_USEAFPACKET"                description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
+	NoEthernetframe            bool   `long:"noEtherframe"               env:"DNSMONSTER_NOETHERFRAME"               description:"The PCAP capture does not contain ethernet frames"`
+	processingChannel          chan rawPacketBytes
+	ip4Defrgger                chan ipv4ToDefrag
+	ip6Defrgger                chan ipv6FragmentInfo
+	ip4DefrggerReturn          chan ipv4Defragged
+	ip6DefrggerReturn          chan ipv6Defragged
+	tcpAssembly                []chan tcpPacket
+	tcpReturnChannel           chan tcpData
+	resultChannel              chan types.DNSResult
+	ratioA                     int
+	ratioB                     int
 	// input                <-chan rawPacketBytes
 }
 
@@ -48,12 +53,12 @@ func (config CaptureConfig) initializeFlags() error {
 	_, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", &config)
 	GlobalCaptureConfig = &config
 	config.resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
-	config.tcpReturnChannel = make(chan tcpData, util.GeneralFlags.TcpResultChannelSize)
+	config.tcpReturnChannel = make(chan tcpData, config.TcpResultChannelSize)
 	config.processingChannel = make(chan rawPacketBytes, config.PacketChannelSize)
-	config.ip4Defrgger = make(chan ipv4ToDefrag, util.GeneralFlags.DefraggerChannelReturnSize)
-	config.ip6Defrgger = make(chan ipv6FragmentInfo, util.GeneralFlags.DefraggerChannelReturnSize)
-	config.ip4DefrggerReturn = make(chan ipv4Defragged, util.GeneralFlags.DefraggerChannelReturnSize)
-	config.ip6DefrggerReturn = make(chan ipv6Defragged, util.GeneralFlags.DefraggerChannelReturnSize)
+	config.ip4Defrgger = make(chan ipv4ToDefrag, config.DefraggerChannelReturnSize)
+	config.ip6Defrgger = make(chan ipv6FragmentInfo, config.DefraggerChannelReturnSize)
+	config.ip4DefrggerReturn = make(chan ipv4Defragged, config.DefraggerChannelReturnSize)
+	config.ip6DefrggerReturn = make(chan ipv6Defragged, config.DefraggerChannelReturnSize)
 
 	return err
 }
@@ -98,8 +103,8 @@ func (config CaptureConfig) CheckFlagsAndStart() {
 	}
 
 	// start the defrag goroutines
-	for i := uint(0); i < util.GeneralFlags.TcpHandlerCount; i++ {
-		config.tcpAssembly = append(config.tcpAssembly, make(chan tcpPacket, util.GeneralFlags.TcpAssemblyChannelSize))
+	for i := uint(0); i < config.TcpHandlerCount; i++ {
+		config.tcpAssembly = append(config.tcpAssembly, make(chan tcpPacket, config.TcpAssemblyChannelSize))
 		go tcpAssembler(config.tcpAssembly[i], config.tcpReturnChannel, util.GeneralFlags.GcTime)
 	}
 	go ipv4Defragger(config.ip4Defrgger, config.ip4DefrggerReturn, util.GeneralFlags.GcTime)

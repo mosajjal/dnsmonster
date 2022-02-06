@@ -183,6 +183,48 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 ```
   dnsmonster
 
+capture:
+      --devName=                         Device used to capture
+                                         [$DNSMONSTER_DEVNAME]
+      --pcapFile=                        Pcap filename to run
+                                         [$DNSMONSTER_PCAPFILE]
+      --dnstapSocket=                    dnstrap socket path. Example:
+                                         unix:///tmp/dnstap.sock,
+                                         tcp://127.0.0.1:8080
+                                         [$DNSMONSTER_DNSTAPSOCKET]
+      --port=                            Port selected to filter packets
+                                         (default: 53) [$DNSMONSTER_PORT]
+      --sampleRatio=                     Capture Sampling by a:b. eg
+                                         sampleRatio of 1:100 will process 1
+                                         percent of the incoming packets
+                                         (default: 1:1)
+                                         [$DNSMONSTER_SAMPLERATIO]
+      --dnstapPermission=                Set the dnstap socket permission, only
+                                         applicable when unix:// is used
+                                         (default: 755)
+                                         [$DNSMONSTER_DNSTAPPERMISSION]
+      --packetHandlerCount=              Number of routines used to handle
+                                         received packets (default: 2)
+                                         [$DNSMONSTER_PACKETHANDLERCOUNT]
+      --packetChannelSize=               Size of the packet handler channel
+                                         (default: 1000)
+                                         [$DNSMONSTER_PACKETCHANNELSIZE]
+      --afpacketBuffersizeMb=            Afpacket Buffersize in MB (default:
+                                         64) [$DNSMONSTER_AFPACKETBUFFERSIZEMB]
+      --filter=                          BPF filter applied to the packet
+                                         stream. If port is selected, the
+                                         packets will not be defragged.
+                                         (default: ((ip and (ip[9] == 6 or
+                                         ip[9] == 17)) or (ip6 and (ip6[6] ==
+                                         17 or ip6[6] == 6 or ip6[6] == 44))))
+                                         [$DNSMONSTER_FILTER]
+      --useAfpacket                      Use AFPacket for live captures.
+                                         Supported on Linux 3.0+ only
+                                         [$DNSMONSTER_USEAFPACKET]
+      --noEtherframe                     The PCAP capture does not contain
+                                         ethernet frames
+                                         [$DNSMONSTER_NOETHERFRAME]
+
 clickhouse_output:
       --clickhouseAddress=               Address of the clickhouse database to
                                          save the results (default:
@@ -541,48 +583,6 @@ help:
                                          current inputs (flags, input config
                                          file and environment variables) and
                                          write to provided path
-
-capture:
-      --devName=                         Device used to capture
-                                         [$DNSMONSTER_DEVNAME]
-      --pcapFile=                        Pcap filename to run
-                                         [$DNSMONSTER_PCAPFILE]
-      --dnstapSocket=                    dnstrap socket path. Example:
-                                         unix:///tmp/dnstap.sock,
-                                         tcp://127.0.0.1:8080
-                                         [$DNSMONSTER_DNSTAPSOCKET]
-      --port=                            Port selected to filter packets
-                                         (default: 53) [$DNSMONSTER_PORT]
-      --sampleRatio=                     Capture Sampling by a:b. eg
-                                         sampleRatio of 1:100 will process 1
-                                         percent of the incoming packets
-                                         (default: 1:1)
-                                         [$DNSMONSTER_SAMPLERATIO]
-      --dnstapPermission=                Set the dnstap socket permission, only
-                                         applicable when unix:// is used
-                                         (default: 755)
-                                         [$DNSMONSTER_DNSTAPPERMISSION]
-      --packetHandlerCount=              Number of routines used to handle
-                                         received packets (default: 2)
-                                         [$DNSMONSTER_PACKETHANDLERCOUNT]
-      --packetChannelSize=               Size of the packet handler channel
-                                         (default: 1000)
-                                         [$DNSMONSTER_PACKETCHANNELSIZE]
-      --afpacketBuffersizeMb=            Afpacket Buffersize in MB (default:
-                                         64) [$DNSMONSTER_AFPACKETBUFFERSIZEMB]
-      --filter=                          BPF filter applied to the packet
-                                         stream. If port is selected, the
-                                         packets will not be defragged.
-                                         (default: ((ip and (ip[9] == 6 or
-                                         ip[9] == 17)) or (ip6 and (ip6[6] ==
-                                         17 or ip6[6] == 6 or ip6[6] == 44))))
-                                         [$DNSMONSTER_FILTER]
-      --useAfpacket                      Use AFPacket for live captures.
-                                         Supported on Linux 3.0+ only
-                                         [$DNSMONSTER_USEAFPACKET]
-      --noEtherframe                     The PCAP capture does not contain
-                                         ethernet frames
-                                         [$DNSMONSTER_NOETHERFRAME]
 ```
 [//]: <> (end of command line options)
 

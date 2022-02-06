@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/capture"
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	"github.com/pkg/profile"
 	"github.com/rcrowley/go-metrics"
@@ -62,42 +61,18 @@ func main() {
 			f.Close()
 		}()
 	}
-
-	// Setup our output channels
-	resultChannel := make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
-	setupOutputs(resultChannel)
-
 	// Setup SIGINT handling
 	handleInterrupt()
 
 	// todo: this needs to be its own file with configurable output formats and endpoints (stdout, file, syslog, prometheus, etc)
 	go metrics.Log(metrics.DefaultRegistry, util.GeneralFlags.PrintStatsDelay, log.StandardLogger())
 
-	// Start listening if we're using pcap or afpacket
-	if util.CaptureFlags.DnstapSocket == "" {
-		capturer := capture.NewDNSCapturer(capture.CaptureOptions{
-			DevName:                      util.CaptureFlags.DevName,
-			UseAfpacket:                  util.CaptureFlags.UseAfpacket,
-			PcapFile:                     util.CaptureFlags.PcapFile,
-			Filter:                       util.CaptureFlags.Filter,
-			Port:                         uint16(util.CaptureFlags.Port),
-			GcTime:                       util.GeneralFlags.GcTime,
-			ResultChannel:                resultChannel,
-			PacketHandlerCount:           util.CaptureFlags.PacketHandlerCount,
-			PacketChannelSize:            util.CaptureFlags.PacketChannelSize,
-			TCPHandlerCount:              util.GeneralFlags.TcpHandlerCount,
-			TCPAssemblyChannelSize:       util.GeneralFlags.TcpAssemblyChannelSize,
-			TCPResultChannelSize:         util.GeneralFlags.TcpResultChannelSize,
-			IPDefraggerChannelSize:       util.GeneralFlags.DefraggerChannelSize,
-			IPDefraggerReturnChannelSize: util.GeneralFlags.DefraggerChannelReturnSize,
-			NoEthernetframe:              util.CaptureFlags.NoEthernetframe,
-		})
+	// set up captures
+	capture.GlobalCaptureConfig.CheckFlagsAndStart()
 
-		capturer.Start()
-		// Wait for the output to finish
-		log.Info("Exiting..")
+	// Setup our output channels
+	setupOutputs(capture.GlobalCaptureConfig.GetResultChannel())
 
-	} else { // dnstap si totally different, hence only the result channel is being pushed to it
-		capture.StartDNSTap(resultChannel)
-	}
+	//todo: this could be a better place to handle intrrupts, logrotate and even statsd
+	select {}
 }

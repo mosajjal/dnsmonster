@@ -4,7 +4,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
 	"time"
@@ -45,21 +44,21 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 
 }
 
-func handleDNSTapInterrupt(done chan bool) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			log.Infof("SIGINT received.. Cleaning up")
-			if strings.Contains(util.CaptureFlags.DnstapSocket, "unix://") {
-				os.Remove(strings.Split(util.CaptureFlags.DnstapSocket, "://")[1])
-			} else {
-				ln.Close()
-			}
-			close(done)
-		}
-	}()
-}
+// func handleDNSTapInterrupt(done chan bool) {
+// 	c := make(chan os.Signal, 1)
+// 	signal.Notify(c, os.Interrupt)
+// 	go func() {
+// 		for range c {
+// 			log.Infof("SIGINT received.. Cleaning up")
+// 			if strings.Contains(util.CaptureFlags.DnstapSocket, "unix://") {
+// 				os.Remove(strings.Split(util.CaptureFlags.DnstapSocket, "://")[1])
+// 			} else {
+// 				ln.Close()
+// 			}
+// 			close(done)
+// 		}
+// 	}()
+// }
 
 func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
 	dnstapObject := &dnstap.Dnstap{}
@@ -85,14 +84,14 @@ func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
 	return myDNSResult
 }
 
-func StartDNSTap(resultChannel chan types.DNSResult) {
+func (config CaptureConfig) StartDnsTap() {
 	log.Info("Starting DNStap capture")
 
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
 	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
 	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
 
-	input := parseDnstapSocket(util.CaptureFlags.DnstapSocket, util.CaptureFlags.DnstapPermission)
+	input := parseDnstapSocket(config.DnstapSocket, config.DnstapPermission)
 
 	buf := make(chan []byte, 1024)
 
@@ -100,7 +99,7 @@ func StartDNSTap(resultChannel chan types.DNSResult) {
 	totalCnt := int64(0)
 
 	// Setup SIGINT handling
-	handleDNSTapInterrupt(done)
+	// handleDNSTapInterrupt(done)
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
@@ -119,12 +118,12 @@ func StartDNSTap(resultChannel chan types.DNSResult) {
 				close(done)
 				return
 			}
-			if ratioCnt%util.RatioB < util.RatioA {
-				if ratioCnt > util.RatioB*util.RatioA {
+			if ratioCnt%config.ratioB < config.ratioA {
+				if ratioCnt > config.ratioB*config.ratioA {
 					ratioCnt = 0
 				}
 				select {
-				case resultChannel <- dnsTapMsgToDNSResult(msg):
+				case config.resultChannel <- dnsTapMsgToDNSResult(msg):
 
 				case <-done:
 					return

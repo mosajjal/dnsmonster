@@ -33,7 +33,7 @@ jobs:
       run: go test -v .
 
     - name: generate sample config file 
-      run: ./dnsmonster --writeConfig=../config-sample.ini
+      run: ./dnsmonster --writeConfig=config-sample.ini
 
     - name: update README command line options
       run: |

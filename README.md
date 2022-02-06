@@ -206,6 +206,24 @@ capture:
       --packetHandlerCount=              Number of routines used to handle
                                          received packets (default: 2)
                                          [$DNSMONSTER_PACKETHANDLERCOUNT]
+      --tcpAssemblyChannelSize=          Size of the tcp assembler (default:
+                                         10000)
+                                         [$DNSMONSTER_TCPASSEMBLYCHANNELSIZE]
+      --tcpResultChannelSize=            Size of the tcp result channel
+                                         (default: 10000)
+                                         [$DNSMONSTER_TCPRESULTCHANNELSIZE]
+      --tcpHandlerCount=                 Number of routines used to handle tcp
+                                         assembly (default: 1)
+                                         [$DNSMONSTER_TCPHANDLERCOUNT]
+      --defraggerChannelSize=            Size of the channel to send packets to
+                                         be defragged (default: 10000)
+                                         [$DNSMONSTER_DEFRAGGERCHANNELSIZE]
+      --defraggerChannelReturnSize=      Size of the channel where the
+                                         defragged packets are returned
+                                         (default: 10000)
+                                         [$DNSMONSTER_DEFRAGGERCHANNELRETURNSIZ-
+
+                                         E]
       --packetChannelSize=               Size of the packet handler channel
                                          (default: 1000)
                                          [$DNSMONSTER_PACKETCHANNELSIZE]
@@ -507,30 +525,12 @@ general:
       --serverName=                      Name of the server used to index the
                                          metrics. (default: default)
                                          [$DNSMONSTER_SERVERNAME]
-      --tcpAssemblyChannelSize=          Size of the tcp assembler (default:
-                                         10000)
-                                         [$DNSMONSTER_TCPASSEMBLYCHANNELSIZE]
-      --tcpResultChannelSize=            Size of the tcp result channel
-                                         (default: 10000)
-                                         [$DNSMONSTER_TCPRESULTCHANNELSIZE]
-      --tcpHandlerCount=                 Number of routines used to handle tcp
-                                         assembly (default: 1)
-                                         [$DNSMONSTER_TCPHANDLERCOUNT]
-      --resultChannelSize=               Size of the result processor channel
-                                         size (default: 100000)
-                                         [$DNSMONSTER_RESULTCHANNELSIZE]
       --logLevel=[0|1|2|3|4]             Set debug Log level, 0:PANIC, 1:ERROR,
                                          2:WARN, 3:INFO, 4:DEBUG (default: 3)
                                          [$DNSMONSTER_LOGLEVEL]
-      --defraggerChannelSize=            Size of the channel to send packets to
-                                         be defragged (default: 10000)
-                                         [$DNSMONSTER_DEFRAGGERCHANNELSIZE]
-      --defraggerChannelReturnSize=      Size of the channel where the
-                                         defragged packets are returned
-                                         (default: 10000)
-                                         [$DNSMONSTER_DEFRAGGERCHANNELRETURNSIZ-
-
-                                         E]
+      --resultChannelSize=               Size of the result processor channel
+                                         size (default: 100000)
+                                         [$DNSMONSTER_RESULTCHANNELSIZE]
       --cpuprofile=                      write cpu profile to file
                                          [$DNSMONSTER_CPUPROFILE]
       --memprofile=                      write memory profile to file

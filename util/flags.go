@@ -3,8 +3,6 @@ package util
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jessevdk/go-flags"
@@ -23,25 +21,6 @@ var AllowDomainList [][]string
 
 var SkipDomainMap = make(map[string]bool)
 var AllowDomainMap = make(map[string]bool)
-
-// Ratio numbers used for input sampling
-var RatioA int
-var RatioB int
-
-var CaptureFlags struct {
-	DevName              string `long:"devName"              env:"DNSMONSTER_DEVNAME"              default:""                                                                                                  description:"Device used to capture"`
-	PcapFile             string `long:"pcapFile"             env:"DNSMONSTER_PCAPFILE"             default:""                                                                                                  description:"Pcap filename to run"`
-	DnstapSocket         string `long:"dnstapSocket"         env:"DNSMONSTER_DNSTAPSOCKET"         default:""                                                                                                  description:"dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
-	Port                 uint   `long:"port"                 env:"DNSMONSTER_PORT"                 default:"53"                                                                                                description:"Port selected to filter packets"`
-	SampleRatio          string `long:"sampleRatio"          env:"DNSMONSTER_SAMPLERATIO"          default:"1:1"                                                                                               description:"Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets"`
-	DnstapPermission     string `long:"dnstapPermission"     env:"DNSMONSTER_DNSTAPPERMISSION"     default:"755"                                                                                               description:"Set the dnstap socket permission, only applicable when unix:// is used"`
-	PacketHandlerCount   uint   `long:"packetHandlerCount"   env:"DNSMONSTER_PACKETHANDLERCOUNT"   default:"2"                                                                                                 description:"Number of routines used to handle received packets"`
-	PacketChannelSize    uint   `long:"packetChannelSize"    env:"DNSMONSTER_PACKETCHANNELSIZE"    default:"1000"                                                                                              description:"Size of the packet handler channel"`
-	AfpacketBuffersizeMb uint   `long:"afpacketBuffersizeMb" env:"DNSMONSTER_AFPACKETBUFFERSIZEMB" default:"64"                                                                                                description:"Afpacket Buffersize in MB"`
-	Filter               string `long:"filter"               env:"DNSMONSTER_FILTER"               default:"((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))" description:"BPF filter applied to the packet stream. If port is selected, the packets will not be defragged."`
-	UseAfpacket          bool   `long:"useAfpacket"          env:"DNSMONSTER_USEAFPACKET"          description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
-	NoEthernetframe      bool   `long:"noEtherframe"         env:"DNSMONSTER_NOETHERFRAME"         description:"The PCAP capture does not contain ethernet frames"`
-}
 
 var GeneralFlags struct {
 	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
@@ -87,8 +66,10 @@ func ProcessFlags() {
 	iniParser := flags.NewIniParser(GlobalParser)
 	GlobalParser.AddGroup("general", "General Options", &GeneralFlags)
 	GlobalParser.AddGroup("help", "Help Options", &helpOptions)
-	GlobalParser.AddGroup("capture", "Options specific to capture side", &CaptureFlags)
-	GlobalParser.Parse()
+	f, err := GlobalParser.Parse()
+	if err != nil {
+		log.Fatalf("Error parsing flags %v with error %s", f, err)
+	}
 
 	// process help options first
 	if helpOptions.Help {
@@ -181,49 +162,15 @@ func ProcessFlags() {
 
 	// todo: check to see if there's at least one output is enabled. possibly can add all the types and see if it's a positive number
 
-	if CaptureFlags.Port > 65535 {
-		log.Fatal("--port must be between 1 and 65535")
-	}
 	if GeneralFlags.MaskSize4 > 32 || GeneralFlags.MaskSize4 < 0 {
 		log.Fatal("--maskSize4 must be between 0 and 32")
 	}
 	if GeneralFlags.MaskSize6 > 128 || GeneralFlags.MaskSize4 < 0 {
 		log.Fatal("--maskSize6 must be between 0 and 128")
 	}
-	if CaptureFlags.DevName == "" && CaptureFlags.PcapFile == "" && CaptureFlags.DnstapSocket == "" {
-		log.Fatal("one of --devName, --pcapFile or --dnstapSocket is required")
-	}
-
-	if CaptureFlags.DevName != "" {
-		if CaptureFlags.PcapFile != "" || CaptureFlags.DnstapSocket != "" {
-			log.Fatal("You must set only --devName, --pcapFile or --dnstapSocket")
-		}
-	} else {
-		if CaptureFlags.PcapFile != "" && CaptureFlags.DnstapSocket != "" {
-			log.Fatal("You must set only --devName, --pcapFile or --dnstapSocket")
-		}
-	}
-
-	if CaptureFlags.DnstapSocket != "" {
-		if !strings.HasPrefix(CaptureFlags.DnstapSocket, "unix://") && !strings.HasPrefix(CaptureFlags.DnstapSocket, "tcp://") {
-			log.Fatal("You must provide a unix:// or tcp:// socket for dnstap")
-		}
-	}
 
 	if GeneralFlags.PacketLimit < 0 {
 		log.Fatal("--packetLimit must be equal or greather than 0")
-	}
-
-	ratioNumbers := strings.Split(CaptureFlags.SampleRatio, ":")
-	if len(ratioNumbers) != 2 {
-		log.Fatal("wrong --sampleRatio syntax")
-	}
-	var errA error
-	var errB error
-	RatioA, errA = strconv.Atoi(ratioNumbers[0])
-	RatioB, errB = strconv.Atoi(ratioNumbers[1])
-	if errA != nil || errB != nil || RatioA > RatioB {
-		log.Fatal("wrong --sampleRatio syntax")
 	}
 
 	// load the skipDomainFile if exists

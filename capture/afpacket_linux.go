@@ -64,14 +64,14 @@ func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	return frameSize, blockSize, numBlocks, nil
 }
 
-func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
+func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	// Open device
 	// var tPacket *afpacket.TPacket
 	var err error
 	handle := &afpacketHandle{}
 
 	frameSize, blockSize, numBlocks, err := afpacketComputeSize(
-		util.CaptureFlags.AfpacketBuffersizeMb,
+		config.AfpacketBuffersizeMb,
 		65536,
 		uint(os.Getpagesize()))
 	util.ErrorHandler(err)

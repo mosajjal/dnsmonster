@@ -13,7 +13,7 @@ func removeIndex(s []types.GenericOutput, index int) []types.GenericOutput {
 	return append(s[:index], s[index+1:]...)
 }
 
-func setupOutputs(resultChannel chan types.DNSResult) {
+func setupOutputs(resultChannel *chan types.DNSResult) {
 	log.Info("Creating the dispatch Channel")
 	// go through all the registered outputs, and see if they are configured to push data, otherwise, remove them from the dispatch list
 	for i := 0; i < len(types.GlobalDispatchList); i++ {
@@ -44,28 +44,28 @@ func setupOutputs(resultChannel chan types.DNSResult) {
 	} else {
 		log.Infof("allowDomains refresh interval is %s", util.GeneralFlags.AllowDomainsRefreshInterval)
 	}
+	go func() {
+		for {
+			select {
+			case data := <-*resultChannel:
+				for _, o := range types.GlobalDispatchList {
+					// todo: this blocks on type0 outputs. This is still blocking for some reason
+					o.OutputChannel() <- data
+				}
 
-	for {
-		select {
-		case data := <-resultChannel:
-
-			for _, o := range types.GlobalDispatchList {
-				// todo: this blocks on type0 outputs. This is still blocking for some reason
-				o.OutputChannel() <- data
-			}
-
-		case <-skipDomainsFileTickerChan:
-			if util.SkipDomainMapBool {
-				util.SkipDomainMap = util.LoadDomainsToMap(util.GeneralFlags.SkipDomainsFile)
-			} else {
-				util.SkipDomainList = util.LoadDomainsToList(util.GeneralFlags.SkipDomainsFile)
-			}
-		case <-allowDomainsFileTickerChan:
-			if util.AllowDomainMapBool {
-				util.AllowDomainMap = util.LoadDomainsToMap(util.GeneralFlags.AllowDomainsFile)
-			} else {
-				util.AllowDomainList = util.LoadDomainsToList(util.GeneralFlags.AllowDomainsFile)
+			case <-skipDomainsFileTickerChan:
+				if util.SkipDomainMapBool {
+					util.SkipDomainMap = util.LoadDomainsToMap(util.GeneralFlags.SkipDomainsFile)
+				} else {
+					util.SkipDomainList = util.LoadDomainsToList(util.GeneralFlags.SkipDomainsFile)
+				}
+			case <-allowDomainsFileTickerChan:
+				if util.AllowDomainMapBool {
+					util.AllowDomainMap = util.LoadDomainsToMap(util.GeneralFlags.AllowDomainsFile)
+				} else {
+					util.AllowDomainList = util.LoadDomainsToList(util.GeneralFlags.AllowDomainsFile)
+				}
 			}
 		}
-	}
+	}()
 }

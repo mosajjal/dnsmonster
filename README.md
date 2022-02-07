@@ -254,6 +254,9 @@ clickhouse_output:
       --clickhousePassword=              Password to connect to the clickhouse
                                          database
                                          [$DNSMONSTER_CLICKHOUSEPASSWORD]
+      --clickhouseDatabase=              Database to connect to the clickhouse
+                                         database (default: default)
+                                         [$DNSMONSTER_CLICKHOUSEDATABASE]
       --clickhouseDelay=                 Interval between sending results to
                                          ClickHouse (default: 1s)
                                          [$DNSMONSTER_CLICKHOUSEDELAY]

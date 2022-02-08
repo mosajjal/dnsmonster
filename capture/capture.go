@@ -40,7 +40,7 @@ type CaptureConfig struct {
 	ip6Defrgger                chan ipv6FragmentInfo
 	ip4DefrggerReturn          chan ipv4Defragged
 	ip6DefrggerReturn          chan ipv6Defragged
-	tcpAssembly                []chan tcpPacket
+	tcpAssembly                chan tcpPacket
 	tcpReturnChannel           chan tcpData
 	resultChannel              chan types.DNSResult
 	ratioA                     int
@@ -53,10 +53,11 @@ func (config CaptureConfig) initializeFlags() error {
 	_, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", &config)
 	GlobalCaptureConfig = &config
 	config.resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.tcpAssembly = make(chan tcpPacket, config.TcpAssemblyChannelSize)
 	config.tcpReturnChannel = make(chan tcpData, config.TcpResultChannelSize)
 	config.processingChannel = make(chan *rawPacketBytes, config.PacketChannelSize)
-	config.ip4Defrgger = make(chan ipv4ToDefrag, config.DefraggerChannelReturnSize)
-	config.ip6Defrgger = make(chan ipv6FragmentInfo, config.DefraggerChannelReturnSize)
+	config.ip4Defrgger = make(chan ipv4ToDefrag, config.DefraggerChannelSize)
+	config.ip6Defrgger = make(chan ipv6FragmentInfo, config.DefraggerChannelSize)
 	config.ip4DefrggerReturn = make(chan ipv4Defragged, config.DefraggerChannelReturnSize)
 	config.ip6DefrggerReturn = make(chan ipv6Defragged, config.DefraggerChannelReturnSize)
 
@@ -104,8 +105,7 @@ func (config CaptureConfig) CheckFlagsAndStart() {
 
 	// start the defrag goroutines
 	for i := uint(0); i < config.TcpHandlerCount; i++ {
-		config.tcpAssembly = append(config.tcpAssembly, make(chan tcpPacket, config.TcpAssemblyChannelSize))
-		go tcpAssembler(config.tcpAssembly[i], config.tcpReturnChannel, util.GeneralFlags.GcTime)
+		go tcpAssembler(config.tcpAssembly, config.tcpReturnChannel, util.GeneralFlags.GcTime)
 	}
 	go ipv4Defragger(config.ip4Defrgger, config.ip4DefrggerReturn, util.GeneralFlags.GcTime)
 	go ipv6Defragger(config.ip6Defrgger, config.ip6DefrggerReturn, util.GeneralFlags.GcTime)

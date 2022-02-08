@@ -289,8 +289,10 @@ func ipv4Defragger(ipInput <-chan ipv4ToDefrag, ipOut chan ipv4Defragged, gcTime
 				}
 			}
 		case <-ticker.C:
-			ipv4Defragger.DiscardOlderThan(time.Now().Add(gcTime * -1))
-
+			discarded := ipv4Defragger.DiscardOlderThan(time.Now().Add(gcTime * -1))
+			if discarded > 0 {
+				log.Infof("ipv4Defragger: discarded %d packets", discarded)
+			}
 		}
 	}
 }

@@ -125,6 +125,7 @@ func (config CaptureConfig) StartDnsTap() {
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
 
+	// blocking loop
 	for {
 
 		go input.ReadInto(buf)

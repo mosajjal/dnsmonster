@@ -37,7 +37,7 @@ func (config CaptureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 			}
 		case layers.LayerTypeTCP:
 			if uint16(tcp.SrcPort) == uint16(config.Port) || uint16(tcp.DstPort) == uint16(config.Port) {
-				config.tcpAssembly[flow.FastHash()%uint64(len(config.tcpAssembly))] <- tcpPacket{
+				config.tcpAssembly <- tcpPacket{
 					IPVersion,
 					*tcp,
 					timestamp,
@@ -141,10 +141,10 @@ func (config CaptureConfig) StartPacketDecoder() {
 	)
 	foundLayerTypes := []gopacket.LayerType{}
 
-	workerHandlerChannel := make(chan *rawPacketBytes, config.PacketChannelSize) //todo: test this with a sized channel to see if it makes a difference
+	// workerHandlerChannel := make(chan *rawPacketBytes, config.PacketChannelSize)
 	for i := 0; i < int(config.PacketHandlerCount); i++ {
 		log.Infof("Creating handler #%d", i)
-		go config.inputHandlerWorker(workerHandlerChannel)
+		go config.inputHandlerWorker(config.processingChannel)
 	}
 
 	for {
@@ -185,8 +185,8 @@ func (config CaptureConfig) StartPacketDecoder() {
 				break
 			}
 			config.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
-		case packet := <-config.processingChannel:
-			workerHandlerChannel <- packet
+			// case packet := <-config.processingChannel:
+			// 	workerHandlerChannel <- packet
 		}
 	}
 }

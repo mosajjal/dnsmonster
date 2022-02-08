@@ -45,6 +45,7 @@ func setupOutputs(resultChannel *chan types.DNSResult) {
 		log.Infof("allowDomains refresh interval is %s", util.GeneralFlags.AllowDomainsRefreshInterval)
 	}
 	go func() {
+		// blocking loop
 		for {
 			select {
 			case data := <-*resultChannel:

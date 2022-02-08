@@ -62,13 +62,13 @@ func (config CaptureConfig) StartNonDnsTap() {
 			os.Exit(0)
 		}
 
+		totalCnt++
 		if config.ratioA != config.ratioB { // this confirms the ratio is in use
 			ratioCnt++
 			if ratioCnt%config.ratioB < config.ratioA {
 				if ratioCnt > config.ratioB*config.ratioA { //reset ratiocount before it goes to an absurdly high number
 					ratioCnt = 0
 				}
-				totalCnt++
 				config.processingChannel <- &rawPacketBytes{data, ci}
 			}
 		} else { // always pass the data through if there's no ratio logic

@@ -35,7 +35,7 @@ type CaptureConfig struct {
 	Filter                     string `long:"filter"                     env:"DNSMONSTER_FILTER"                     default:"((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))" description:"BPF filter applied to the packet stream. If port is selected, the packets will not be defragged."`
 	UseAfpacket                bool   `long:"useAfpacket"                env:"DNSMONSTER_USEAFPACKET"                description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
 	NoEthernetframe            bool   `long:"noEtherframe"               env:"DNSMONSTER_NOETHERFRAME"               description:"The PCAP capture does not contain ethernet frames"`
-	processingChannel          chan rawPacketBytes
+	processingChannel          chan *rawPacketBytes
 	ip4Defrgger                chan ipv4ToDefrag
 	ip6Defrgger                chan ipv6FragmentInfo
 	ip4DefrggerReturn          chan ipv4Defragged
@@ -54,7 +54,7 @@ func (config CaptureConfig) initializeFlags() error {
 	GlobalCaptureConfig = &config
 	config.resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
 	config.tcpReturnChannel = make(chan tcpData, config.TcpResultChannelSize)
-	config.processingChannel = make(chan rawPacketBytes, config.PacketChannelSize)
+	config.processingChannel = make(chan *rawPacketBytes, config.PacketChannelSize)
 	config.ip4Defrgger = make(chan ipv4ToDefrag, config.DefraggerChannelReturnSize)
 	config.ip6Defrgger = make(chan ipv6FragmentInfo, config.DefraggerChannelReturnSize)
 	config.ip4DefrggerReturn = make(chan ipv4Defragged, config.DefraggerChannelReturnSize)

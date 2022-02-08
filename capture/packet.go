@@ -49,7 +49,7 @@ func (config CaptureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 
 }
 
-func (config CaptureConfig) inputHandlerWorker(p chan rawPacketBytes) {
+func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
 
 	var detectIP DetectIP
 	var ethLayer layers.Ethernet
@@ -82,9 +82,9 @@ func (config CaptureConfig) inputHandlerWorker(p chan rawPacketBytes) {
 			timestamp = time.Now()
 		}
 		parser.DecodeLayers(packet.bytes, &foundLayerTypes)
-		for _, layer := range foundLayerTypes {
-			log.Warnf("found %#+v layer", layer.String())
-		}
+		// for _, layer := range foundLayerTypes {
+		// 	log.Warnf("found %#+v layer", layer.String()) //todo:remove
+		// }
 		// first parse the ip layer, so we can find fragmented packets
 		for _, layerType := range foundLayerTypes {
 			switch layerType {
@@ -141,7 +141,7 @@ func (config CaptureConfig) StartPacketDecoder() {
 	)
 	foundLayerTypes := []gopacket.LayerType{}
 
-	workerHandlerChannel := make(chan rawPacketBytes, config.PacketChannelSize) //todo: test this with a sized channel to see if it makes a difference
+	workerHandlerChannel := make(chan *rawPacketBytes, config.PacketChannelSize) //todo: test this with a sized channel to see if it makes a difference
 	for i := 0; i < int(config.PacketHandlerCount); i++ {
 		log.Infof("Creating handler #%d", i)
 		go config.inputHandlerWorker(workerHandlerChannel)

@@ -51,10 +51,11 @@ func (config CaptureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 
 func (config CaptureConfig) inputHandlerWorker(p chan rawPacketBytes) {
 
+	var detectIP DetectIP
 	var ethLayer layers.Ethernet
+	var vlan layers.Dot1Q
 	var ip4 layers.IPv4
 	var ip6 layers.IPv6
-	var vlan layers.Dot1Q
 	var udp layers.UDP
 	var tcp layers.TCP
 
@@ -67,6 +68,12 @@ func (config CaptureConfig) inputHandlerWorker(p chan rawPacketBytes) {
 		&udp,
 		&tcp,
 	}
+	// Use the IP Family detector when no ethernet frame is present.
+	if config.NoEthernetframe {
+		decodeLayers[0] = &detectIP
+		startLayer = LayerTypeDetectIP
+	}
+
 	parser := gopacket.NewDecodingLayerParser(startLayer, decodeLayers...)
 	foundLayerTypes := []gopacket.LayerType{}
 	for packet := range p {
@@ -74,7 +81,10 @@ func (config CaptureConfig) inputHandlerWorker(p chan rawPacketBytes) {
 		if timestamp.IsZero() {
 			timestamp = time.Now()
 		}
-		_ = parser.DecodeLayers(packet.bytes, &foundLayerTypes)
+		parser.DecodeLayers(packet.bytes, &foundLayerTypes)
+		for _, layer := range foundLayerTypes {
+			log.Warnf("found %#+v layer", layer.String())
+		}
 		// first parse the ip layer, so we can find fragmented packets
 		for _, layerType := range foundLayerTypes {
 			switch layerType {
@@ -88,6 +98,7 @@ func (config CaptureConfig) inputHandlerWorker(p chan rawPacketBytes) {
 					}
 				} else {
 					// log.Infof("packet %v coming to %p\n", timestamp, &encoder)
+
 					config.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), timestamp, 4, ip4.SrcIP, ip4.DstIP)
 				}
 			case layers.LayerTypeIPv6:

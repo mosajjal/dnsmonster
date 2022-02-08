@@ -27,7 +27,6 @@ func handleInterrupt() {
 		for range c {
 			for {
 				log.Infof("SIGINT Received. Stopping capture...")
-
 				<-time.After(10 * time.Second)
 				log.Fatal("emergency exit")
 				return
@@ -53,11 +52,15 @@ func main() {
 			time.Sleep(120 * time.Second)
 			log.Warn("Writing memory profile")
 			f, err := os.Create(util.GeneralFlags.Memprofile)
-			util.ErrorHandler(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 			runtime.GC() // get up-to-date statistics
 
 			err = pprof.Lookup("heap").WriteTo(f, 0)
-			util.ErrorHandler(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 			f.Close()
 		}()
 	}

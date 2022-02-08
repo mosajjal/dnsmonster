@@ -96,7 +96,9 @@ func ProcessFlags() {
 	if GeneralFlags.Config != "" {
 		err := iniParser.ParseFile(string(GeneralFlags.Config))
 		if err != nil {
-			ErrorHandler(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		//  re-parse the argument from command line to give them priority
 		GlobalParser.Parse()
@@ -124,6 +126,7 @@ func ProcessFlags() {
 
 	//TODO: log format needs to be a configurable parameter
 	// log.SetFormatter(&log.JSONFormatter{})
+	log.SetReportCaller(true)
 
 	if GeneralFlags.SkipDomainsFile != "" {
 		log.Info("skipDomainsFile is provided")

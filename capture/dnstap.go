@@ -23,10 +23,14 @@ var ln net.Listener
 func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSockInput {
 	var err error
 	uri, err := url.ParseRequestURI(socketString)
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if uri.Scheme == "tcp4" || uri.Scheme == "tcp" || uri.Scheme == "tcp6" {
 		ln, err = net.Listen(uri.Scheme, uri.Host)
-		util.ErrorHandler(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		log.Infof("listening on DNStap socket %v", socketString)
 		// see if the socket exists
@@ -48,9 +52,13 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 				permission = permission*8 + permBit
 			}
 			err = os.Chmod(uri.Path, os.FileMode(permission))
-			util.ErrorHandler(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-		util.ErrorHandler(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return dnstap.NewFrameStreamSockInput(ln)

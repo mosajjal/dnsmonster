@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcapgo"
-	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,13 +15,17 @@ type pcapFileHandle struct {
 
 func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
 	f, err := os.Open(fileName)
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	handle, err := pcapgo.NewReader(f)
 
 	// Set Filter
 	log.Infof("Using File: %s", fileName)
 	log.Warnf("BPF Filter is not supported in offline mode.")
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return &pcapFileHandle{handle, f}
 }
 func (h *pcapFileHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {

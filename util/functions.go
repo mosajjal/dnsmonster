@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -94,7 +93,9 @@ func LoadDomainsToList(Filename string) [][]string {
 
 	} else {
 		file, err := os.Open(Filename)
-		ErrorHandler(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 		log.Info("(re)loading File: ", Filename)
 		defer file.Close()
 		scanner = bufio.NewScanner(file)
@@ -106,14 +107,6 @@ func LoadDomainsToList(Filename string) [][]string {
 	}
 	log.Infof("%s loaded with %d lines", Filename, len(lines))
 	return lines
-}
-
-func ErrorHandler(err error) {
-	if err != nil {
-		log.Error("fatal Error: ", err)
-		time.Sleep(time.Second * 5)
-		os.Exit(1)
-	}
 }
 
 func LoadDomainsToMap(Filename string) map[string]bool {
@@ -138,7 +131,9 @@ func LoadDomainsToMap(Filename string) map[string]bool {
 
 	} else {
 		file, err := os.Open(Filename)
-		ErrorHandler(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 		log.Info("(re)loading File: ", Filename)
 		defer file.Close()
 		scanner = bufio.NewScanner(file)

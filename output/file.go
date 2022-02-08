@@ -58,7 +58,9 @@ func (fConfig FileConfig) Output() {
 	if fConfig.FileOutputType > 0 {
 		var err error
 		fileObject, err = os.OpenFile(string(fConfig.FileOutputPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		util.ErrorHandler(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 		defer fileObject.Close()
 	}
 
@@ -77,10 +79,14 @@ func (fConfig FileConfig) Output() {
 			fileSentToOutput.Inc(1)
 			if isOutputJson {
 				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
-				util.ErrorHandler(err)
+				if err != nil {
+					log.Fatal(err)
+				}
 			} else {
 				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.CsvRow()))
-				util.ErrorHandler(err)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	}

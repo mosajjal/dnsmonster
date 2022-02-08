@@ -87,11 +87,15 @@ func (esConfig ElasticConfig) connectelastic() (*elastic.Client, error) {
 		elastic.SetGzip(true),
 		elastic.SetErrorLog(log.New()),
 	)
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Ping the Elasticsearch server to get e.g. the version number
 	info, code, err := client.Ping(esConfig.ElasticOutputEndpoint).Do(ctx)
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
 	return client, err
@@ -105,12 +109,16 @@ func (esConfig ElasticConfig) Output() {
 
 	// Use the IndexExists service to check if a specified index exists.
 	exists, err := client.IndexExists(esConfig.ElasticOutputIndex).Do(ctx)
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if !exists {
 		// Create a new index.
 		createIndex, err := client.CreateIndex(esConfig.ElasticOutputIndex).Do(ctx)
-		util.ErrorHandler(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		if !createIndex.Acknowledged {
 			log.Panicln("Could not create the Elastic index.. Exiting")
@@ -155,7 +163,9 @@ func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []ty
 				BodyString(string(batch[i].String())).
 				Do(ctx)
 
-			util.ErrorHandler(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 	_, err := client.Flush().Index(esConfig.ElasticOutputIndex).Do(ctx)

@@ -6,7 +6,6 @@ package capture
 import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcapgo"
-	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,13 +17,17 @@ func initializeLivePcap(devName, filter string) *livePcapHandle {
 	// Open device
 	handle, err := pcapgo.NewEthernetHandle(devName)
 	// handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Set Filter
 	log.Infof("Using Device: %s", devName)
 	log.Infof("Filter: %s", filter)
 	err = handle.SetBPF(TcpdumpToPcapgoBpf(filter))
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	h := livePcapHandle{handle}
 	return &h
 }

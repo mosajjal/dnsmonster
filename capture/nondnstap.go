@@ -1,6 +1,7 @@
 package capture
 
 import (
+	"os"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/util"
@@ -34,7 +35,10 @@ func (config CaptureConfig) StartNonDnsTap() {
 	go func() {
 		for {
 			data, ci, err := myHandler.ReadPacketData()
-			util.ErrorHandler(err)
+			if err != nil && err.Error() == "EOF" {
+				log.Warnf("EOF reached... exiting")
+				os.Exit(0)
+			}
 			packetBytesChannel <- rawPacketBytes{data, ci}
 		}
 	}()

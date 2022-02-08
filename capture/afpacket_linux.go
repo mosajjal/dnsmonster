@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/google/gopacket"
@@ -34,7 +33,9 @@ func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 	log.Infof("Filter: %s", filter)
 	err = h.TPacket.SetBPF(pcapBPF)
 	if err != nil {
-		util.ErrorHandler(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	return err
 }
@@ -74,7 +75,9 @@ func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpa
 		config.AfpacketBuffersizeMb,
 		65536,
 		uint(os.Getpagesize()))
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	handle.TPacket, err = afpacket.NewTPacket(
 		afpacket.OptInterface(devName),
 		afpacket.OptFrameSize(frameSize),
@@ -83,7 +86,9 @@ func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpa
 		afpacket.OptPollTimeout(-10*time.Millisecond),
 		afpacket.SocketRaw,
 		afpacket.TPacketVersion3)
-	util.ErrorHandler(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	handle.SetBPFFilter(filter, 1024)
 	log.Infof("Opened: %s", devName)

@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/jessevdk/go-flags"
@@ -22,7 +23,7 @@ var AllowDomainList [][]string
 var SkipDomainMap = make(map[string]bool)
 var AllowDomainMap = make(map[string]bool)
 
-var GeneralFlags struct {
+type GeneralConfig struct {
 	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
 	GcTime                      time.Duration  `long:"gcTime"                      env:"DNSMONSTER_GCTIME"                      default:"10s"                                                     description:"Garbage Collection interval for tcp assembly and ip defragmentation"`
 	CaptureStatsDelay           time.Duration  `long:"captureStatsDelay"           env:"DNSMONSTER_CAPTURESTATSDELAY"           default:"1s"                                                      description:"Duration to calculate interface stats"`
@@ -44,6 +45,17 @@ var GeneralFlags struct {
 	AllowDomainsFileType        string         `long:"allowDomainsFileType"        env:"DNSMONSTER_ALLOWDOMAINSFILETYPE"        default:"csv"                                                     description:"allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower"`
 	SkipTLSVerification         bool           `long:"skipTLSVerification"         env:"DNSMONSTER_SKIPTLSVERIFICATION"         description:"Skip TLS verification when making HTTPS connections"`
 	Version                     bool           `long:"version"                     env:"DNSMONSTER_VERSION"                     description:"show version and quit."  no-ini:"true" `
+	wg                          *sync.WaitGroup
+	exiting                     chan bool // used to signal exit to all goroutines
+}
+
+var GeneralFlags GeneralConfig
+
+func (g GeneralConfig) GetWg() *sync.WaitGroup {
+	return g.wg
+}
+func (g GeneralConfig) GetExit() chan bool {
+	return g.exiting
 }
 
 var helpOptions struct {
@@ -57,6 +69,9 @@ var helpOptions struct {
 
 func ProcessFlags() {
 	//todo: flags are camel-case but ini is not. this needs to be consistent
+
+	GeneralFlags.wg = &sync.WaitGroup{}
+	GeneralFlags.exiting = make(chan bool)
 
 	iniParser := flags.NewIniParser(GlobalParser)
 	GlobalParser.AddGroup("general", "General Options", &GeneralFlags)

@@ -27,7 +27,8 @@ func handleInterrupt() {
 		for range c {
 			for {
 				log.Infof("SIGINT Received. Stopping capture...")
-				<-time.After(10 * time.Second)
+				util.GeneralFlags.GetExit() <- true
+				<-time.After(2 * time.Second)
 				log.Fatal("emergency exit")
 				return
 			}
@@ -43,7 +44,6 @@ func main() {
 	// debug and profile options
 	runtime.GOMAXPROCS(util.GeneralFlags.Gomaxprocs)
 	if util.GeneralFlags.Cpuprofile != "" {
-
 		defer profile.Start(profile.CPUProfile).Stop()
 	}
 	// Setup the memory profile if reuqested
@@ -77,5 +77,6 @@ func main() {
 	setupOutputs(capture.GlobalCaptureConfig.GetResultChannel())
 
 	//todo: this could be a better place to handle intrrupts, logrotate and even statsd
-	select {}
+	util.GeneralFlags.GetWg().Wait()
+	<-time.After(2 * time.Second)
 }

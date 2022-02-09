@@ -185,8 +185,12 @@ func (config CaptureConfig) StartPacketDecoder() {
 				break
 			}
 			config.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
-			// case packet := <-config.processingChannel:
-			// 	workerHandlerChannel <- packet
+		// case packet := <-config.processingChannel:
+		// 	workerHandlerChannel <- packet
+		case <-util.GeneralFlags.GetExit():
+			log.Warnf("here")
+			util.GeneralFlags.GetWg().Done()
+			return
 		}
 	}
 }

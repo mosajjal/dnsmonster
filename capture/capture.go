@@ -111,6 +111,7 @@ func (config CaptureConfig) CheckFlagsAndStart() {
 	go ipv6Defragger(config.ip6Defrgger, config.ip6DefrggerReturn, util.GeneralFlags.GcTime)
 
 	// start the packet decoder goroutines
+	util.GeneralFlags.GetWg().Add(1)
 	go config.StartPacketDecoder()
 
 	// Start listening if we're not using DNSTap

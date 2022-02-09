@@ -1,7 +1,6 @@
 package capture
 
 import (
-	"os"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/util"
@@ -57,9 +56,10 @@ func (config CaptureConfig) StartNonDnsTap() {
 	for {
 		data, ci, err := myHandler.ReadPacketData() //todo: ZeroCopyReadPacketData is slower than ReadPacketData. need to investigate why
 		if data == nil || err != nil {
-			log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 10 seconds waiting for processing to finish")
-			time.Sleep(time.Second * 10)
-			os.Exit(0)
+			log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 2 seconds waiting for processing to finish")
+			time.Sleep(time.Second * 2)
+			util.GeneralFlags.GetWg().Done()
+			return
 		}
 
 		totalCnt++

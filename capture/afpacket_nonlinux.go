@@ -46,6 +46,6 @@ func (afhandle *afpacketHandle) Stat() (uint, uint) {
 	return 0, 0
 }
 
-func initializeLiveAFpacket(devName, filter string) *afpacketHandle {
+func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	return nil
 }

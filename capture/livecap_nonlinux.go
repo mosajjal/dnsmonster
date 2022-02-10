@@ -31,7 +31,7 @@ func (h *livePcapHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.Capt
 }
 
 func (h *livePcapHandle) Close() {
-	h.Close()
+	h.handle.Close()
 }
 
 func (h *livePcapHandle) Stat() (uint, uint) {

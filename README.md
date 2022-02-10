@@ -400,6 +400,8 @@ kafka_output:
                                          Kafka if Batch size is not filled
                                          (default: 1s)
                                          [$DNSMONSTER_KAFKABATCHDELAY]
+      --kafkaCompress                    Compress Kafka connection
+                                         [$DNSMONSTER_KAFKACOMPRESS]
 
 sentinel_output:
       --sentinelOutputType=[0|1|2|3|4]   What should be written to Microsoft

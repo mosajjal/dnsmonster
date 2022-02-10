@@ -17,11 +17,9 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var done = make(chan bool)
-var ln net.Listener
-
 func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSockInput {
 	var err error
+	var ln net.Listener
 	uri, err := url.ParseRequestURI(socketString)
 	if err != nil {
 		log.Fatal(err)
@@ -38,7 +36,12 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 			log.Infof("socket exists, will try to overwrite the socket")
 			os.Remove(uri.Path)
 		}
+
 		ln, err = net.Listen(uri.Scheme, uri.Path)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if uri.Scheme == "unix" {
 			permission := 0
 			if len(socketChmod) > 3 {
@@ -56,43 +59,28 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 				log.Fatal(err)
 			}
 		}
-		if err != nil {
-			log.Fatal(err)
-		}
 	}
 
-	return dnstap.NewFrameStreamSockInput(ln)
-
+	dSocket := dnstap.NewFrameStreamSockInput(ln)
+	dSocket.SetLogger(log.New())
+	return dSocket
 }
-
-// func handleDNSTapInterrupt(done chan bool) {
-// 	c := make(chan os.Signal, 1)
-// 	signal.Notify(c, os.Interrupt)
-// 	go func() {
-// 		for range c {
-// 			log.Infof("SIGINT received.. Cleaning up")
-// 			if strings.Contains(util.CaptureFlags.DnstapSocket, "unix://") {
-// 				os.Remove(strings.Split(util.CaptureFlags.DnstapSocket, "://")[1])
-// 			} else {
-// 				ln.Close()
-// 			}
-// 			close(done)
-// 		}
-// 	}()
-// }
 
 func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
 	dnstapObject := &dnstap.Dnstap{}
 
-	proto.Unmarshal(msg, dnstapObject)
+	if err := proto.Unmarshal(msg, dnstapObject); err != nil {
+		log.Fatal(err)
+	}
 
-	// var myDNSrow DNSRow
+	message := dnstapObject.Message.GetQueryMessage()
+	if message == nil {
+		message = dnstapObject.Message.GetResponseMessage()
+	}
+
 	var myDNSResult types.DNSResult
-
-	if dnstapObject.Message.GetQueryMessage() != nil {
-		myDNSResult.DNS.Unpack(dnstapObject.Message.GetQueryMessage())
-	} else {
-		myDNSResult.DNS.Unpack(dnstapObject.Message.GetResponseMessage())
+	if err := myDNSResult.DNS.Unpack(message); err != nil {
+		log.Fatal(err)
 	}
 
 	myDNSResult.Timestamp = time.Unix(int64(dnstapObject.Message.GetQueryTimeSec()), int64(dnstapObject.Message.GetQueryTimeNsec()))
@@ -113,22 +101,18 @@ func (config CaptureConfig) StartDnsTap() {
 	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
 
 	input := parseDnstapSocket(config.DnstapSocket, config.DnstapPermission)
-
 	buf := make(chan []byte, 1024)
+	go input.ReadInto(buf)
 
 	ratioCnt := 0
 	totalCnt := int64(0)
-
-	// Setup SIGINT handling
-	// handleDNSTapInterrupt(done)
+	droppedCnt := int64(0)
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
 
 	// blocking loop
 	for {
-
-		go input.ReadInto(buf)
 		select {
 		case msg := <-buf:
 			ratioCnt++
@@ -137,27 +121,20 @@ func (config CaptureConfig) StartDnsTap() {
 			if msg == nil {
 				log.Info("dnstap socket is returning nil. exiting..")
 				time.Sleep(time.Second * 2)
-				close(done)
 				return
 			}
 			if ratioCnt%config.ratioB < config.ratioA {
 				if ratioCnt > config.ratioB*config.ratioA {
 					ratioCnt = 0
 				}
-				select {
-				case config.resultChannel <- dnsTapMsgToDNSResult(msg):
-
-				case <-done:
-					return
-				}
+				config.resultChannel <- dnsTapMsgToDNSResult(msg)
+			} else {
+				droppedCnt += 1
 			}
-		case <-done:
-			return
 		case <-captureStatsTicker.C:
 			packetsCaptured.Update(totalCnt)
-			packetsDropped.Update(0) //todo: this is not correct, need to fix
+			packetsDropped.Update(droppedCnt)
 			packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
-
 		}
 	}
 }

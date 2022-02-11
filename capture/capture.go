@@ -48,8 +48,8 @@ type CaptureConfig struct {
 	// input                <-chan rawPacketBytes
 }
 
+// this function will run at import time, before parsing the flags
 func (config CaptureConfig) initializeFlags() error {
-	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", &config)
 	GlobalCaptureConfig = &config
 	config.resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
@@ -206,6 +206,9 @@ type DetectIP struct {
 	family layers.EthernetType
 }
 
+// an interface to unify different types of packet capture.
+// right now, most functionality of afpacket, pcap file and libpcap
+// are captured in this interface
 type genericPacketHandler interface {
 	ReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	ZeroCopyReadPacketData() ([]byte, gopacket.CaptureInfo, error)
@@ -218,6 +221,6 @@ type rawPacketBytes struct {
 	info  gopacket.CaptureInfo
 }
 
-// actually run this as a goroutine
+// This will allow an instance to be spawned at import time
 var GlobalCaptureConfig *CaptureConfig
 var _ = CaptureConfig{}.initializeFlags()

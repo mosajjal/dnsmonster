@@ -30,6 +30,7 @@ Table of Contents
   - [skip domains](#skip-domains)
   - [allow domains](#allow-domains)
   - [SAMPLE in clickhouse SELECT queries](#sample-in-clickhouse-select-queries)
+- [Supported Inputs](#supported-inputs)
 - [Supported Outputs](#supported-outputs)
 - [Roadmap](#roadmap)
 - [Related projects](#related-projects)
@@ -653,6 +654,13 @@ UPDATE: in the latest version of `clickhouse`, the .inner tables do not have the
 ## SAMPLE in clickhouse SELECT queries
 By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS_LOG`) file have the ability to sample down a result as needed, since each DNS question has a semi-unique UUID associated with it. For more information about SAMPLE queries in Clickhouse, please check out [this](https://clickhouse.tech/docs/en/sql-reference/statements/select/sample/) document.
 
+# Supported Inputs
+* Live capture via libpcap/ncap (Ethernet and raw IP are supported)
+* Live capture via afpacket (Ethernet and raw IP are supported)
+* Dnstap socket (listen mode)
+* Pcap file (Ethernet frame)
+
+NOTE: if your `pcap` file is captured by one of Linux's meta-interfaces (eg tcpdump -i any), dnsmonster will not be able to read the Ethernet frame off of it since it doesn't exist. you can use a tool like `tcprewrite` to convert the pcap file to Ethernet.
 
 # Supported Outputs
 
@@ -688,6 +696,7 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 - [ ] De-duplication support
 - [ ] Clickhouse versioning and migration tool
 - [ ] `statsd` and `Prometheus` support 
+- [ ] tests and benchmarks
 
 # Related projects
 

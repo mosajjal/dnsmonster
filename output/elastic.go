@@ -173,5 +173,5 @@ func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []ty
 
 }
 
-// actually run this as a goroutine
+// This will allow an instance to be spawned at import time
 var _ = ElasticConfig{}.initializeFlags()

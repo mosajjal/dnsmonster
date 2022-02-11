@@ -25,9 +25,11 @@ func (h *afpacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo,
 func (h *afpacketHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	return h.TPacket.ZeroCopyReadPacketData()
 }
+
 func (h *afpacketHandle) LinkType() layers.LinkType {
 	return layers.LinkTypeEthernet
 }
+
 func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 	pcapBPF := TcpdumpToPcapgoBpf(filter)
 	log.Infof("Filter: %s", filter)

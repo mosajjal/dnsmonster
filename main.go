@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"runtime/pprof"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/capture"
@@ -48,35 +47,22 @@ func main() {
 	}
 	// Setup the memory profile if reuqested
 	if util.GeneralFlags.Memprofile != "" {
-		go func() {
-			time.Sleep(120 * time.Second)
-			log.Warn("Writing memory profile")
-			f, err := os.Create(util.GeneralFlags.Memprofile)
-			if err != nil {
-				log.Fatal(err)
-			}
-			runtime.GC() // get up-to-date statistics
-
-			err = pprof.Lookup("heap").WriteTo(f, 0)
-			if err != nil {
-				log.Fatal(err)
-			}
-			f.Close()
-		}()
+		defer profile.Start(profile.MemProfile).Stop()
 	}
+
 	// Setup SIGINT handling
 	handleInterrupt()
 
 	// todo: this needs to be its own file with configurable output formats and endpoints (stdout, file, syslog, prometheus, etc)
 	go metrics.Log(metrics.DefaultRegistry, util.GeneralFlags.PrintStatsDelay, log.StandardLogger())
 
-	// set up captures
+	// set up capture
 	capture.GlobalCaptureConfig.CheckFlagsAndStart()
 
-	// Setup our output channels
+	// Set up output dispatch
 	setupOutputs(capture.GlobalCaptureConfig.GetResultChannel())
 
-	//todo: this could be a better place to handle intrrupts, logrotate and even statsd
+	// block until capture and output finish their loop, in order to exit cleanly
 	util.GeneralFlags.GetWg().Wait()
 	<-time.After(2 * time.Second)
 }

@@ -80,5 +80,5 @@ func (stdConfig StdoutConfig) Output() {
 	}
 }
 
-// actually run this as a goroutine
+// This will allow an instance to be spawned at import time
 var _ = StdoutConfig{}.initializeFlags()

@@ -9,7 +9,6 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	mkdns "github.com/miekg/dns"
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"
 )
@@ -29,7 +28,7 @@ func (config CaptureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 						MaskSize = util.GeneralFlags.MaskSize6
 						BitSize = 8 * net.IPv6len
 					}
-					config.resultChannel <- types.DNSResult{Timestamp: timestamp,
+					config.resultChannel <- util.DNSResult{Timestamp: timestamp,
 						DNS: msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
 						DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
 					}
@@ -158,7 +157,7 @@ func (config CaptureConfig) StartPacketDecoder() {
 					MaskSize = util.GeneralFlags.MaskSize6
 					BitSize = 8 * net.IPv6len
 				}
-				config.resultChannel <- types.DNSResult{Timestamp: data.timestamp,
+				config.resultChannel <- util.DNSResult{Timestamp: data.timestamp,
 					DNS: msg, IPVersion: data.IPVersion, SrcIP: data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
 					DstIP: data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "tcp", PacketLength: uint16(len(data.data)),
 				}
@@ -188,7 +187,6 @@ func (config CaptureConfig) StartPacketDecoder() {
 		// case packet := <-config.processingChannel:
 		// 	workerHandlerChannel <- packet
 		case <-util.GeneralFlags.GetExit():
-			log.Warnf("here")
 			util.GeneralFlags.GetWg().Done()
 			return
 		}

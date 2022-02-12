@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -27,7 +26,7 @@ type SentinelConfig struct {
 	SentinelOutputProxy      string        `long:"sentinelOutputProxy"         env:"DNSMONSTER_SENTINELOUTPUTPROXY"         default:""                                                        description:"Sentinel Output Proxy in URI format"`
 	SentinelBatchSize        uint          `long:"sentinelBatchSize"           env:"DNSMONSTER_SENTINELBATCHSIZE"           default:"100"                                                     description:"Sentinel Batch Size"`
 	SentinelBatchDelay       time.Duration `long:"sentinelBatchDelay"          env:"DNSMONSTER_SENTINELBATCHDELAY"          default:"1s"                                                      description:"Interval between sending results to Sentinel if Batch size is not filled"`
-	outputChannel            chan types.DNSResult
+	outputChannel            chan util.DNSResult
 	closeChannel             chan bool
 }
 
@@ -35,9 +34,9 @@ func (seConfig SentinelConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("sentinel_output", "Microsoft Sentinel Output", &seConfig)
 
-	seConfig.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	seConfig.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &seConfig)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &seConfig)
 	return err
 }
 
@@ -58,7 +57,7 @@ func (seConfig SentinelConfig) Close() {
 	<-seConfig.closeChannel
 }
 
-func (seConfig SentinelConfig) OutputChannel() chan types.DNSResult {
+func (seConfig SentinelConfig) OutputChannel() chan util.DNSResult {
 	return seConfig.outputChannel
 }
 
@@ -171,7 +170,7 @@ func (seConfig SentinelConfig) Output() {
 			}
 
 			cnt++
-			batch += data.String()
+			batch += data.GetJson()
 			batch += ","
 			if cnt == int(seConfig.SentinelBatchSize) {
 				// remove the last ,

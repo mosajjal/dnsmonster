@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -20,7 +19,7 @@ type ElasticConfig struct {
 	ElasticOutputIndex    string        `long:"elasticOutputIndex"          env:"DNSMONSTER_ELASTICOUTPUTINDEX"          default:"default"                                                 description:"elastic index"`
 	ElasticBatchSize      uint          `long:"elasticBatchSize"            env:"DNSMONSTER_ELASTICBATCHSIZE"            default:"1000"                                                    description:"Send data to Elastic in batch sizes"`
 	ElasticBatchDelay     time.Duration `long:"elasticBatchDelay"           env:"DNSMONSTER_ELASTICBATCHDELAY"           default:"1s"                                                      description:"Interval between sending results to Elastic if Batch size is not filled"`
-	outputChannel         chan types.DNSResult
+	outputChannel         chan util.DNSResult
 	closeChannel          chan bool
 }
 
@@ -28,9 +27,9 @@ func (config ElasticConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("elastic_output", "Elastic Output", &config)
 
-	config.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &config)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
 	return err
 }
 
@@ -51,7 +50,7 @@ func (config ElasticConfig) Close() {
 	<-config.closeChannel
 }
 
-func (config ElasticConfig) OutputChannel() chan types.DNSResult {
+func (config ElasticConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 
@@ -103,7 +102,7 @@ func (esConfig ElasticConfig) connectelastic() (*elastic.Client, error) {
 
 func (esConfig ElasticConfig) Output() {
 	client := esConfig.connectelasticRetry()
-	batch := make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
+	batch := make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
 
 	ticker := time.NewTicker(esConfig.ElasticBatchDelay)
 
@@ -136,14 +135,14 @@ func (esConfig ElasticConfig) Output() {
 				log.Info(err)
 				client = esConfig.connectelasticRetry()
 			} else {
-				batch = make([]types.DNSResult, 0, esConfig.ElasticBatchSize)
+				batch = make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
 			}
 
 		}
 	}
 }
 
-func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []types.DNSResult) error {
+func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []util.DNSResult) error {
 	elasticSentToOutput := metrics.GetOrRegisterCounter("elasticSentToOutput", metrics.DefaultRegistry)
 	elasticSkipped := metrics.GetOrRegisterCounter("elasticSkipped", metrics.DefaultRegistry)
 
@@ -160,7 +159,7 @@ func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []ty
 			_, err := client.Index().
 				Index(esConfig.ElasticOutputIndex).
 				Type("_doc").
-				BodyString(string(batch[i].String())).
+				BodyString(string(batch[i].GetJson())).
 				Do(ctx)
 
 			if err != nil {

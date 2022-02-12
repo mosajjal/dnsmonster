@@ -13,7 +13,6 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 )
 
@@ -42,7 +41,7 @@ type CaptureConfig struct {
 	ip6DefrggerReturn          chan ipv6Defragged
 	tcpAssembly                chan tcpPacket
 	tcpReturnChannel           chan tcpData
-	resultChannel              chan types.DNSResult
+	resultChannel              chan util.DNSResult
 	ratioA                     int
 	ratioB                     int
 	// input                <-chan rawPacketBytes
@@ -52,7 +51,7 @@ type CaptureConfig struct {
 func (config CaptureConfig) initializeFlags() error {
 	_, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", &config)
 	GlobalCaptureConfig = &config
-	config.resultChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.resultChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 	config.tcpAssembly = make(chan tcpPacket, config.TcpAssemblyChannelSize)
 	config.tcpReturnChannel = make(chan tcpData, config.TcpResultChannelSize)
 	config.processingChannel = make(chan *rawPacketBytes, config.PacketChannelSize)
@@ -64,7 +63,7 @@ func (config CaptureConfig) initializeFlags() error {
 	return err
 }
 
-func (config CaptureConfig) GetResultChannel() *chan types.DNSResult {
+func (config CaptureConfig) GetResultChannel() *chan util.DNSResult {
 	return &config.resultChannel
 }
 

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -14,7 +13,7 @@ type StdoutConfig struct {
 	StdoutOutputType        uint   `long:"stdoutOutputType"            env:"DNSMONSTER_STDOUTOUTPUTTYPE"            default:"0"                                                       description:"What should be written to stdout. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"        choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	StdoutOutputFormat      string `long:"stdoutOutputFormat"          env:"DNSMONSTER_STDOUTOUTPUTFORMAT"          default:"json"                                                    description:"Output format for stdout. options:json,csv. note that the csv splits the datetime format into multiple fields"                                                                                                                                                                        choice:"json" choice:"csv"`
 	StdoutOutputWorkerCount uint   `long:"stdoutOutputWorkerCount"     env:"DNSMONSTER_STDOUTOUTPUTWORKERCOUNT"     default:"8"                                                       description:"Number of workers"`
-	outputChannel           chan types.DNSResult
+	outputChannel           chan util.DNSResult
 	closeChannel            chan bool
 }
 
@@ -22,9 +21,9 @@ func (config StdoutConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("stdout_output", "Stdout Output", &config)
 
-	config.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &config)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
 	return err
 }
 
@@ -45,7 +44,7 @@ func (config StdoutConfig) Close() {
 	<-config.closeChannel
 }
 
-func (config StdoutConfig) OutputChannel() chan types.DNSResult {
+func (config StdoutConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 
@@ -62,9 +61,9 @@ func (stdConfig StdoutConfig) stdoutOutputWorker() {
 			}
 			stdoutSentToOutput.Inc(1)
 			if isOutputJson {
-				fmt.Printf("%s\n", data.String())
+				fmt.Print(data.GetJson() + "\n")
 			} else {
-				fmt.Printf("%s\n", data.CsvRow())
+				fmt.Print(data.GetCsvRow() + "\n")
 			}
 		}
 	}
@@ -73,7 +72,7 @@ func (stdConfig StdoutConfig) stdoutOutputWorker() {
 
 func (stdConfig StdoutConfig) Output() {
 	if stdConfig.StdoutOutputFormat == "csv" {
-		types.PrintCsvHeader()
+		fmt.Print(util.GetCsvHeaderRow() + "\n")
 	}
 	for i := 0; i < int(stdConfig.StdoutOutputWorkerCount); i++ { //todo: make this configurable
 		go stdConfig.stdoutOutputWorker()

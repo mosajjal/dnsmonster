@@ -7,7 +7,6 @@ import (
 
 	syslog "github.com/hashicorp/go-syslog"
 
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -16,7 +15,7 @@ import (
 type SyslogConfig struct {
 	SyslogOutputType     uint   `long:"syslogOutputType"            env:"DNSMONSTER_SYSLOGOUTPUTTYPE"            default:"0"                                                       description:"What should be written to Syslog server. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	SyslogOutputEndpoint string `long:"syslogOutputEndpoint"        env:"DNSMONSTER_SYSLOGOUTPUTENDPOINT"        default:"udp://127.0.0.1:514"                                     description:"Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none"`
-	outputChannel        chan types.DNSResult
+	outputChannel        chan util.DNSResult
 	closeChannel         chan bool
 }
 
@@ -24,9 +23,9 @@ func (config SyslogConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("syslog_output", "Syslog Output", &config)
 
-	config.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &config)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
 	return err
 }
 
@@ -47,7 +46,7 @@ func (config SyslogConfig) Close() {
 	<-config.closeChannel
 }
 
-func (config SyslogConfig) OutputChannel() chan types.DNSResult {
+func (config SyslogConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 
@@ -97,7 +96,7 @@ func (sysConfig SyslogConfig) Output() {
 			}
 			syslogSentToOutput.Inc(1)
 
-			err := writer.WriteLevel(syslog.LOG_ALERT, []byte(data.String()))
+			err := writer.WriteLevel(syslog.LOG_ALERT, []byte(data.GetJson()))
 			// don't exit on connection failure, try to connect again if need be
 			if err != nil {
 				log.Info(err)

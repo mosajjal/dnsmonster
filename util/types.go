@@ -1,4 +1,4 @@
-package types
+package util
 
 import (
 	"net"
@@ -17,14 +17,6 @@ type DNSResult struct {
 	DstIP        net.IP
 	Protocol     string
 	PacketLength uint16
-}
-
-type GeneralConfig struct {
-	MaskSize4           int
-	MaskSize6           int
-	PacketLimit         int
-	ServerName          string
-	SkipTlsVerification bool
 }
 
 type GenericOutput interface {

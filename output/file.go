@@ -2,11 +2,9 @@ package output
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -16,7 +14,7 @@ type FileConfig struct {
 	FileOutputType   uint           `long:"fileOutputType"              env:"DNSMONSTER_FILEOUTPUTTYPE"              default:"0"                                                       description:"What should be written to file. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"          choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	FileOutputPath   flags.Filename `long:"fileOutputPath"              env:"DNSMONSTER_FILEOUTPUTPATH"              default:""                                                        description:"Path to output file. Used if fileOutputType is not none"`
 	FileOutputFormat string         `long:"fileOutputFormat"            env:"DNSMONSTER_FILEOUTPUTFORMAT"            default:"json"                                                    description:"Output format for file. options:json,csv. note that the csv splits the datetime format into multiple fields"                                                                                                                                                                          choice:"json" choice:"csv"`
-	outputChannel    chan types.DNSResult
+	outputChannel    chan util.DNSResult
 	closeChannel     chan bool
 }
 
@@ -24,9 +22,9 @@ func (config FileConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("file_output", "File Output", &config)
 
-	config.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &config)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
 	return err
 }
 
@@ -47,7 +45,7 @@ func (config FileConfig) Close() {
 	<-config.closeChannel
 }
 
-func (config FileConfig) OutputChannel() chan types.DNSResult {
+func (config FileConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 
@@ -66,7 +64,10 @@ func (fConfig FileConfig) Output() {
 
 	isOutputJson := fConfig.FileOutputFormat == "json"
 	if !isOutputJson {
-		types.PrintCsvHeader()
+		_, err := fileObject.WriteString(util.GetCsvHeaderRow() + "\n")
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	for data := range fConfig.outputChannel {
@@ -78,12 +79,12 @@ func (fConfig FileConfig) Output() {
 			}
 			fileSentToOutput.Inc(1)
 			if isOutputJson {
-				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.String()))
+				_, err := fileObject.WriteString(data.GetJson() + "\n")
 				if err != nil {
 					log.Fatal(err)
 				}
 			} else {
-				_, err := fileObject.WriteString(fmt.Sprintf("%s\n", data.CsvRow()))
+				_, err := fileObject.WriteString(data.GetCsvRow() + "\n")
 				if err != nil {
 					log.Fatal(err)
 				}

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -66,7 +65,7 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 	return dSocket
 }
 
-func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
+func dnsTapMsgToDNSResult(msg []byte) util.DNSResult {
 	dnstapObject := &dnstap.Dnstap{}
 
 	if err := proto.Unmarshal(msg, dnstapObject); err != nil {
@@ -78,7 +77,7 @@ func dnsTapMsgToDNSResult(msg []byte) types.DNSResult {
 		message = dnstapObject.Message.GetResponseMessage()
 	}
 
-	var myDNSResult types.DNSResult
+	var myDNSResult util.DNSResult
 	if err := myDNSResult.DNS.Unpack(message); err != nil {
 		log.Fatal(err)
 	}

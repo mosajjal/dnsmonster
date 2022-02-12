@@ -5,7 +5,6 @@ import (
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -19,7 +18,7 @@ type InfluxConfig struct {
 	InfluxOutputOrg     string `long:"influxOutputOrg"              env:"DNSMONSTER_INFLUXOUTPUTORG"              default:"dnsmonster"                                              description:"Influx Server Org"`
 	InfluxOutputWorkers uint   `long:"influxOutputWorkers"          env:"DNSMONSTER_INFLUXOUTPUTWORKERS"          default:"8"                                                       description:"Minimun capacity of the cache array used to send data to Influx"`
 	InfluxBatchSize     uint   `long:"influxBatchSize"              env:"DNSMONSTER_INFLUXBATCHSIZE"              default:"1000"                                                    description:"Minimun capacity of the cache array used to send data to Influx"`
-	outputChannel       chan types.DNSResult
+	outputChannel       chan util.DNSResult
 	closeChannel        chan bool
 }
 
@@ -27,9 +26,9 @@ func (config InfluxConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("influx_output", "Influx Output", &config)
 
-	config.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &config)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
 	return err
 }
 
@@ -50,7 +49,7 @@ func (config InfluxConfig) Close() {
 	<-config.closeChannel
 }
 
-func (config InfluxConfig) OutputChannel() chan types.DNSResult {
+func (config InfluxConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 

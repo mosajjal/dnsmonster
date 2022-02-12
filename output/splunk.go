@@ -13,7 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 )
 
@@ -26,7 +25,7 @@ type SplunkConfig struct {
 	SplunkOutputSourceType string        `long:"splunkOutputSourceType"      env:"DNSMONSTER_SPLUNKOUTPUTSOURCETYPE"      default:"json"                                                    description:"Splunk Output Sourcetype"`
 	SplunkBatchSize        uint          `long:"splunkBatchSize"             env:"DNSMONSTER_SPLUNKBATCHSIZE"             default:"1000"                                                    description:"Send data to HEC in batch sizes"`
 	SplunkBatchDelay       time.Duration `long:"splunkBatchDelay"            env:"DNSMONSTER_SPLUNKBATCHDELAY"            default:"1s"                                                      description:"Interval between sending results to HEC if Batch size is not filled"`
-	outputChannel          chan types.DNSResult
+	outputChannel          chan util.DNSResult
 	closeChannel           chan bool
 }
 
@@ -40,9 +39,9 @@ func (config SplunkConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("splunk_output", "Splunk Output", &config)
 
-	config.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &config)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
 	return err
 }
 
@@ -63,7 +62,7 @@ func (config SplunkConfig) Close() {
 	<-config.closeChannel
 }
 
-func (config SplunkConfig) OutputChannel() chan types.DNSResult {
+func (config SplunkConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 
@@ -143,7 +142,7 @@ func (spConfig SplunkConfig) Output() {
 	log.Infof("Connecting to Splunk endpoints")
 	spConfig.connectMultiSplunkRetry()
 
-	batch := make([]types.DNSResult, 0, spConfig.SplunkBatchSize)
+	batch := make([]util.DNSResult, 0, spConfig.SplunkBatchSize)
 	rand.Seed(time.Now().Unix())
 	ticker := time.NewTicker(spConfig.SplunkBatchDelay)
 
@@ -164,7 +163,7 @@ func (spConfig SplunkConfig) Output() {
 					splunkConnectionList[healthyId] = conn
 					splunkFailed.Inc(int64(len(batch)))
 				} else {
-					batch = make([]types.DNSResult, 0, spConfig.SplunkBatchSize)
+					batch = make([]util.DNSResult, 0, spConfig.SplunkBatchSize)
 				}
 			} else {
 				log.Warn("Splunk Connection not found")
@@ -175,7 +174,7 @@ func (spConfig SplunkConfig) Output() {
 	}
 }
 
-func (spConfig SplunkConfig) splunkSendData(client *splunk.Client, batch []types.DNSResult) error {
+func (spConfig SplunkConfig) splunkSendData(client *splunk.Client, batch []util.DNSResult) error {
 	splunkSentToOutput := metrics.GetOrRegisterCounter("splunkSentToOutput", metrics.DefaultRegistry)
 	splunkSkipped := metrics.GetOrRegisterCounter("splunkSkipped", metrics.DefaultRegistry)
 	var events []*splunk.Event
@@ -189,7 +188,7 @@ func (spConfig SplunkConfig) splunkSendData(client *splunk.Client, batch []types
 			splunkSentToOutput.Inc(1)
 			events = append(
 				events,
-				client.NewEventWithTime(batch[i].Timestamp, batch[i].String(), spConfig.SplunkOutputSource, spConfig.SplunkOutputSourceType, spConfig.SplunkOutputIndex),
+				client.NewEventWithTime(batch[i].Timestamp, batch[i].GetJson(), spConfig.SplunkOutputSource, spConfig.SplunkOutputSourceType, spConfig.SplunkOutputIndex),
 			)
 		}
 	}

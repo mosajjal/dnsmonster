@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -22,7 +21,7 @@ type KafkaConfig struct {
 	KafkaBatchSize    uint          `long:"kafkaBatchSize"              env:"DNSMONSTER_KAFKABATCHSIZE"              default:"1000"                                                    description:"Minimun capacity of the cache array used to send data to Kafka"`
 	KafkaBatchDelay   time.Duration `long:"kafkaBatchDelay"             env:"DNSMONSTER_KAFKABATCHDELAY"             default:"1s"                                                      description:"Interval between sending results to Kafka if Batch size is not filled"`
 	KafkaCompress     bool          `long:"kafkaCompress"               env:"DNSMONSTER_KAFKACOMPRESS"                                                                                 description:"Compress Kafka connection"`
-	outputChannel     chan types.DNSResult
+	outputChannel     chan util.DNSResult
 	closeChannel      chan bool
 }
 
@@ -30,9 +29,9 @@ func (kafConfig KafkaConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("kafka_output", "Kafka Output", &kafConfig)
 
-	kafConfig.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	kafConfig.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &kafConfig)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &kafConfig)
 	return err
 }
 
@@ -52,7 +51,7 @@ func (kafConfig KafkaConfig) Close() {
 	close(kafConfig.closeChannel)
 }
 
-func (kafConfig KafkaConfig) OutputChannel() chan types.DNSResult {
+func (kafConfig KafkaConfig) OutputChannel() chan util.DNSResult {
 	return kafConfig.outputChannel
 }
 
@@ -93,7 +92,7 @@ func (kafConfig KafkaConfig) Output() {
 	}
 }
 
-func (kafConfig KafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult types.DNSResult) error {
+func (kafConfig KafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util.DNSResult) error {
 	kafkaSentToOutput := metrics.GetOrRegisterCounter("kafkaSentToOutput", metrics.DefaultRegistry)
 	kafkaSkipped := metrics.GetOrRegisterCounter("stdoutSkipped", metrics.DefaultRegistry)
 
@@ -109,7 +108,7 @@ func (kafConfig KafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult type
 
 	return kWriter.WriteMessages(context.Background(), kafka.Message{
 		Key:   []byte(myUUID),
-		Value: []byte(fmt.Sprintf("%s\n", dnsresult.String())),
+		Value: []byte(fmt.Sprintf("%s\n", dnsresult.GetJson())),
 	})
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"time"
 
-	"github.com/mosajjal/dnsmonster/types"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/rogpeppe/fastuuid"
@@ -32,7 +31,7 @@ type ClickhouseConfig struct {
 	ClickhouseBatchSize         uint          `long:"clickhouseBatchSize"         env:"DNSMONSTER_CLICKHOUSEBATCHSIZE"         default:"100000"                                                  description:"Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations"`
 	ClickhouseWorkers           uint          `long:"clickhouseWorkers"           env:"DNSMONSTER_CLICKHOUSEWORKERS"           default:"1"                                                       description:"Number of Clickhouse output Workers"`
 	ClickhouseWorkerChannelSize uint          `long:"clickhouseWorkerChannelSize" env:"DNSMONSTER_CLICKHOUSEWORKERCHANNELSIZE" default:"100000"                                                  description:"Channel Size for each Clickhouse Worker"`
-	outputChannel               chan types.DNSResult
+	outputChannel               chan util.DNSResult
 	closeChannel                chan bool
 }
 
@@ -40,9 +39,9 @@ func (chConfig ClickhouseConfig) initializeFlags() error {
 	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
 	_, err := util.GlobalParser.AddGroup("clickhouse_output", "ClickHouse Output", &chConfig)
 
-	chConfig.outputChannel = make(chan types.DNSResult, util.GeneralFlags.ResultChannelSize)
+	chConfig.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
-	types.GlobalDispatchList = append(types.GlobalDispatchList, &chConfig)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &chConfig)
 	return err
 }
 
@@ -63,7 +62,7 @@ func (chConfig ClickhouseConfig) Close() {
 	<-chConfig.closeChannel
 }
 
-func (chConfig ClickhouseConfig) OutputChannel() chan types.DNSResult {
+func (chConfig ClickhouseConfig) OutputChannel() chan util.DNSResult {
 	return chConfig.outputChannel
 }
 
@@ -119,7 +118,7 @@ func (chConfig ClickhouseConfig) Output() {
 
 func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 	connect := chConfig.connectClickhouseRetry()
-	batch := make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
+	batch := make([]util.DNSResult, 0, chConfig.ClickhouseBatchSize)
 
 	ticker := time.NewTicker(chConfig.ClickhouseDelay)
 	for {
@@ -133,14 +132,14 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 				log.Warnf("Error sending data to clickhouse: %v", err)
 				connect = chConfig.connectClickhouseRetry()
 			} else {
-				batch = make([]types.DNSResult, 0, chConfig.ClickhouseBatchSize)
+				batch = make([]util.DNSResult, 0, chConfig.ClickhouseBatchSize)
 			}
 
 		}
 	}
 }
 
-func (chConfig ClickhouseConfig) clickhouseSendData(connect clickhouse.Clickhouse, batch []types.DNSResult) error {
+func (chConfig ClickhouseConfig) clickhouseSendData(connect clickhouse.Clickhouse, batch []util.DNSResult) error {
 	clickhouseSentToOutput := metrics.GetOrRegisterCounter("clickhouseSentToOutput", metrics.DefaultRegistry)
 	clickhouseSkipped := metrics.GetOrRegisterCounter("clickhouseSkipped", metrics.DefaultRegistry)
 
@@ -196,7 +195,7 @@ func (chConfig ClickhouseConfig) clickhouseSendData(connect clickhouse.Clickhous
 
 					var fullQuery []byte
 					if chConfig.ClickhouseSaveFullQuery {
-						fullQuery = []byte(batch[k].String())
+						fullQuery = []byte(batch[k].GetJson())
 					}
 					var SrcIP, DstIP uint64
 

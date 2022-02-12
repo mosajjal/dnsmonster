@@ -1,12 +1,9 @@
 package util
 
 import (
-	"bytes"
 	"encoding/binary"
+	"fmt"
 	"reflect"
-	"text/template"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type CsvRow struct {
@@ -34,21 +31,33 @@ type CsvRow struct {
 	Id           uint16
 }
 
-func populateTemplate() error {
-	v := reflect.ValueOf(CsvRow{})
-	typeOfV := v.Type()
-	for i := 0; i < v.NumField(); i++ {
-		// Get the field, returns https://golang.org/pkg/reflect/#StructField
-		csvTemplateString += "{{." + typeOfV.Field(i).Name + "}},"
-	}
-	//remove trailing comma
-	csvTemplateString = csvTemplateString[:len(csvTemplateString)-1]
-	return nil
+// currently there's not a better way to do this unless you sacrifice performance by 10x
+func formatCsvRow(csvrow CsvRow) string {
+	return fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v",
+		csvrow.Year,
+		csvrow.Month,
+		csvrow.Day,
+		csvrow.Hour,
+		csvrow.Minute,
+		csvrow.Second,
+		csvrow.Ns,
+		csvrow.Server,
+		csvrow.IpVersion,
+		csvrow.SrcIP,
+		csvrow.DstIP,
+		csvrow.Protocol,
+		csvrow.Qr,
+		csvrow.OpCode,
+		csvrow.Class,
+		csvrow.Type,
+		csvrow.ResponseCode,
+		csvrow.Question,
+		csvrow.Size,
+		csvrow.Edns0Present,
+		csvrow.DoBit,
+		csvrow.Id,
+	)
 }
-
-var csvTemplateString string
-var _ = populateTemplate()
-var csvTemplate, err = template.New("dnsmonster_csv").Parse(csvTemplateString)
 
 func (d *DNSResult) GetCsvRow() string {
 	// the integer version of the IP is much more useful in Machine learning than the string
@@ -107,12 +116,7 @@ func (d *DNSResult) GetCsvRow() string {
 		DoBit:        dobit,
 		Id:           d.DNS.Id,
 	}
-	buf := new(bytes.Buffer)
-	err = csvTemplate.Execute(buf, s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return buf.String()
+	return formatCsvRow(s)
 }
 
 // return headers for above csv

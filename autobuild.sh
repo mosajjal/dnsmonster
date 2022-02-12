@@ -45,7 +45,6 @@ dockercomposetemplate=$(cat <<EOF
     depends_on:
       - ch
     volumes:
-      - ./grafana/plugins/vertamedia-clickhouse-datasource/dist:/var/lib/grafana/plugins/vertamedia-clickhouse-datasource
       - ./bin/curl:/sbin/curl
 networks:
   monitoring:
@@ -75,8 +74,6 @@ dnsmonsteragent=$(cat <<EOF
 EOF
 )
 
-echo "fetching submodules"
-git submodule update --recursive
 echo "Starting the DNSMonster AIO Builder using docker-compose."
 echo "IMPORTANT: this script should be run when you are inside dnsmonster directory (./autobuild.sh). Do NOT run this from another directory"
 echo -n "before we begin, make sure to have TCP ports 3000, 8123 and 9000 available in your host machine and press Enter to continue..."
@@ -155,10 +152,13 @@ sleep 30
 echo "Crete tables for Clickhouse"
 docker-compose exec ch /bin/sh -c 'cat /tmp/tables.sql | clickhouse-client -h 127.0.0.1 --multiquery'
 
-# echo "downloading latest version of Clickhouse plugin for Grafana"
+echo "downloading latest version of Clickhouse plugin for Grafana"
 # docker-compose exec grafana /sbin/curl -L https://github.com/Vertamedia/clickhouse-grafana/releases/download/v2.4.2/vertamedia-clickhouse-datasource-2.4.2.zip -o /tmp/vertamedia-clickhouse-datasource-2.4.2.zip
 # docker-compose exec grafana unzip /tmp/vertamedia-clickhouse-datasource-2.4.2.zip -d /var/lib/grafana/plugins/
-# echo
+docker-compose exec grafana grafana-cli plugins install vertamedia-clickhouse-datasource
+
+echo "restarting grafana container after plugin installation"
+docker-compose restart grafana
 
 echo "Adding the datasource to Grafana"
 docker-compose exec grafana /sbin/curl -H 'Content-Type:application/json' 'http://admin:admin@127.0.0.1:3000/api/datasources' --data-raw '{"name":"ClickHouse","type":"vertamedia-clickhouse-datasource","url":"http://ch:8123","access":"proxy"}'

@@ -1,3 +1,0 @@
-[submodule "grafana/plugins/vertamedia-clickhouse-datasource"]
-	path = grafana/plugins/vertamedia-clickhouse-datasource
-	url = https://github.com/Vertamedia/clickhouse-grafana

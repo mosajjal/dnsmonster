@@ -1,6 +1,7 @@
 package capture
 
 import (
+	b64 "encoding/base64"
 	"net"
 	"net/url"
 	"os"
@@ -65,11 +66,11 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 	return dSocket
 }
 
-func dnsTapMsgToDNSResult(msg []byte) util.DNSResult {
+func dnsTapMsgToDNSResult(msg []byte) (*util.DNSResult, error) {
 	dnstapObject := &dnstap.Dnstap{}
 
 	if err := proto.Unmarshal(msg, dnstapObject); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	message := dnstapObject.Message.GetQueryMessage()
@@ -79,7 +80,7 @@ func dnsTapMsgToDNSResult(msg []byte) util.DNSResult {
 
 	var myDNSResult util.DNSResult
 	if err := myDNSResult.DNS.Unpack(message); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	myDNSResult.Timestamp = time.Unix(int64(dnstapObject.Message.GetQueryTimeSec()), int64(dnstapObject.Message.GetQueryTimeNsec()))
@@ -89,7 +90,7 @@ func dnsTapMsgToDNSResult(msg []byte) util.DNSResult {
 	myDNSResult.Protocol = strings.ToLower(dnstapObject.Message.GetSocketProtocol().String())
 	myDNSResult.PacketLength = uint16(len(dnstapObject.Message.GetResponseMessage()) + len(dnstapObject.Message.GetQueryMessage()))
 
-	return myDNSResult
+	return &myDNSResult, nil
 }
 
 func (config CaptureConfig) StartDnsTap() {
@@ -126,7 +127,13 @@ func (config CaptureConfig) StartDnsTap() {
 				if ratioCnt > config.ratioB*config.ratioA {
 					ratioCnt = 0
 				}
-				config.resultChannel <- dnsTapMsgToDNSResult(msg)
+				res, err := dnsTapMsgToDNSResult(msg)
+				if err != nil {
+					log.Errorf("could not unpack message: %v, content: %s", err, b64.StdEncoding.EncodeToString(msg))
+					continue
+				}
+
+				config.resultChannel <- *res
 			} else {
 				droppedCnt += 1
 			}

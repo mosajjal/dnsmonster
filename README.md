@@ -448,10 +448,12 @@ splunk_output:
                                          ;	4: Enable Output and apply both skip
                                          and allow domains logic (default: 0)
                                          [$DNSMONSTER_SPLUNKOUTPUTTYPE]
-      --splunkOutputEndpoints=           splunk endpoint address, example:
+      --splunkOutputEndpoint=            splunk endpoint address, example:
                                          http://127.0.0.1:8088. Used if
-                                         splunkOutputType is not none
-                                         [$DNSMONSTER_SPLUNKOUTPUTENDPOINTS]
+                                         splunkOutputType is not none, can be
+                                         specified multiple times for load
+                                         balanace and HA
+                                         [$DNSMONSTER_SPLUNKOUTPUTENDPOINT]
       --splunkOutputToken=               Splunk HEC Token (default:
                                          00000000-0000-0000-0000-000000000000)
                                          [$DNSMONSTER_SPLUNKOUTPUTTOKEN]

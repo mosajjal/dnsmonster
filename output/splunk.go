@@ -18,7 +18,7 @@ import (
 
 type SplunkConfig struct {
 	SplunkOutputType       uint          `long:"splunkOutputType"            env:"DNSMONSTER_SPLUNKOUTPUTTYPE"            default:"0"                                                       description:"What should be written to HEC. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"           choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	SplunkOutputEndpoints  []string      `long:"splunkOutputEndpoints"       env:"DNSMONSTER_SPLUNKOUTPUTENDPOINTS"       default:""                                                        description:"splunk endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none"`
+	SplunkOutputEndpoint   []string      `long:"splunkOutputEndpoint"        env:"DNSMONSTER_SPLUNKOUTPUTENDPOINT"        default:""                                                        description:"splunk endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none, can be specified multiple times for load balanace and HA"`
 	SplunkOutputToken      string        `long:"splunkOutputToken"           env:"DNSMONSTER_SPLUNKOUTPUTTOKEN"           default:"00000000-0000-0000-0000-000000000000"                    description:"Splunk HEC Token"`
 	SplunkOutputIndex      string        `long:"splunkOutputIndex"           env:"DNSMONSTER_SPLUNKOUTPUTINDEX"           default:"temp"                                                    description:"Splunk Output Index"`
 	SplunkOutputSource     string        `long:"splunkOutputSource"          env:"DNSMONSTER_SPLUNKOUTPUTSOURCE"          default:"dnsmonster"                                              description:"Splunk Output Source"`
@@ -69,7 +69,7 @@ func (config SplunkConfig) OutputChannel() chan util.DNSResult {
 var splunkConnectionList = make(map[string]SplunkConnection)
 
 func (spConfig SplunkConfig) connectMultiSplunkRetry() {
-	for _, splunkEndpoint := range spConfig.SplunkOutputEndpoints {
+	for _, splunkEndpoint := range spConfig.SplunkOutputEndpoint {
 		go spConfig.connectSplunkRetry(splunkEndpoint)
 	}
 }

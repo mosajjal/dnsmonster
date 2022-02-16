@@ -48,6 +48,7 @@ jobs:
       working-directory: "."
 
     - name: Commit changes
+      if: ${{ github.event_name == 'push' }} # only commit changes if it's a push to branch not a PR
       uses: EndBug/add-and-commit@v5
       with:
         author_name: Ali Mosajjal

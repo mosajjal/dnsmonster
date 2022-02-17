@@ -387,7 +387,7 @@ kafka_output:
                                          ;	4: Enable Output and apply both skip
                                          and allow domains logic (default: 0)
                                          [$DNSMONSTER_KAFKAOUTPUTTYPE]
-      --kafkaOutputBroker=               kafka broker address, example:
+      --kafkaOutputBroker=               kafka broker address(es), example:
                                          127.0.0.1:9092. Used if
                                          kafkaOutputType is not none
                                          [$DNSMONSTER_KAFKAOUTPUTBROKER]

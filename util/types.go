@@ -17,6 +17,8 @@ type DNSResult struct {
 	DstIP        net.IP
 	Protocol     string
 	PacketLength uint16
+	Identity     string
+	Version      string
 }
 
 type GenericOutput interface {

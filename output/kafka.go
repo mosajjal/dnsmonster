@@ -16,7 +16,7 @@ import (
 
 type KafkaConfig struct {
 	KafkaOutputType   uint          `long:"kafkaOutputType"             env:"DNSMONSTER_KAFKAOUTPUTTYPE"             default:"0"                                                       description:"What should be written to kafka. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"         choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	KafkaOutputBroker string        `long:"kafkaOutputBroker"           env:"DNSMONSTER_KAFKAOUTPUTBROKER"           default:""                                                        description:"kafka broker address, example: 127.0.0.1:9092. Used if kafkaOutputType is not none"`
+	KafkaOutputBroker []string      `long:"kafkaOutputBroker"           env:"DNSMONSTER_KAFKAOUTPUTBROKER"           default:""                                                        description:"kafka broker address(es), example: 127.0.0.1:9092. Used if kafkaOutputType is not none"`
 	KafkaOutputTopic  string        `long:"kafkaOutputTopic"            env:"DNSMONSTER_KAFKAOUTPUTTOPIC"            default:"dnsmonster"                                              description:"Kafka topic for logging"`
 	KafkaBatchSize    uint          `long:"kafkaBatchSize"              env:"DNSMONSTER_KAFKABATCHSIZE"              default:"1000"                                                    description:"Minimun capacity of the cache array used to send data to Kafka"`
 	KafkaBatchDelay   time.Duration `long:"kafkaBatchDelay"             env:"DNSMONSTER_KAFKABATCHDELAY"             default:"1s"                                                      description:"Interval between sending results to Kafka if Batch size is not filled"`
@@ -58,7 +58,7 @@ func (kafConfig KafkaConfig) OutputChannel() chan util.DNSResult {
 func (kafConfig KafkaConfig) getWriter() *kafka.Writer {
 	kWriter := &kafka.Writer{
 		Async:        true,
-		Addr:         kafka.TCP(kafConfig.KafkaOutputBroker),
+		Addr:         kafka.TCP(kafConfig.KafkaOutputBroker...),
 		Topic:        kafConfig.KafkaOutputTopic,
 		Balancer:     &kafka.LeastBytes{},
 		BatchSize:    int(kafConfig.KafkaBatchSize),

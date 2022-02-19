@@ -17,23 +17,25 @@ import (
 )
 
 type CaptureConfig struct {
-	DevName                    string `long:"devName"                    env:"DNSMONSTER_DEVNAME"                    default:""                                                                                                  description:"Device used to capture"`
-	PcapFile                   string `long:"pcapFile"                   env:"DNSMONSTER_PCAPFILE"                   default:""                                                                                                  description:"Pcap filename to run"`
-	DnstapSocket               string `long:"dnstapSocket"               env:"DNSMONSTER_DNSTAPSOCKET"               default:""                                                                                                  description:"dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
-	Port                       uint   `long:"port"                       env:"DNSMONSTER_PORT"                       default:"53"                                                                                                description:"Port selected to filter packets"`
-	SampleRatio                string `long:"sampleRatio"                env:"DNSMONSTER_SAMPLERATIO"                default:"1:1"                                                                                               description:"Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets"`
-	DnstapPermission           string `long:"dnstapPermission"           env:"DNSMONSTER_DNSTAPPERMISSION"           default:"755"                                                                                               description:"Set the dnstap socket permission, only applicable when unix:// is used"`
-	PacketHandlerCount         uint   `long:"packetHandlerCount"         env:"DNSMONSTER_PACKETHANDLERCOUNT"         default:"2"                                                                                                 description:"Number of routines used to handle received packets"`
-	TcpAssemblyChannelSize     uint   `long:"tcpAssemblyChannelSize"     env:"DNSMONSTER_TCPASSEMBLYCHANNELSIZE"     default:"10000"                                                                                             description:"Size of the tcp assembler"`
-	TcpResultChannelSize       uint   `long:"tcpResultChannelSize"       env:"DNSMONSTER_TCPRESULTCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the tcp result channel"`
-	TcpHandlerCount            uint   `long:"tcpHandlerCount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                                                                                                 description:"Number of routines used to handle tcp assembly"`
-	DefraggerChannelSize       uint   `long:"defraggerChannelSize"       env:"DNSMONSTER_DEFRAGGERCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the channel to send packets to be defragged"`
-	DefraggerChannelReturnSize uint   `long:"defraggerChannelReturnSize" env:"DNSMONSTER_DEFRAGGERCHANNELRETURNSIZE" default:"10000"                                                                                             description:"Size of the channel where the defragged packets are returned"`
-	PacketChannelSize          uint   `long:"packetChannelSize"          env:"DNSMONSTER_PACKETCHANNELSIZE"          default:"1000"                                                                                              description:"Size of the packet handler channel"`
-	AfpacketBuffersizeMb       uint   `long:"afpacketBuffersizeMb"       env:"DNSMONSTER_AFPACKETBUFFERSIZEMB"       default:"64"                                                                                                description:"Afpacket Buffersize in MB"`
-	Filter                     string `long:"filter"                     env:"DNSMONSTER_FILTER"                     default:"((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))" description:"BPF filter applied to the packet stream. If port is selected, the packets will not be defragged."`
-	UseAfpacket                bool   `long:"useAfpacket"                env:"DNSMONSTER_USEAFPACKET"                description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
-	NoEthernetframe            bool   `long:"noEtherframe"               env:"DNSMONSTER_NOETHERFRAME"               description:"The PCAP capture does not contain ethernet frames"`
+	DevName                    string        `long:"devName"                    env:"DNSMONSTER_DEVNAME"                    default:""                                                                                                  description:"Device used to capture"`
+	PcapFile                   string        `long:"pcapFile"                   env:"DNSMONSTER_PCAPFILE"                   default:""                                                                                                  description:"Pcap filename to run"`
+	DnstapSocket               string        `long:"dnstapSocket"               env:"DNSMONSTER_DNSTAPSOCKET"               default:""                                                                                                  description:"dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
+	Port                       uint          `long:"port"                       env:"DNSMONSTER_PORT"                       default:"53"                                                                                                description:"Port selected to filter packets"`
+	SampleRatio                string        `long:"sampleRatio"                env:"DNSMONSTER_SAMPLERATIO"                default:"1:1"                                                                                               description:"Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets"`
+	DedupCleanupInterval       time.Duration `long:"dedupCleanupInterval"       env:"DNSMONSTER_DEDUPCLEANUPINTERVAL"       default:"60s"                                                                                               description:"Cleans up packet hash table used for deduplication"`
+	DnstapPermission           string        `long:"dnstapPermission"           env:"DNSMONSTER_DNSTAPPERMISSION"           default:"755"                                                                                               description:"Set the dnstap socket permission, only applicable when unix:// is used"`
+	PacketHandlerCount         uint          `long:"packetHandlerCount"         env:"DNSMONSTER_PACKETHANDLERCOUNT"         default:"2"                                                                                                 description:"Number of routines used to handle received packets"`
+	TcpAssemblyChannelSize     uint          `long:"tcpAssemblyChannelSize"     env:"DNSMONSTER_TCPASSEMBLYCHANNELSIZE"     default:"10000"                                                                                             description:"Size of the tcp assembler"`
+	TcpResultChannelSize       uint          `long:"tcpResultChannelSize"       env:"DNSMONSTER_TCPRESULTCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the tcp result channel"`
+	TcpHandlerCount            uint          `long:"tcpHandlerCount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                                                                                                 description:"Number of routines used to handle tcp assembly"`
+	DefraggerChannelSize       uint          `long:"defraggerChannelSize"       env:"DNSMONSTER_DEFRAGGERCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the channel to send packets to be defragged"`
+	DefraggerChannelReturnSize uint          `long:"defraggerChannelReturnSize" env:"DNSMONSTER_DEFRAGGERCHANNELRETURNSIZE" default:"10000"                                                                                             description:"Size of the channel where the defragged packets are returned"`
+	PacketChannelSize          uint          `long:"packetChannelSize"          env:"DNSMONSTER_PACKETCHANNELSIZE"          default:"1000"                                                                                              description:"Size of the packet handler channel"`
+	AfpacketBuffersizeMb       uint          `long:"afpacketBuffersizeMb"       env:"DNSMONSTER_AFPACKETBUFFERSIZEMB"       default:"64"                                                                                                description:"Afpacket Buffersize in MB"`
+	Filter                     string        `long:"filter"                     env:"DNSMONSTER_FILTER"                     default:"((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))" description:"BPF filter applied to the packet stream. If port is selected, the packets will not be defragged."`
+	UseAfpacket                bool          `long:"useAfpacket"                env:"DNSMONSTER_USEAFPACKET"                description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
+	NoEthernetframe            bool          `long:"noEtherframe"               env:"DNSMONSTER_NOETHERFRAME"               description:"The PCAP capture does not contain ethernet frames"`
+	Dedup                      bool          `long:"dedup"                      env:"DNSMONSTER_DEDUP"                      description:"Deduplicate incoming packets, Only supported with --devName and --pcapFile. Experimental "`
 	processingChannel          chan *rawPacketBytes
 	ip4Defrgger                chan ipv4ToDefrag
 	ip6Defrgger                chan ipv6FragmentInfo
@@ -44,7 +46,7 @@ type CaptureConfig struct {
 	resultChannel              chan util.DNSResult
 	ratioA                     int
 	ratioB                     int
-	// input                <-chan rawPacketBytes
+	dedupHashTable             map[uint64]bool
 }
 
 // this function will run at import time, before parsing the flags
@@ -100,6 +102,19 @@ func (config CaptureConfig) CheckFlagsAndStart() {
 	config.ratioB, errB = strconv.Atoi(ratioNumbers[1])
 	if errA != nil || errB != nil || config.ratioA > config.ratioB {
 		log.Fatal("wrong --sampleRatio syntax")
+	}
+
+	// set up dedup hash table
+	config.dedupHashTable = make(map[uint64]bool)
+	if config.Dedup {
+		log.Infof("Packet deduplication is enabled")
+		go func() {
+			for {
+				<-time.After(config.DedupCleanupInterval)
+				log.Infof("cleaning up dedup hash table")
+				config.dedupHashTable = make(map[uint64]bool)
+			}
+		}()
 	}
 
 	// start the defrag goroutines
@@ -218,6 +233,17 @@ type genericPacketHandler interface {
 type rawPacketBytes struct {
 	bytes []byte
 	info  gopacket.CaptureInfo
+}
+
+// a very fast hashing function, mainly used for deduplication
+func FNV1A(input []byte) uint64 {
+	var hash uint64 = 0xcbf29ce484222325
+	var fnv_prime uint64 = 0x100000001b3
+	for _, b := range input {
+		hash ^= uint64(b)
+		hash *= fnv_prime
+	}
+	return hash
 }
 
 // This will allow an instance to be spawned at import time

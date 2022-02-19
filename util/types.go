@@ -7,7 +7,7 @@ import (
 	mkdns "github.com/miekg/dns"
 )
 
-// DNSResult is the middleware that connects the packet encoder to Clickhouse.
+// DNSResult is the middleware that connects the packet encoder to Any output.
 // For DNStap, this is probably going to be replaced with something else.
 type DNSResult struct {
 	Timestamp    time.Time

@@ -692,10 +692,10 @@ NOTE: if your `pcap` file is captured by one of Linux's meta-interfaces (eg tcpd
 - [x] Grafana dashboard performance improvements
 - [x] remove `libpcap` dependency and move to `pcapgo` for packet processing
 - [x] Getting the data ready to be used for ML & Anomaly Detection
+- [x] De-duplication support (WIP)
+- [x] Optional SSL for Clickhouse
 - [ ] Splunk Dashboard
 - [ ] Kibana Dashbaord
-- [ ] Optional SSL for Clickhouse
-- [ ] De-duplication support
 - [ ] Clickhouse versioning and migration tool
 - [ ] `statsd` and `Prometheus` support 
 - [ ] tests and benchmarks

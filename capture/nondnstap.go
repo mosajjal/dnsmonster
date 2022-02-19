@@ -12,6 +12,8 @@ func (config CaptureConfig) StartNonDnsTap() {
 
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
 	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
+	packetsDuplicate := metrics.GetOrRegisterCounter("packetsDuplicate", metrics.DefaultRegistry)
+	packetsOverRatio := metrics.GetOrRegisterCounter("packetsOverRatio", metrics.DefaultRegistry)
 	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
 
 	var myHandler genericPacketHandler
@@ -63,17 +65,35 @@ func (config CaptureConfig) StartNonDnsTap() {
 		}
 
 		totalCnt++
+		// ratio checks
+		skipForRatio := false
 		if config.ratioA != config.ratioB { // this confirms the ratio is in use
 			ratioCnt++
 			if ratioCnt%config.ratioB < config.ratioA {
 				if ratioCnt > config.ratioB*config.ratioA { //reset ratiocount before it goes to an absurdly high number
 					ratioCnt = 0
 				}
-				config.processingChannel <- &rawPacketBytes{data, ci}
+				packetsOverRatio.Inc(1)
+				skipForRatio = true
 			}
-		} else { // always pass the data through if there's no ratio logic
+		}
+
+		// dedup checks
+		skipForDudup := false
+		if config.Dedup {
+			hash := FNV1A(data)
+			_, ok := config.dedupHashTable[hash] // check for existence
+			if !ok {
+				config.dedupHashTable[hash] = true
+			} else {
+				skipForDudup = true
+				packetsDuplicate.Inc(1)
+			}
+		}
+
+		if !skipForRatio && !skipForDudup {
 			config.processingChannel <- &rawPacketBytes{data, ci}
 		}
-	}
 
+	}
 }

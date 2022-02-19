@@ -200,6 +200,9 @@ capture:
                                          percent of the incoming packets
                                          (default: 1:1)
                                          [$DNSMONSTER_SAMPLERATIO]
+      --dedupCleanupInterval=            Cleans up packet hash table used for
+                                         deduplication (default: 60s)
+                                         [$DNSMONSTER_DEDUPCLEANUPINTERVAL]
       --dnstapPermission=                Set the dnstap socket permission, only
                                          applicable when unix:// is used
                                          (default: 755)
@@ -243,6 +246,10 @@ capture:
       --noEtherframe                     The PCAP capture does not contain
                                          ethernet frames
                                          [$DNSMONSTER_NOETHERFRAME]
+      --dedup                            Deduplicate incoming packets, Only
+                                         supported with --devName and
+                                         --pcapFile. Experimental
+                                         [$DNSMONSTER_DEDUP]
 
 clickhouse_output:
       --clickhouseAddress=               Address of the clickhouse database to

@@ -64,7 +64,7 @@ func (config CaptureConfig) StartNonDnsTap() {
 			return
 		}
 
-		totalCnt++
+		totalCnt++ // * there is a race condition between this and the metrics being captured at line 48 (packetsCaptured.Update(totalCnt))
 		// ratio checks
 		skipForRatio := false
 		if config.ratioA != config.ratioB { // this confirms the ratio is in use

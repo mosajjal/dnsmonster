@@ -146,8 +146,8 @@ sed -i "s/$old_ttl_line/$new_ttl_line/" ./clickhouse/tables.sql
 echo "Starting the containers..."
 docker-compose up -d
 
-echo "Waiting 30 seconds for Containers to be fully up and running "
-sleep 30
+echo "Waiting 20 seconds for Containers to be fully up and running "
+sleep 20
 
 echo "Crete tables for Clickhouse"
 docker-compose exec ch /bin/sh -c 'cat /tmp/tables.sql | clickhouse-client -h 127.0.0.1 --multiquery'
@@ -159,6 +159,7 @@ docker-compose exec grafana grafana-cli plugins install vertamedia-clickhouse-da
 
 echo "restarting grafana container after plugin installation"
 docker-compose restart grafana
+sleep 10
 
 echo "Adding the datasource to Grafana"
 docker-compose exec grafana /sbin/curl -H 'Content-Type:application/json' 'http://admin:admin@127.0.0.1:3000/api/datasources' --data-raw '{"name":"ClickHouse","type":"vertamedia-clickhouse-datasource","url":"http://ch:8123","access":"proxy"}'

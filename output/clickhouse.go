@@ -1,10 +1,10 @@
 package output
 
 import (
+	"context"
+	"crypto/tls"
 	"encoding/binary"
 	"errors"
-	"fmt"
-	"sync"
 
 	"time"
 
@@ -13,8 +13,8 @@ import (
 	"github.com/rogpeppe/fastuuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/ClickHouse/clickhouse-go"
-	data "github.com/ClickHouse/clickhouse-go/lib/data"
+	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/compress"
 )
 
 type ClickhouseConfig struct {
@@ -68,7 +68,7 @@ func (chConfig ClickhouseConfig) OutputChannel() chan util.DNSResult {
 
 var uuidGen = fastuuid.MustNewGenerator()
 
-func (chConfig ClickhouseConfig) connectClickhouseRetry() clickhouse.Clickhouse {
+func (chConfig ClickhouseConfig) connectClickhouseRetry() clickhouse.Conn {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if chConfig.ClickhouseOutputType == 0 {
@@ -87,8 +87,28 @@ func (chConfig ClickhouseConfig) connectClickhouseRetry() clickhouse.Clickhouse 
 	}
 }
 
-func (chConfig ClickhouseConfig) connectClickhouse() (clickhouse.Clickhouse, error) {
-	connection, err := clickhouse.OpenDirect(fmt.Sprintf("tcp://%v?debug=%v&skip_verify=%v&secure=%v&compress=%v&username=%s&password=%s&database=%s", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug, util.GeneralFlags.SkipTLSVerification, chConfig.ClickhouseSecure, chConfig.ClickhouseCompress, chConfig.ClickhouseUsername, chConfig.ClickhousePassword, chConfig.ClickhouseDatabase))
+func (chConfig ClickhouseConfig) connectClickhouse() (clickhouse.Conn, error) {
+	compressOption := &clickhouse.Compression{Method: compress.NONE}
+	tlsOption := &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification}
+	if chConfig.ClickhouseCompress {
+		compressOption = &clickhouse.Compression{Method: compress.LZ4}
+	}
+	if !chConfig.ClickhouseSecure {
+		tlsOption = nil
+	}
+
+	connection, err := clickhouse.Open(&clickhouse.Options{
+		Addr: []string{chConfig.ClickhouseAddress},
+		Auth: clickhouse.Auth{
+			Database: chConfig.ClickhouseDatabase,
+			Username: chConfig.ClickhouseUsername,
+			Password: chConfig.ClickhousePassword,
+		},
+		TLS:         tlsOption,
+		Debug:       chConfig.ClickhouseDebug,
+		Compression: compressOption,
+	})
+	// connection, err := clickhouse.Open(fmt.Sprintf("tcp://%v?debug=%v&skip_verify=%v&secure=%v&compress=%v&username=%s&password=%s&database=%s", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug, util.GeneralFlags.SkipTLSVerification, chConfig.ClickhouseSecure, chConfig.ClickhouseCompress, chConfig.ClickhouseUsername, chConfig.ClickhousePassword, chConfig.ClickhouseDatabase))
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -116,145 +136,105 @@ func (chConfig ClickhouseConfig) Output() {
 	}
 }
 
-func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
-	connect := chConfig.connectClickhouseRetry()
-	batch := make([]util.DNSResult, 0, chConfig.ClickhouseBatchSize)
-
-	ticker := time.NewTicker(chConfig.ClickhouseDelay)
-	for {
-		select {
-		case data := <-chConfig.outputChannel:
-			if util.GeneralFlags.PacketLimit == 0 || len(batch) < util.GeneralFlags.PacketLimit {
-				batch = append(batch, data)
-			}
-		case <-ticker.C:
-			if err := chConfig.clickhouseSendData(connect, batch); err != nil {
-				log.Warnf("Error sending data to clickhouse: %v", err)
-				connect = chConfig.connectClickhouseRetry()
-			} else {
-				batch = make([]util.DNSResult, 0, chConfig.ClickhouseBatchSize)
-			}
-
-		}
-	}
+type clickhouseRow struct {
+	DnsDate      time.Time
+	timestamp    time.Time
+	Server       string
+	IPVersion    uint8
+	SrcIP        uint64
+	DstIP        uint64
+	Protocol     string
+	QR           uint8
+	OpCode       uint8
+	Class        uint16
+	Type         uint16
+	Edns0Present uint8
+	DoBit        uint8
+	FullQuery    string
+	ResponseCode uint8
+	Question     string
+	Size         uint16
+	ID           []byte
 }
 
-func (chConfig ClickhouseConfig) clickhouseSendData(connect clickhouse.Clickhouse, batch []util.DNSResult) error {
+func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
+	connect := chConfig.connectClickhouseRetry()
+	ctx = context.Background()
 	clickhouseSentToOutput := metrics.GetOrRegisterCounter("clickhouseSentToOutput", metrics.DefaultRegistry)
 	clickhouseSkipped := metrics.GetOrRegisterCounter("clickhouseSkipped", metrics.DefaultRegistry)
 
-	if len(batch) == 0 {
-		return nil
-	}
-	// Return if the connection is null, we are exiting
-	if connect == nil {
-		return nil
-	}
-	_, err := connect.Begin()
+	batch, err := connect.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
 	if err != nil {
-		log.Warnf("Error starting transaction: %v", err)
-		return err
+		log.Warnf("Error preparing batch: %v", err) //todo: potentially better errors
 	}
 
-	_, err = connect.Prepare("INSERT INTO DNS_LOG (DnsDate, timestamp, Server, IPVersion, SrcIP, DstIP, Protocol, QR, OpCode, Class, Type, ResponseCode, Question, Size, Edns0Present, DoBit,FullQuery, ID) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-	if err != nil {
-		return err
-	}
+	c := uint(0)
+	for data := range chConfig.outputChannel {
+		for _, dnsQuery := range data.DNS.Question {
+			c++
+			if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {
+				clickhouseSkipped.Inc(1)
+				continue
+			}
+			clickhouseSentToOutput.Inc(1)
 
-	block, err := connect.Block()
-	if err != nil {
-		log.Warnf("Error getting block: %v", err)
-		return err
-	}
+			var fullQuery = ""
+			if chConfig.ClickhouseSaveFullQuery {
+				fullQuery = data.GetJson()
+			}
+			var SrcIP, DstIP uint64
 
-	blocks := []*data.Block{block}
-
-	var clickhouseWaitGroup sync.WaitGroup
-
-	for i := 0; i < len(blocks); i++ {
-		clickhouseWaitGroup.Add(1)
-	}
-
-	count := len(blocks)
-	for i := range blocks {
-
-		b := blocks[i]
-		start := i * (len(batch)) / count
-		end := min((i+1)*(len(batch))/count, len(batch))
-		go func() {
-			defer clickhouseWaitGroup.Done()
-			b.Reserve()
-			for k := start; k < end; k++ {
-				for _, dnsQuery := range batch[k].DNS.Question {
-
-					if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {
-						clickhouseSkipped.Inc(1)
-						continue
-					}
-					clickhouseSentToOutput.Inc(1)
-
-					var fullQuery []byte
-					if chConfig.ClickhouseSaveFullQuery {
-						fullQuery = []byte(batch[k].GetJson())
-					}
-					var SrcIP, DstIP uint64
-
-					if batch[k].IPVersion == 4 {
-						SrcIP = uint64(binary.BigEndian.Uint32(batch[k].SrcIP))
-						DstIP = uint64(binary.BigEndian.Uint32(batch[k].DstIP))
-					} else {
-						SrcIP = binary.BigEndian.Uint64(batch[k].SrcIP[8:]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
-						DstIP = binary.BigEndian.Uint64(batch[k].DstIP[8:])
-					}
-					QR := uint8(0)
-					if batch[k].DNS.Response {
-						QR = 1
-					}
-					edns, doBit := uint8(0), uint8(0)
-					if edns0 := batch[k].DNS.IsEdns0(); edns0 != nil {
-						edns = 1
-						if edns0.Do() {
-							doBit = 1
-						}
-					}
-
-					b.NumRows++
-					//writing the vars into a SQL statement
-					b.WriteDate(0, batch[k].Timestamp)
-					b.WriteDateTime(1, batch[k].Timestamp)
-					b.WriteBytes(2, []byte(util.GeneralFlags.ServerName))
-					b.WriteUInt8(3, batch[k].IPVersion)
-					b.WriteUInt64(4, SrcIP)
-					b.WriteUInt64(5, DstIP)
-					b.WriteFixedString(6, []byte(batch[k].Protocol))
-					b.WriteUInt8(7, QR)
-					b.WriteUInt8(8, uint8(batch[k].DNS.Opcode))
-					b.WriteUInt16(9, uint16(dnsQuery.Qclass))
-					b.WriteUInt16(10, uint16(dnsQuery.Qtype))
-					b.WriteUInt8(11, uint8(batch[k].DNS.Rcode))
-					b.WriteString(12, string(dnsQuery.Name))
-					b.WriteUInt16(13, batch[k].PacketLength)
-					b.WriteUInt8(14, edns)
-					b.WriteUInt8(15, doBit)
-
-					b.WriteFixedString(16, fullQuery)
-					myUUID := uuidGen.Next()
-					b.WriteFixedString(17, myUUID[:16])
+			if data.IPVersion == 4 {
+				SrcIP = uint64(binary.BigEndian.Uint32(data.SrcIP))
+				DstIP = uint64(binary.BigEndian.Uint32(data.DstIP))
+			} else {
+				SrcIP = binary.BigEndian.Uint64(data.SrcIP[8:]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+				DstIP = binary.BigEndian.Uint64(data.DstIP[8:])
+			}
+			QR := uint8(0)
+			if data.DNS.Response {
+				QR = 1
+			}
+			edns, doBit := uint8(0), uint8(0)
+			if edns0 := data.DNS.IsEdns0(); edns0 != nil {
+				edns = 1
+				if edns0.Do() {
+					doBit = 1
 				}
 			}
-			if err := connect.WriteBlock(b); err != nil {
-				log.Warnf("Error writing block: %s", err)
-				return
+			myUUID := uuidGen.Next()
+
+			batch.AppendStruct(clickhouseRow{
+				DnsDate:      data.Timestamp,
+				timestamp:    time.Now(),
+				Server:       util.GeneralFlags.ServerName,
+				IPVersion:    data.IPVersion,
+				SrcIP:        SrcIP,
+				DstIP:        DstIP,
+				Protocol:     data.Protocol,
+				QR:           QR,
+				OpCode:       uint8(data.DNS.Opcode),
+				Class:        uint16(dnsQuery.Qclass),
+				Type:         uint16(dnsQuery.Qtype),
+				Edns0Present: edns,
+				DoBit:        doBit,
+				FullQuery:    fullQuery,
+				ResponseCode: uint8(data.DNS.Rcode),
+				Question:     string(dnsQuery.Name),
+				Size:         data.PacketLength,
+				ID:           myUUID[:16],
+			})
+			if c%chConfig.ClickhouseBatchSize == 0 {
+				c = 0
+				err = batch.Send()
+				if err != nil {
+					log.Warnf("Error while executing batch: %v", err) //todo:potentially add this to stats
+				}
+				batch, _ = connect.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
 			}
-		}()
-	}
-	clickhouseWaitGroup.Wait() // there is a separate waitgroup only for Clickhouse, need to investigate if this is needed or not.
-	if err := connect.Commit(); err != nil {
-		log.Warnf("Error writing block: %s", err)
-		return err
+		}
 	}
 
-	return nil
 }
 
 var _ = ClickhouseConfig{}.initializeFlags()

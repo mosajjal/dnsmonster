@@ -404,12 +404,24 @@ kafka_output:
       --kafkaBatchSize=                  Minimun capacity of the cache array
                                          used to send data to Kafka (default:
                                          1000) [$DNSMONSTER_KAFKABATCHSIZE]
+      --kafkaTimeout=                    Kafka connection timeout in seconds
+                                         (default: 3) [$DNSMONSTER_KAFKATIMEOUT]
       --kafkaBatchDelay=                 Interval between sending results to
                                          Kafka if Batch size is not filled
                                          (default: 1s)
                                          [$DNSMONSTER_KAFKABATCHDELAY]
       --kafkaCompress                    Compress Kafka connection
                                          [$DNSMONSTER_KAFKACOMPRESS]
+      --kafkaSecure                      Use TLS for kafka connection
+                                         [$DNSMONSTER_KAFKASECURE]
+      --kafkaCACertificatePath=          Path of CA certificate that signs
+                                         Kafka broker certificate
+                                         [$DNSMONSTER_KAFKACACERTIFICATEPATH]
+      --kafkaTLSCertificatePath=         Path of TLS certificate to present to
+                                         broker
+                                         [$DNSMONSTER_KAFKATLSCERTIFICATEPATH]
+      --kafkaTLSKeyPath=                 Path of TLS certificate key
+                                         [$DNSMONSTER_KAFKATLSKEYPATH]
 
 sentinel_output:
       --sentinelOutputType=[0|1|2|3|4]   What should be written to Microsoft

@@ -17,8 +17,8 @@ type DNSResult struct {
 	DstIP        net.IP
 	Protocol     string
 	PacketLength uint16
-	Identity     string
-	Version      string
+	Identity     string `json:",omitempty"`
+	Version      string `json:",omitempty"`
 }
 
 type GenericOutput interface {

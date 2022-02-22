@@ -8,13 +8,13 @@ import (
 
 	"time"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/compress"
+	"github.com/google/uuid"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/rogpeppe/fastuuid"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/ClickHouse/clickhouse-go/v2/lib/compress"
 )
 
 type ClickhouseConfig struct {
@@ -104,9 +104,13 @@ func (chConfig ClickhouseConfig) connectClickhouse() (clickhouse.Conn, error) {
 			Username: chConfig.ClickhouseUsername,
 			Password: chConfig.ClickhousePassword,
 		},
-		TLS:         tlsOption,
-		Debug:       chConfig.ClickhouseDebug,
-		Compression: compressOption,
+		DialTimeout:     time.Second,
+		MaxOpenConns:    16,
+		MaxIdleConns:    5,
+		ConnMaxLifetime: time.Hour,
+		TLS:             tlsOption,
+		Debug:           chConfig.ClickhouseDebug,
+		Compression:     compressOption,
 	})
 	// connection, err := clickhouse.Open(fmt.Sprintf("tcp://%v?debug=%v&skip_verify=%v&secure=%v&compress=%v&username=%s&password=%s&database=%s", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug, util.GeneralFlags.SkipTLSVerification, chConfig.ClickhouseSecure, chConfig.ClickhouseCompress, chConfig.ClickhouseUsername, chConfig.ClickhousePassword, chConfig.ClickhouseDatabase))
 	if err != nil {
@@ -115,13 +119,6 @@ func (chConfig ClickhouseConfig) connectClickhouse() (clickhouse.Conn, error) {
 	}
 
 	return connection, err
-}
-
-func min(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // Main handler for Clickhouse output. the data from the dispatched output channel will reach this function
@@ -134,27 +131,6 @@ func (chConfig ClickhouseConfig) Output() {
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
 		go chConfig.clickhouseOutputWorker()
 	}
-}
-
-type clickhouseRow struct {
-	DnsDate      time.Time
-	timestamp    time.Time
-	Server       string
-	IPVersion    uint8
-	SrcIP        uint64
-	DstIP        uint64
-	Protocol     string
-	QR           uint8
-	OpCode       uint8
-	Class        uint16
-	Type         uint16
-	Edns0Present uint8
-	DoBit        uint8
-	FullQuery    string
-	ResponseCode uint8
-	Question     string
-	Size         uint16
-	ID           []byte
 }
 
 func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
@@ -202,28 +178,33 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 					doBit = 1
 				}
 			}
-			myUUID := uuidGen.Next()
-
-			batch.AppendStruct(clickhouseRow{
-				DnsDate:      data.Timestamp,
-				timestamp:    time.Now(),
-				Server:       util.GeneralFlags.ServerName,
-				IPVersion:    data.IPVersion,
-				SrcIP:        SrcIP,
-				DstIP:        DstIP,
-				Protocol:     data.Protocol,
-				QR:           QR,
-				OpCode:       uint8(data.DNS.Opcode),
-				Class:        uint16(dnsQuery.Qclass),
-				Type:         uint16(dnsQuery.Qtype),
-				Edns0Present: edns,
-				DoBit:        doBit,
-				FullQuery:    fullQuery,
-				ResponseCode: uint8(data.DNS.Rcode),
-				Question:     string(dnsQuery.Name),
-				Size:         data.PacketLength,
-				ID:           myUUID[:16],
-			})
+			tempUuidGen := uuidGen.Next()
+			var myUUID uuid.UUID
+			copy(myUUID[:], tempUuidGen[:16])
+			err = batch.Append(
+				data.Timestamp,
+				time.Now(),
+				util.GeneralFlags.ServerName,
+				data.IPVersion,
+				SrcIP,
+				DstIP,
+				data.Protocol,
+				QR,
+				uint8(data.DNS.Opcode),
+				uint16(dnsQuery.Qclass),
+				uint16(dnsQuery.Qtype),
+				edns,
+				doBit,
+				fullQuery,
+				uint8(data.DNS.Rcode),
+				dnsQuery.Name,
+				data.PacketLength,
+				myUUID,
+			)
+			if err != nil {
+				log.Warnf("Error while executing batch: %v", err) //todo:potentially add this to stats
+			}
+			//todo: incorporate batch timeout here. There needs to be a way to send the results even though the batch is not full
 			if c%chConfig.ClickhouseBatchSize == 0 {
 				c = 0
 				err = batch.Send()

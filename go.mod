@@ -4,15 +4,16 @@ go 1.17
 
 require (
 	github.com/google/gopacket v1.1.19
+	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/influxdata/influxdb-client-go/v2 v2.8.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
+	github.com/satori/go.uuid v1.2.0
 )
 
 require (
 	github.com/deepmap/oapi-codegen v1.9.1 // indirect
 	github.com/farsightsec/golang-framestream v0.3.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.11 // indirect

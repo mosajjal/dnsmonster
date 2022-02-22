@@ -10,6 +10,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/compress"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/google/uuid"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
@@ -133,6 +134,8 @@ func (chConfig ClickhouseConfig) Output() {
 	}
 }
 
+var batchQueue = make(chan driver.Batch, 1000)
+
 func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 	connect := chConfig.connectClickhouseRetry()
 	ctx = context.Background()
@@ -145,77 +148,82 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 	}
 
 	c := uint(0)
-	for data := range chConfig.outputChannel {
-		for _, dnsQuery := range data.DNS.Question {
-			c++
-			if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {
-				clickhouseSkipped.Inc(1)
-				continue
-			}
-			clickhouseSentToOutput.Inc(1)
-
-			var fullQuery = ""
-			if chConfig.ClickhouseSaveFullQuery {
-				fullQuery = data.GetJson()
-			}
-			var SrcIP, DstIP uint64
-
-			if data.IPVersion == 4 {
-				SrcIP = uint64(binary.BigEndian.Uint32(data.SrcIP))
-				DstIP = uint64(binary.BigEndian.Uint32(data.DstIP))
-			} else {
-				SrcIP = binary.BigEndian.Uint64(data.SrcIP[8:]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
-				DstIP = binary.BigEndian.Uint64(data.DstIP[8:])
-			}
-			QR := uint8(0)
-			if data.DNS.Response {
-				QR = 1
-			}
-			edns, doBit := uint8(0), uint8(0)
-			if edns0 := data.DNS.IsEdns0(); edns0 != nil {
-				edns = 1
-				if edns0.Do() {
-					doBit = 1
+	for {
+		var now = time.Now()
+		select {
+		case data := <-chConfig.outputChannel:
+			for _, dnsQuery := range data.DNS.Question {
+				c++
+				if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {
+					clickhouseSkipped.Inc(1)
+					continue
 				}
-			}
-			tempUuidGen := uuidGen.Next()
-			var myUUID uuid.UUID
-			copy(myUUID[:], tempUuidGen[:16])
-			err = batch.Append(
-				data.Timestamp,
-				time.Now(),
-				util.GeneralFlags.ServerName,
-				data.IPVersion,
-				SrcIP,
-				DstIP,
-				data.Protocol,
-				QR,
-				uint8(data.DNS.Opcode),
-				uint16(dnsQuery.Qclass),
-				uint16(dnsQuery.Qtype),
-				edns,
-				doBit,
-				fullQuery,
-				uint8(data.DNS.Rcode),
-				dnsQuery.Name,
-				data.PacketLength,
-				myUUID,
-			)
-			if err != nil {
-				log.Warnf("Error while executing batch: %v", err) //todo:potentially add this to stats
-			}
-			//todo: incorporate batch timeout here. There needs to be a way to send the results even though the batch is not full
-			if c%chConfig.ClickhouseBatchSize == 0 {
-				c = 0
-				err = batch.Send()
+				clickhouseSentToOutput.Inc(1)
+
+				var fullQuery = ""
+				if chConfig.ClickhouseSaveFullQuery {
+					fullQuery = data.GetJson()
+				}
+				var SrcIP, DstIP uint64
+
+				if data.IPVersion == 4 {
+					SrcIP = uint64(binary.BigEndian.Uint32(data.SrcIP))
+					DstIP = uint64(binary.BigEndian.Uint32(data.DstIP))
+				} else {
+					SrcIP = binary.BigEndian.Uint64(data.SrcIP[8:]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+					DstIP = binary.BigEndian.Uint64(data.DstIP[8:])
+				}
+				QR := uint8(0)
+				if data.DNS.Response {
+					QR = 1
+				}
+				edns, doBit := uint8(0), uint8(0)
+				if edns0 := data.DNS.IsEdns0(); edns0 != nil {
+					edns = 1
+					if edns0.Do() {
+						doBit = 1
+					}
+				}
+				tempUuidGen := uuidGen.Next()
+				var myUUID uuid.UUID
+				copy(myUUID[:], tempUuidGen[:16])
+				err = batch.Append(
+					data.Timestamp,
+					time.Now(),
+					util.GeneralFlags.ServerName,
+					data.IPVersion,
+					SrcIP,
+					DstIP,
+					data.Protocol,
+					QR,
+					uint8(data.DNS.Opcode),
+					uint16(dnsQuery.Qclass),
+					uint16(dnsQuery.Qtype),
+					edns,
+					doBit,
+					fullQuery,
+					uint8(data.DNS.Rcode),
+					dnsQuery.Name,
+					data.PacketLength,
+					myUUID,
+				)
 				if err != nil {
 					log.Warnf("Error while executing batch: %v", err) //todo:potentially add this to stats
 				}
-				batch, _ = connect.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+				//todo: incorporate batch timeout here. There needs to be a way to send the results even though the batch is not full
+				if c%chConfig.ClickhouseBatchSize == 0 || time.Since(now) > chConfig.ClickhouseDelay {
+
+					c = 0
+					err = batch.Send()
+					if err != nil {
+						log.Warnf("Error while executing batch: %v", err) //todo:potentially add this to stats
+					}
+					batch, _ = connect.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+					now = time.Now()
+				}
 			}
 		}
 	}
-
 }
 
 var _ = ClickhouseConfig{}.initializeFlags()

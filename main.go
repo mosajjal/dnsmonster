@@ -65,4 +65,6 @@ func main() {
 	// block until capture and output finish their loop, in order to exit cleanly
 	util.GeneralFlags.GetWg().Wait()
 	<-time.After(2 * time.Second)
+	// print metrics for one last time before exiting the program
+	metrics.WriteOnce(metrics.DefaultRegistry, log.StandardLogger().Writer())
 }

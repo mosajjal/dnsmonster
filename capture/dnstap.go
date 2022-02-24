@@ -74,11 +74,13 @@ func dnsTapMsgToDNSResult(msg []byte) (*util.DNSResult, error) {
 	}
 
 	var myDNSResult util.DNSResult
-	myDNSResult.Identity = string(dnstapObject.Identity)
-	myDNSResult.Version = string(dnstapObject.Version)
+	myDNSResult.Identity = string(dnstapObject.GetIdentity())
+	myDNSResult.Version = string(dnstapObject.GetVersion())
 	myDNSResult.IPVersion = uint8(*dnstapObject.GetMessage().SocketFamily)*2 + 2
 	myDNSResult.SrcIP = dnstapObject.Message.GetQueryAddress()
+	myDNSResult.SrcPort = uint16(dnstapObject.Message.GetQueryPort())
 	myDNSResult.DstIP = dnstapObject.Message.GetResponseAddress()
+	myDNSResult.DstPort = uint16(dnstapObject.Message.GetResponsePort())
 	myDNSResult.Protocol = strings.ToLower(dnstapObject.Message.GetSocketProtocol().String())
 
 	message := dnstapObject.Message.GetQueryMessage()

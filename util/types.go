@@ -14,7 +14,9 @@ type DNSResult struct {
 	DNS          mkdns.Msg
 	IPVersion    uint8
 	SrcIP        net.IP
+	SrcPort      uint16 `json:",omitempty"`
 	DstIP        net.IP
+	DstPort      uint16 `json:",omitempty"`
 	Protocol     string
 	PacketLength uint16
 	Identity     string `json:",omitempty"`

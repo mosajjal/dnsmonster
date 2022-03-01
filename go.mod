@@ -30,26 +30,24 @@ require (
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.0.12
-	github.com/bytedance/sonic v1.1.0
+	github.com/bytedance/sonic v1.1.1
 	github.com/chenzhuoyu/base64x v0.0.0-20211229061535-45e1f0233683 // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/miekg/dns v1.1.46
 	github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.7
 	github.com/olivere/elastic v6.2.37+incompatible
-	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0
 	github.com/rogpeppe/fastuuid v1.2.0
-	github.com/segmentio/kafka-go v0.4.28
+	github.com/segmentio/kafka-go v0.4.29
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
-	golang.org/x/sys v0.0.0-20220222200937-f2425489ef4c // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.27.1
 )

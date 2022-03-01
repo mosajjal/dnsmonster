@@ -246,6 +246,8 @@ func FNV1A(input []byte) uint64 {
 	return hash
 }
 
-// This will allow an instance to be spawned at import time
+// This variable is accessible globally
 var GlobalCaptureConfig *CaptureConfig
+
+// The next line will allow an instance to be spawned at import time
 var _ = CaptureConfig{}.initializeFlags()

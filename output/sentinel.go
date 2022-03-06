@@ -160,7 +160,8 @@ func (seConfig SentinelConfig) Output() {
 
 	batch := "["
 	cnt := 0
-	//todo: solve the batch delay issue
+	//todo: test the batch delay solution
+	var now = time.Now()
 	for data := range seConfig.outputChannel {
 		for _, dnsQuery := range data.DNS.Question {
 
@@ -172,7 +173,7 @@ func (seConfig SentinelConfig) Output() {
 			cnt++
 			batch += data.GetJson()
 			batch += ","
-			if cnt == int(seConfig.SentinelBatchSize) {
+			if cnt == int(seConfig.SentinelBatchSize) || time.Since(now) > seConfig.SentinelBatchDelay {
 				// remove the last ,
 				batch = strings.TrimSuffix(batch, ",")
 				batch += "]"
@@ -180,6 +181,7 @@ func (seConfig SentinelConfig) Output() {
 				//reset counters
 				batch = "["
 				cnt = 0
+				now = time.Now()
 			}
 		}
 	}

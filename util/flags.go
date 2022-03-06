@@ -12,6 +12,7 @@ import (
 
 var releaseVersion string = "DEVELOPMENT"
 var GlobalParser = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
+var GlobalMetricConfig MetricConfig
 
 var SkipDomainMapBool = false
 var AllowDomainMapBool = false
@@ -27,7 +28,6 @@ type GeneralConfig struct {
 	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
 	GcTime                      time.Duration  `long:"gcTime"                      env:"DNSMONSTER_GCTIME"                      default:"10s"                                                     description:"Garbage Collection interval for tcp assembly and ip defragmentation"`
 	CaptureStatsDelay           time.Duration  `long:"captureStatsDelay"           env:"DNSMONSTER_CAPTURESTATSDELAY"           default:"1s"                                                      description:"Duration to calculate interface stats"`
-	PrintStatsDelay             time.Duration  `long:"printStatsDelay"             env:"DNSMONSTER_PRINTSTATSDELAY"             default:"10s"                                                     description:"Duration to print capture and database stats"`
 	MaskSize4                   int            `long:"maskSize4"                   env:"DNSMONSTER_MASKSIZE4"                   default:"32"                                                      description:"Mask IPv4s by bits. 32 means all the bits of IP is saved in DB"`
 	MaskSize6                   int            `long:"maskSize6"                   env:"DNSMONSTER_MASKSIZE6"                   default:"128"                                                     description:"Mask IPv6s by bits. 32 means all the bits of IP is saved in DB"`
 	ServerName                  string         `long:"serverName"                  env:"DNSMONSTER_SERVERNAME"                  default:"default"                                                 description:"Name of the server used to index the metrics."`
@@ -69,13 +69,13 @@ var helpOptions struct {
 
 func ProcessFlags() {
 	//todo: flags are camel-case but ini is not. this needs to be consistent
-
 	GeneralFlags.wg = &sync.WaitGroup{}
 	GeneralFlags.exiting = make(chan bool)
 
 	iniParser := flags.NewIniParser(GlobalParser)
 	GlobalParser.AddGroup("general", "General Options", &GeneralFlags)
 	GlobalParser.AddGroup("help", "Help Options", &helpOptions)
+	GlobalParser.AddGroup("metric", "Metrics", &GlobalMetricConfig)
 	f, err := GlobalParser.Parse()
 	if err != nil {
 		log.Fatalf("Error parsing flags %v with error %s", f, err)

@@ -180,6 +180,9 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 - Default values (No configuration)
 
 ## Command line options
+
+Note that command line arguments are case-sensitive at the moment. This is the [known limitation](https://github.com/jessevdk/go-flags/issues/333) of the underlying flag parser library `dnsmonster` uses.  
+
 [//]: <> (start of command line options)
 ```
   dnsmonster
@@ -713,10 +716,10 @@ NOTE: if your `pcap` file is captured by one of Linux's meta-interfaces (eg tcpd
 - [x] Getting the data ready to be used for ML & Anomaly Detection
 - [x] De-duplication support (WIP)
 - [x] Optional SSL for Clickhouse
+- [x] `statsd` and `Prometheus` support 
 - [ ] Splunk Dashboard
 - [ ] Kibana Dashbaord
 - [ ] Clickhouse versioning and migration tool
-- [ ] `statsd` and `Prometheus` support 
 - [ ] tests and benchmarks
 
 # Related projects

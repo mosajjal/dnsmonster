@@ -50,11 +50,13 @@ func main() {
 		defer profile.Start(profile.MemProfile).Stop()
 	}
 
+	err := util.GlobalMetricConfig.SetupMetrics()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Setup SIGINT handling
 	handleInterrupt()
-
-	// todo: this needs to be its own file with configurable output formats and endpoints (stdout, file, syslog, prometheus, etc)
-	go metrics.Log(metrics.DefaultRegistry, util.GeneralFlags.PrintStatsDelay, log.StandardLogger())
 
 	// set up capture
 	capture.GlobalCaptureConfig.CheckFlagsAndStart()

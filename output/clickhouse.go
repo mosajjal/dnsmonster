@@ -69,7 +69,7 @@ func (chConfig ClickhouseConfig) OutputChannel() chan util.DNSResult {
 
 var uuidGen = fastuuid.MustNewGenerator()
 
-func (chConfig ClickhouseConfig) connectClickhouseRetry() clickhouse.Conn {
+func (chConfig ClickhouseConfig) connectClickhouseRetry() (driver.Conn, driver.Batch) {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if chConfig.ClickhouseOutputType == 0 {
@@ -77,9 +77,11 @@ func (chConfig ClickhouseConfig) connectClickhouseRetry() clickhouse.Conn {
 	}
 	defer tick.Stop()
 	for {
-		c, err := chConfig.connectClickhouse()
+		c, b, err := chConfig.connectClickhouse()
 		if err == nil {
-			return c
+			return c, b
+		} else {
+			log.Errorf("Error connecting to Clickhouse: %s", err)
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
@@ -88,7 +90,7 @@ func (chConfig ClickhouseConfig) connectClickhouseRetry() clickhouse.Conn {
 	}
 }
 
-func (chConfig ClickhouseConfig) connectClickhouse() (clickhouse.Conn, error) {
+func (chConfig ClickhouseConfig) connectClickhouse() (driver.Conn, driver.Batch, error) {
 	compressOption := &clickhouse.Compression{Method: compress.NONE}
 	tlsOption := &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification}
 	if chConfig.ClickhouseCompress {
@@ -116,10 +118,10 @@ func (chConfig ClickhouseConfig) connectClickhouse() (clickhouse.Conn, error) {
 	// connection, err := clickhouse.Open(fmt.Sprintf("tcp://%v?debug=%v&skip_verify=%v&secure=%v&compress=%v&username=%s&password=%s&database=%s", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug, util.GeneralFlags.SkipTLSVerification, chConfig.ClickhouseSecure, chConfig.ClickhouseCompress, chConfig.ClickhouseUsername, chConfig.ClickhousePassword, chConfig.ClickhouseDatabase))
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return connection, nil, err
 	}
-
-	return connection, err
+	batch, err := connection.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+	return connection, batch, err
 }
 
 // Main handler for Clickhouse output. the data from the dispatched output channel will reach this function
@@ -134,18 +136,12 @@ func (chConfig ClickhouseConfig) Output() {
 	}
 }
 
-var batchQueue = make(chan driver.Batch, 1000)
-
 func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
-	connect := chConfig.connectClickhouseRetry()
+	conn, batch := chConfig.connectClickhouseRetry()
 	ctx = context.Background()
 	clickhouseSentToOutput := metrics.GetOrRegisterCounter("clickhouseSentToOutput", metrics.DefaultRegistry)
 	clickhouseSkipped := metrics.GetOrRegisterCounter("clickhouseSkipped", metrics.DefaultRegistry)
-
-	batch, err := connect.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
-	if err != nil {
-		log.Warnf("Error preparing batch: %v", err) //todo: potentially better errors
-	}
+	clickhouseFailed := metrics.GetOrRegisterCounter("clickhouseFailed", metrics.DefaultRegistry)
 
 	c := uint(0)
 	for {
@@ -187,7 +183,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 				tempUuidGen := uuidGen.Next()
 				var myUUID uuid.UUID
 				copy(myUUID[:], tempUuidGen[:16])
-				err = batch.Append(
+				err := batch.Append(
 					data.Timestamp,
 					time.Now(),
 					util.GeneralFlags.ServerName,
@@ -208,17 +204,19 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 					myUUID,
 				)
 				if err != nil {
-					log.Warnf("Error while executing batch: %v", err) //todo:potentially add this to stats
+					log.Warnf("Error while executing batch: %v", err)
+					clickhouseFailed.Inc(1)
 				}
-				//todo: incorporate batch timeout here. There needs to be a way to send the results even though the batch is not full
+				//todo: test batch timeout here.
 				if c%chConfig.ClickhouseBatchSize == 0 || time.Since(now) > chConfig.ClickhouseDelay {
 
-					c = 0
 					err = batch.Send()
 					if err != nil {
-						log.Warnf("Error while executing batch: %v", err) //todo:potentially add this to stats
+						log.Warnf("Error while executing batch: %v", err)
+						clickhouseFailed.Inc(int64(c))
 					}
-					batch, _ = connect.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+					c = 0
+					batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
 					now = time.Now()
 				}
 			}

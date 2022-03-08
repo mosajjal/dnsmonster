@@ -29,7 +29,11 @@ func setupOutputs(resultChannel *chan util.DNSResult) {
 			// since we just removed the last item, we should go back one index to keep it consistent
 			i--
 		}
+	}
 
+	//check to see if at least one output is specified, otherwise we should panic exit
+	if len(util.GlobalDispatchList) == 0 {
+		log.Fatal("No output specified. Please specify at least one output")
 	}
 
 	skipDomainsFileTicker := time.NewTicker(util.GeneralFlags.SkipDomainsRefreshInterval)

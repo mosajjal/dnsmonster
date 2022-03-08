@@ -145,11 +145,6 @@ func ProcessFlags() {
 
 	if GeneralFlags.SkipDomainsFile != "" {
 		log.Info("skipDomainsFile is provided")
-		// todo: check to see if the file provided exists
-		// commented because this now can be either filepath or URL
-		// if _, err := os.Stat(generalOptions.SkipDomainsFile); err != nil {
-		// 	log.Fatal("error in finding SkipDomains file. You must provide a path to an existing filename")
-		// }
 		if GeneralFlags.SkipDomainsFileType != "csv" && GeneralFlags.SkipDomainsFileType != "hashtable" {
 			log.Fatal("skipDomainsFileType must be either csv or hashtable")
 		}
@@ -160,11 +155,6 @@ func ProcessFlags() {
 
 	if GeneralFlags.AllowDomainsFile != "" {
 		log.Info("allowDomainsFile is provided")
-		// todo: check to see if the file provided exists
-		// commented because this now can be either filepath or URL
-		// if _, err := os.Stat(generalOptions.AllowDomainsFile); err != nil {
-		// 	log.Fatal("error in finding allowDomainsFile. You must provide a path to an existing filename")
-		// }
 		if GeneralFlags.AllowDomainsFileType != "csv" && GeneralFlags.AllowDomainsFileType != "hashtable" {
 			log.Fatal("allowDomainsFileType must be either csv or hashtable")
 		}
@@ -172,8 +162,6 @@ func ProcessFlags() {
 			AllowDomainMapBool = true
 		}
 	}
-
-	// todo: check to see if there's at least one output is enabled. possibly can add all the types and see if it's a positive number
 
 	if GeneralFlags.MaskSize4 > 32 || GeneralFlags.MaskSize4 < 0 {
 		log.Fatal("--maskSize4 must be between 0 and 32")

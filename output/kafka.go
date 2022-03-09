@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"time"
@@ -153,7 +152,7 @@ func (kafConfig KafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util
 
 	return kWriter.WriteMessages(context.Background(), kafka.Message{
 		Key:   []byte(myUUID),
-		Value: []byte(fmt.Sprintf("%s\n", dnsresult.GetJson())),
+		Value: []byte(dnsresult.GetJson()),
 	})
 }
 

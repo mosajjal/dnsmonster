@@ -896,14 +896,14 @@ metric:
                                                       [$DNSMONSTER_METRICSTATSD-
 
                                                       AGENT]
-      --metricPromethusEndpoint=                      Promethus Registry
+      --metricPrometheusEndpoint=                     Prometheus Registry
                                                       endpoint. Example:
                                                       http://0.0.0.0:2112/metri-
 
                                                       c
                                                       [$DNSMONSTER_METRICPROMET-
 
-                                                      HUSENDPOINT]
+                                                      HEUSENDPOINT]
       --metricFlushInterval=                          Interval between sending
                                                       results to Metric
                                                       Endpoint (default: 10s)

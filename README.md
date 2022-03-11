@@ -926,7 +926,7 @@ $ sudo -E dnsmonster
 you can run `dnsmonster` using the following command to in order to use configuration file:
 
 ```shell
-$ sudo dnsmonster -config=dnsmonster.ini
+$ sudo dnsmonster --config=dnsmonster.ini
 
 # Or you can use environment variables to set the configuration file path
 $ export DNSMONSTER_CONFIG=dnsmonster.ini

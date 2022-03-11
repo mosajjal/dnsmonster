@@ -45,7 +45,7 @@ func main() {
 	if util.GeneralFlags.Cpuprofile != "" {
 		defer profile.Start(profile.CPUProfile).Stop()
 	}
-	// Setup the memory profile if reuqested
+	// Setup the memory profile if requested
 	if util.GeneralFlags.Memprofile != "" {
 		defer profile.Start(profile.MemProfile).Stop()
 	}

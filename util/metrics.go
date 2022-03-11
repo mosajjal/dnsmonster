@@ -17,10 +17,10 @@ import (
 // the capture and output metrics and stats are handled here.
 
 type MetricConfig struct {
-	MetricEndpointType      string        `long:"metricEndpointType"       env:"DNSMONSTER_METRICENDPOINTTYPE"      default:"stderr" description:"Metric Endpoint Service"    choice:"statsd" choice:"prometheus" choice:"stderr"`
-	MetricStatsdAgent       string        `long:"metricStatsdAgent"        env:"DNSMONSTER_METRICSTATSDAGENT"       default:""       description:"Statsd endpoint. Example: 127.0.0.1:8125 "`
-	MetricPromethusEndpoint string        `long:"metricPromethusEndpoint"  env:"DNSMONSTER_METRICPROMETHUSENDPOINT" default:""       description:"Promethus Registry endpoint. Example: http://0.0.0.0:2112/metric"`
-	MetricFlushInterval     time.Duration `long:"metricFlushInterval"      env:"DNSMONSTER_METRICFLUSHINTERVAL"     default:"10s"    description:"Interval between sending results to Metric Endpoint"`
+	MetricEndpointType       string        `long:"metricEndpointType"       env:"DNSMONSTER_METRICENDPOINTTYPE"       default:"stderr" description:"Metric Endpoint Service"    choice:"statsd" choice:"prometheus" choice:"stderr"`
+	MetricStatsdAgent        string        `long:"metricStatsdAgent"        env:"DNSMONSTER_METRICSTATSDAGENT"        default:""       description:"Statsd endpoint. Example: 127.0.0.1:8125 "`
+	MetricPrometheusEndpoint string        `long:"metricPrometheusEndpoint" env:"DNSMONSTER_METRICPROMETHEUSENDPOINT" default:""       description:"Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric"`
+	MetricFlushInterval      time.Duration `long:"metricFlushInterval"      env:"DNSMONSTER_METRICFLUSHINTERVAL"      default:"10s"    description:"Interval between sending results to Metric Endpoint"`
 	// MetricProxy             string        `long:"metricProxy"              env:"DNSMONSTER_METRICPROXY"             default:""       description:"URI formatted proxy server to use for metric endpoint. Example: http://username:password@hostname:port"`
 }
 
@@ -42,13 +42,13 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 
 	case "prometheus":
 		log.Infof("Prometheus Metrics enabled")
-		if metricConfig.MetricPromethusEndpoint == "" {
+		if metricConfig.MetricPrometheusEndpoint == "" {
 			return fmt.Errorf("promethus Registry is required")
 		}
 		prometheusClient := prometheusmetrics.NewPrometheusProvider(metrics.DefaultRegistry, "dnsmonster", GeneralFlags.ServerName, prometheus.DefaultRegisterer, 1*time.Second)
 		go prometheusClient.UpdatePrometheusMetrics()
 
-		u, err := url.Parse(metricConfig.MetricPromethusEndpoint)
+		u, err := url.Parse(metricConfig.MetricPrometheusEndpoint)
 		if err != nil || u.Path == "" {
 			return fmt.Errorf("invalid URL for Prometheus")
 		}

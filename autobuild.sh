@@ -36,7 +36,7 @@ dockercomposetemplate=$(cat <<EOF
         timeout: 10s
         retries: 3
   grafana:
-    image: grafana/grafana:8.3.3
+    image: grafana/grafana:8.4.3
     restart: always
     ports:
       - "3000:3000"

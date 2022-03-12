@@ -11,7 +11,6 @@ import (
 )
 
 func TcpdumpToPcapgoBpf(filter string) []bpf.RawInstruction {
-	returnByteCodes := []bpf.RawInstruction{}
 	log.Warnf("dnsmonster has been compiled without libpcap support. BPF filters are not supported.")
-	return returnByteCodes
+	return nil
 }

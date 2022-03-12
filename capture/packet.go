@@ -81,9 +81,6 @@ func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
 			timestamp = time.Now()
 		}
 		parser.DecodeLayers(packet.bytes, &foundLayerTypes)
-		// for _, layer := range foundLayerTypes {
-		// 	log.Warnf("found %#+v layer", layer.String()) //todo:remove
-		// }
 		// first parse the ip layer, so we can find fragmented packets
 		for _, layerType := range foundLayerTypes {
 			switch layerType {

@@ -288,6 +288,11 @@ capture:
                                                       with --devName and
                                                       --pcapFile. Experimental
                                                       [$DNSMONSTER_DEDUP]
+      --noPromiscuous                                 Do not put the interface
+                                                      in promiscuous mode
+                                                      [$DNSMONSTER_NOPROMISCUOU-
+
+                                                      S]
 
 clickhouse_output:
       --clickhouseAddress=                            Address of the clickhouse

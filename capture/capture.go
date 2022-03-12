@@ -36,6 +36,7 @@ type CaptureConfig struct {
 	UseAfpacket                bool          `long:"useAfpacket"                env:"DNSMONSTER_USEAFPACKET"                description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
 	NoEthernetframe            bool          `long:"noEtherframe"               env:"DNSMONSTER_NOETHERFRAME"               description:"The PCAP capture does not contain ethernet frames"`
 	Dedup                      bool          `long:"dedup"                      env:"DNSMONSTER_DEDUP"                      description:"Deduplicate incoming packets, Only supported with --devName and --pcapFile. Experimental "`
+	NoPromiscuous              bool          `long:"noPromiscuous"              env:"DNSMONSTER_NOPROMISCUOUS"              description:"Do not put the interface in promiscuous mode"`
 	processingChannel          chan *rawPacketBytes
 	ip4Defrgger                chan ipv4ToDefrag
 	ip6Defrgger                chan ipv6FragmentInfo

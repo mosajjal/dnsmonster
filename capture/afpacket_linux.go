@@ -5,6 +5,7 @@ package capture
 
 import (
 	"os"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -32,11 +33,14 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 
 func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 	pcapBPF := TcpdumpToPcapgoBpf(filter)
-	log.Infof("Filter: %s", filter)
-	err = h.TPacket.SetBPF(pcapBPF)
-	if err != nil {
+	// nil means the binary is compiled w/o bpf support
+	if pcapBPF != nil {
+		log.Infof("Filter: %s", filter)
+		err = h.TPacket.SetBPF(pcapBPF)
 		if err != nil {
-			log.Fatal(err)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 	return err
@@ -67,12 +71,21 @@ func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	return frameSize, blockSize, numBlocks, nil
 }
 
+func (config CaptureConfig) setPromiscuous() error {
+	var err error
+	if !config.NoPromiscuous {
+		// TODO: replace with x/net/bpf or pcap
+		err = syscall.SetLsfPromisc(config.DevName, !config.NoPromiscuous)
+		log.Infof("Promiscuous mode: %v", !config.NoPromiscuous)
+	}
+	return err
+}
+
 func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	// Open device
 	// var tPacket *afpacket.TPacket
 	var err error
 	handle := &afpacketHandle{}
-
 	frameSize, blockSize, numBlocks, err := afpacketComputeSize(
 		config.AfpacketBuffersizeMb,
 		65536,
@@ -91,8 +104,13 @@ func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpa
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	handle.SetBPFFilter(filter, 1024)
+
+	// set up promisc mode. first we need to get the fd for the interface we just opened. using a hacky mode
+	// v := reflect.ValueOf(handle.TPacket)
+	// fd := v.FieldByName("fd").Int()
+	config.setPromiscuous()
+
 	log.Infof("Opened: %s", devName)
 	return handle
 }

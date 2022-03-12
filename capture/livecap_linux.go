@@ -16,6 +16,7 @@ type livePcapHandle struct {
 func initializeLivePcap(devName, filter string) *livePcapHandle {
 	// Open device
 	handle, err := pcapgo.NewEthernetHandle(devName)
+	handle.SetPromiscuous(!GlobalCaptureConfig.NoPromiscuous)
 	// handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
 	if err != nil {
 		log.Fatal(err)
@@ -23,10 +24,13 @@ func initializeLivePcap(devName, filter string) *livePcapHandle {
 
 	// Set Filter
 	log.Infof("Using Device: %s", devName)
-	log.Infof("Filter: %s", filter)
-	err = handle.SetBPF(TcpdumpToPcapgoBpf(filter))
-	if err != nil {
-		log.Fatal(err)
+	bpf := TcpdumpToPcapgoBpf(filter)
+	if bpf != nil {
+		log.Infof("Filter: %s", filter)
+		err = handle.SetBPF(bpf)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	h := livePcapHandle{handle}
 	return &h

@@ -53,6 +53,7 @@ func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
 	var detectIP DetectIP
 	var ethLayer layers.Ethernet
 	var vlan layers.Dot1Q
+	var vxlan layers.VXLAN //todo: investigate the performance impact of adding another layer to decoder
 	var ip4 layers.IPv4
 	var ip6 layers.IPv6
 	var udp layers.UDP
@@ -62,6 +63,7 @@ func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
 	decodeLayers := []gopacket.DecodingLayer{
 		&ethLayer,
 		&vlan,
+		&vxlan,
 		&ip4,
 		&ip6,
 		&udp,

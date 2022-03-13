@@ -133,3 +133,13 @@ ENGINE=SummingMergeTree
   TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
   SETTINGS index_granularity = 8192
   AS SELECT DnsDate, timestamp, Server, IPVersion, DstIP, count(*) as c FROM DNS_LOG GROUP BY Server, DnsDate, timestamp, IPVersion, DstIP ;  
+
+-- sample queries
+
+-- new domains over the past 24 hours
+-- SELECT DISTINCT Question FROM (SELECT Question from DNS_LOG WHERE toStartOfDay(timestamp) > Now() - INTERVAL 1 DAY) AS dns1 LEFT ANTI JOIN (SELECT Question from DNS_LOG WHERE toStartOfDay(timestamp) < Now() - INTERVAL 1 DAY  AND toStartOfDay(timestamp) > (Now() - toIntervalDay(10))  ) as dns2 ON dns1.Question = dns2.Question
+
+-- timeline of request count every 5 minutes
+-- SELECT toStartOfFiveMinute(timestamp) as t, count() from DNS_LOG GROUP BY t ORDER BY t
+
+-- 

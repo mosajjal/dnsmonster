@@ -187,13 +187,13 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 ```
 # [capture]
 # Device used to capture
---devName =
+--devName=
 
 # Pcap filename to run
---pcapFile =
+--pcapFile=
 
 # dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
---dnstapSocket =
+--dnstapSocket=
 
 # Port selected to filter packets
 --port=53
@@ -251,10 +251,10 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --clickhouseAddress=localhost:9000
 
 # Username to connect to the clickhouse database
---clickhouseUsername =
+--clickhouseUsername=
 
 # Password to connect to the clickhouse database
---clickhousePassword =
+--clickhousePassword=
 
 # Database to connect to the clickhouse database
 --clickhouseDatabase=default
@@ -301,7 +301,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --elasticOutputType=0
 
 # elastic endpoint address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none
---elasticOutputEndpoint =
+--elasticOutputEndpoint=
 
 # elastic index
 --elasticOutputIndex=default
@@ -322,7 +322,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --fileOutputType=0
 
 # Path to output file. Used if fileOutputType is not none
---fileOutputPath =
+--fileOutputPath=
 
 # Output format for file. options:json,csv. note that the csv splits the datetime format into multiple fields
 --fileOutputFormat=json
@@ -337,7 +337,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --influxOutputType=0
 
 # influx Server address, example: http://localhost:8086. Used if influxOutputType is not none
---influxOutputServer =
+--influxOutputServer=
 
 # Influx Server Auth Token
 --influxOutputToken=dnsmonster
@@ -364,7 +364,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --kafkaOutputType=0
 
 # kafka broker address(es), example: 127.0.0.1:9092. Used if kafkaOutputType is not none
---kafkaOutputBroker =
+--kafkaOutputBroker=
 
 # Kafka topic for logging
 --kafkaOutputTopic=dnsmonster
@@ -385,13 +385,13 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --kafkaSecure
 
 # Path of CA certificate that signs Kafka broker certificate
---kafkaCACertificatePath =
+--kafkaCACertificatePath=
 
 # Path of TLS certificate to present to broker
---kafkaTLSCertificatePath =
+--kafkaTLSCertificatePath=
 
 # Path of TLS certificate key
---kafkaTLSKeyPath =
+--kafkaTLSKeyPath=
 
 # [sentinel_output]
 # What should be written to Microsoft Sentinel. options:
@@ -403,16 +403,16 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --sentinelOutputType=0
 
 # Sentinel Shared Key, either the primary or secondary, can be found in Agents Management page under Log Analytics workspace
---sentinelOutputSharedKey =
+--sentinelOutputSharedKey=
 
 # Sentinel Customer Id. can be found in Agents Management page under Log Analytics workspace
---sentinelOutputCustomerId =
+--sentinelOutputCustomerId=
 
 # Sentinel Output LogType
 --sentinelOutputLogType=dnsmonster
 
 # Sentinel Output Proxy in URI format
---sentinelOutputProxy =
+--sentinelOutputProxy=
 
 # Sentinel Batch Size
 --sentinelBatchSize=100
@@ -430,7 +430,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --splunkOutputType=0
 
 # splunk endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none, can be specified multiple times for load balanace and HA
---splunkOutputEndpoint =
+--splunkOutputEndpoint=
 
 # Splunk HEC Token
 --splunkOutputToken=00000000-0000-0000-0000-000000000000
@@ -500,10 +500,10 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --resultChannelSize=100000
 
 # write cpu profile to file
---cpuprofile =
+--cpuprofile=
 
 # write memory profile to file
---memprofile =
+--memprofile=
 
 # GOMAXPROCS variable
 --gomaxprocs=-1
@@ -512,7 +512,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --packetLimit=0
 
 # Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path
---skipDomainsFile =
+--skipDomainsFile=
 
 # Hot-Reload skipDomainsFile interval
 --skipDomainsRefreshInterval=1m0s
@@ -521,7 +521,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --skipDomainsFileType=csv
 
 # Allow Domains logic input file. Can accept a URL (http:// or https://) or path
---allowDomainsFile =
+--allowDomainsFile=
 
 # Hot-Reload allowDomainsFile file interval
 --allowDomainsRefreshInterval=1m0s
@@ -537,10 +537,10 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --metricEndpointType=
 
 # Statsd endpoint. Example: 127.0.0.1:8125 
---metricStatsdAgent =
+--metricStatsdAgent=
 
 # Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric
---metricPrometheusEndpoint =
+--metricPrometheusEndpoint=
 
 # Interval between sending results to Metric Endpoint
 --metricFlushInterval=10s

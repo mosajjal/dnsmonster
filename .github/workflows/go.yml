@@ -40,7 +40,7 @@ jobs:
         START="$(($(grep -n "start of command line options" README.md | cut -f1 -d:)+2))"
         END="$(($(grep -n "end of command line options" README.md | cut -f1 -d:)-2))"
         USAGE=$(cat <<-END
-        $(COLUMNS=120 ./dnsmonster --help | sed -r 1d)
+        $(./dnsmonster --writeConfig /dev/stdout | sed -E 's/^;/#/; s/^\w/--\l&/; s/^\[/# \[/; s/ =./=/; s/=false|stderr//')
         END
         )
         awk -v var="$USAGE" 'NR=='$START'{print var} NR<'$START' || NR>'$END README.md > README.tmp

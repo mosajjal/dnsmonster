@@ -181,7 +181,7 @@ DNSMonster can be configured using 3 different methods. Command line options, En
 
 ## Command line options
 
-Note that command line arguments are case-sensitive at the moment. This is the [known limitation](https://github.com/jessevdk/go-flags/issues/333) of the underlying flag parser library `dnsmonster` uses.  
+Note that command line arguments are case-sensitive and camelCase at the moment. This is the [known limitation](https://github.com/jessevdk/go-flags/issues/333) of the underlying flag parser library `dnsmonster` uses. 
 
 [//]: <> (start of command line options)
 ```

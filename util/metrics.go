@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	prometheusmetrics "github.com/deathowl/go-metrics-prometheus"
@@ -42,7 +43,7 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 		go reporter.Flush()
 
 	case "prometheus":
-		// log.Infof("Prometheus Metrics enabled")
+		log.Infof("Prometheus Metrics enabled")
 		if metricConfig.MetricPrometheusEndpoint == "" {
 			return fmt.Errorf("promethus Registry is required")
 		}
@@ -63,7 +64,7 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 		go func() {
 			for range time.Tick(metricConfig.MetricFlushInterval) {
 				metricsJson, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
-				log.Infof("metrics: %s", metricsJson)
+				os.Stderr.WriteString(fmt.Sprintf("metrics: %s\n", metricsJson))
 			}
 		}()
 

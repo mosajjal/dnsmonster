@@ -31,6 +31,7 @@ type GeneralConfig struct {
 	MaskSize4                   int            `long:"maskSize4"                   env:"DNSMONSTER_MASKSIZE4"                   default:"32"                                                      description:"Mask IPv4s by bits. 32 means all the bits of IP is saved in DB"`
 	MaskSize6                   int            `long:"maskSize6"                   env:"DNSMONSTER_MASKSIZE6"                   default:"128"                                                     description:"Mask IPv6s by bits. 32 means all the bits of IP is saved in DB"`
 	ServerName                  string         `long:"serverName"                  env:"DNSMONSTER_SERVERNAME"                  default:"default"                                                 description:"Name of the server used to index the metrics."`
+	LogFormat                   string         `long:"logFormat"                   env:"DNSMONSTER_LOGFORMAT"                   default:"text"                                                    description:"Set debug Log format" choice:"json" choice:"text"`
 	LogLevel                    uint           `long:"logLevel"                    env:"DNSMONSTER_LOGLEVEL"                    default:"3"                                                       description:"Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	ResultChannelSize           uint           `long:"resultChannelSize"           env:"DNSMONSTER_RESULTCHANNELSIZE"           default:"100000"                                                  description:"Size of the result processor channel size"`
 	Cpuprofile                  string         `long:"cpuprofile"                  env:"DNSMONSTER_CPUPROFILE"                  default:""                                                        description:"write cpu profile to file"`
@@ -119,7 +120,6 @@ func ProcessFlags() {
 		GlobalParser.Parse()
 	}
 
-	// default logging to warning
 	var lvl log.Level = log.WarnLevel
 	switch GeneralFlags.LogLevel {
 	case 0:
@@ -140,8 +140,12 @@ func ProcessFlags() {
 		log.Fatalln("dnsmonster version:", releaseVersion)
 	}
 
-	//TODO: log format needs to be a configurable parameter
-	// log.SetFormatter(&log.JSONFormatter{})
+	switch GeneralFlags.LogFormat {
+	case "json":
+		log.SetFormatter(&log.JSONFormatter{})
+	case "text":
+		log.SetFormatter(&log.TextFormatter{})
+	}
 
 	if GeneralFlags.SkipDomainsFile != "" {
 		log.Info("skipDomainsFile is provided")

@@ -7,6 +7,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
@@ -68,5 +70,6 @@ func main() {
 	util.GeneralFlags.GetWg().Wait()
 	<-time.After(2 * time.Second)
 	// print metrics for one last time before exiting the program
-	metrics.WriteOnce(metrics.DefaultRegistry, log.StandardLogger().Writer())
+	metricsJson, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
+	os.Stderr.WriteString(fmt.Sprintf("metrics: %s", metricsJson))
 }

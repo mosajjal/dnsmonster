@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -41,7 +42,7 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 		go reporter.Flush()
 
 	case "prometheus":
-		log.Infof("Prometheus Metrics enabled")
+		// log.Infof("Prometheus Metrics enabled")
 		if metricConfig.MetricPrometheusEndpoint == "" {
 			return fmt.Errorf("promethus Registry is required")
 		}
@@ -58,7 +59,13 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 		}()
 
 	case "stderr":
-		go metrics.Log(metrics.DefaultRegistry, metricConfig.MetricFlushInterval, log.StandardLogger())
+		// go metrics.Log(metrics.DefaultRegistry, metricConfig.MetricFlushInterval, log.StandardLogger())
+		go func() {
+			for range time.Tick(metricConfig.MetricFlushInterval) {
+				metricsJson, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
+				log.Infof("metrics: %s", metricsJson)
+			}
+		}()
 
 	default:
 		return fmt.Errorf("endpoint Type %s is not supported", metricConfig.MetricEndpointType)

@@ -44,6 +44,7 @@ ParserParams:
 ParserQuery: |
  let rcodes = dynamic(["NOERROR","FORMERR","SERVFAIL","NXDOMAIN","NOTIMP","REFUSED","YXDOMAIN","YXRRSET","NXRRSET","NOTAUTH","NOTZONE","DSOTYPENI"]);
  let rrcodes = dynamic(["RESV","A","NS","MD","MF","CNAME","SOA","MB","MG","MR","NULL","WKS","PTR","HINFO","MINFO","MX","TXT","RP","AFSDB","X25","ISDN","RT","NSAP","NSAP-PTR","SIG","KEY","PX","GPOS","AAAA","LOC","NXT","EID","NIMLOC","SRV","ATMA","NAPTR","KX","CERT","A6","DNAME","SINK","OPT","APL","DS","SSHFP","IPSECKEY","RRSIG","NSEC","DNSKEY","DHCID","NSEC3","NSEC3PARAM","TLSA","SMIMEA","UNASSIGN","HIP","NINFO","RKEY","TALINK","CDS","CDNSKEY","OPENPGPKEY","CSYNC","ZONEMD","SVCB","HTTPS"]);
+ let opcodes = dynamic(["Query","IQuery","Status","Unassigned","Notify","Update","DNS Stateful Operations"]);
  let parser=
     (
     starttime: datetime=datetime(null), 
@@ -60,7 +61,7 @@ ParserQuery: |
     | where not(DNS_Response_b)
     | extend DNS_Question = todynamic(DNS_Question_s)
     | mv-expand DNS_Question
-    | extend EventType = DNS_Opcode_d,
+    | extend EventType = opcodes[toint(DNS_Opcode_d)],
         EventSubType = "request",
         EventResultDetails = rcodes[toint(DNS_Opcode_d)],
         EventSchemaVersion = "0.1.3",

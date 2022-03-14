@@ -493,6 +493,9 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Name of the server used to index the metrics.
 --serverName=default
 
+# Set debug Log format
+--logFormat=text
+
 # Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG
 --logLevel=3
 

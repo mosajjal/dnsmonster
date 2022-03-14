@@ -130,8 +130,9 @@ func ProcessFlags() {
 		lvl = log.WarnLevel
 	case 3:
 		lvl = log.InfoLevel
-	case 4:
+	case 4: //debug caller shows the function name
 		lvl = log.DebugLevel
+		log.SetReportCaller(true)
 	}
 	log.SetLevel(lvl)
 
@@ -141,7 +142,6 @@ func ProcessFlags() {
 
 	//TODO: log format needs to be a configurable parameter
 	// log.SetFormatter(&log.JSONFormatter{})
-	log.SetReportCaller(true)
 
 	if GeneralFlags.SkipDomainsFile != "" {
 		log.Info("skipDomainsFile is provided")

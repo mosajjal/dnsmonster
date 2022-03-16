@@ -108,6 +108,7 @@ func (config CaptureConfig) StartDnsTap() {
 
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
 	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
+	packetsInvalid := metrics.GetOrRegisterGauge("packetsInvalid", metrics.DefaultRegistry)
 	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
 
 	input := parseDnstapSocket(config.DnstapSocket, config.DnstapPermission)
@@ -117,6 +118,7 @@ func (config CaptureConfig) StartDnsTap() {
 	ratioCnt := 0
 	totalCnt := int64(0)
 	droppedCnt := int64(0)
+	invalidCnt := int64(0)
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
@@ -140,6 +142,7 @@ func (config CaptureConfig) StartDnsTap() {
 				res, err := dnsTapMsgToDNSResult(msg)
 				if err != nil {
 					log.Errorf("could not unpack message: %v, content: %s", err, b64.StdEncoding.EncodeToString(msg))
+					invalidCnt++
 					continue
 				}
 
@@ -150,6 +153,7 @@ func (config CaptureConfig) StartDnsTap() {
 		case <-captureStatsTicker.C:
 			packetsCaptured.Update(totalCnt)
 			packetsDropped.Update(droppedCnt)
+			packetsInvalid.Update(invalidCnt)
 			packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
 		}
 	}

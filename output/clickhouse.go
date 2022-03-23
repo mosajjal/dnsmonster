@@ -166,8 +166,8 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 					SrcIP = uint64(binary.BigEndian.Uint32(data.SrcIP))
 					DstIP = uint64(binary.BigEndian.Uint32(data.DstIP))
 				} else {
-					SrcIP = binary.BigEndian.Uint64(data.SrcIP[8:]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
-					DstIP = binary.BigEndian.Uint64(data.DstIP[8:])
+					SrcIP = binary.BigEndian.Uint64(data.SrcIP[:8]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+					DstIP = binary.BigEndian.Uint64(data.DstIP[:8])
 				}
 				QR := uint8(0)
 				if data.DNS.Response {

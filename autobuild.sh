@@ -54,7 +54,7 @@ EOF
 dnsmonsteragent=$(cat <<EOF
 
   dnsmonster_DEVNAME:
-    image: mosajjal/dnsmonster:latest
+    image: ghcr.io/mosajjal/dnsmonster:latest
     restart: always
     cap_add:
       - NET_ADMIN

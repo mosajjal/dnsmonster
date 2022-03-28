@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ type SplunkConfig struct {
 	SplunkOutputEndpoint   []string      `long:"splunkOutputEndpoint"        env:"DNSMONSTER_SPLUNKOUTPUTENDPOINT"        default:""                                                        description:"splunk endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none, can be specified multiple times for load balanace and HA"`
 	SplunkOutputToken      string        `long:"splunkOutputToken"           env:"DNSMONSTER_SPLUNKOUTPUTTOKEN"           default:"00000000-0000-0000-0000-000000000000"                    description:"Splunk HEC Token"`
 	SplunkOutputIndex      string        `long:"splunkOutputIndex"           env:"DNSMONSTER_SPLUNKOUTPUTINDEX"           default:"temp"                                                    description:"Splunk Output Index"`
+	SplunkOutputProxy      string        `long:"splunkOutputProxy"           env:"DNSMONSTER_SPLUNKOUTPUTPROXY"           default:""                                                        description:"Splunk Output Proxy in URI format"`
 	SplunkOutputSource     string        `long:"splunkOutputSource"          env:"DNSMONSTER_SPLUNKOUTPUTSOURCE"          default:"dnsmonster"                                              description:"Splunk Output Source"`
 	SplunkOutputSourceType string        `long:"splunkOutputSourceType"      env:"DNSMONSTER_SPLUNKOUTPUTSOURCETYPE"      default:"json"                                                    description:"Splunk Output Sourcetype"`
 	SplunkBatchSize        uint          `long:"splunkBatchSize"             env:"DNSMONSTER_SPLUNKBATCHSIZE"             default:"1000"                                                    description:"Send data to HEC in batch sizes"`
@@ -85,7 +87,7 @@ func (spConfig SplunkConfig) connectSplunkRetry(splunkEndpoint string) {
 		// check to see if the connection exists
 		if conn, ok := splunkConnectionList[splunkEndpoint]; ok {
 			if conn.Unhealthy != 0 {
-				log.Warnf("Connection is unhealthy: %v", conn.Err)
+				log.Warnf("Connection is unhealthy")
 				splunkConnectionList[splunkEndpoint] = spConfig.connectSplunk(splunkEndpoint)
 			}
 		} else {
@@ -100,6 +102,14 @@ func (spConfig SplunkConfig) connectSplunk(splunkEndpoint string) SplunkConnecti
 
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification}}
 	httpClient := &http.Client{Timeout: time.Second * 20, Transport: tr}
+
+	if spConfig.SplunkOutputProxy != "" {
+		proxyURL, err := url.Parse(spConfig.SplunkOutputProxy)
+		if err != nil {
+			panic(err)
+		}
+		httpClient.Transport = &http.Transport{Proxy: http.ProxyURL(proxyURL)}
+	}
 
 	splunkURL := splunkEndpoint
 	if !strings.HasSuffix(splunkEndpoint, "/services/collector") {
@@ -121,7 +131,7 @@ func (spConfig SplunkConfig) connectSplunk(splunkEndpoint string) SplunkConnecti
 		unhealthy += 1
 	}
 	myConn := SplunkConnection{Client: client, Unhealthy: unhealthy, Err: err}
-	log.Warnf("new splunk connection %v", myConn)
+	log.Warnf("new splunk connection")
 	return myConn
 }
 
@@ -157,8 +167,8 @@ func (spConfig SplunkConfig) Output() {
 			if conn, ok := splunkConnectionList[healthyId]; ok {
 
 				if err := spConfig.splunkSendData(conn.Client, batch); err != nil {
-					log.Info(err)
-					log.Warnf("marking connection as unhealthy: %+v", conn)
+					log.Warn(err)
+					log.Warnf("marking connection as unhealthy")
 					conn.Unhealthy += 1
 					splunkConnectionList[healthyId] = conn
 					splunkFailed.Inc(int64(len(batch)))

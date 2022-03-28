@@ -438,6 +438,9 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Splunk Output Index
 --splunkOutputIndex=temp
 
+# Splunk Output Proxy in URI format
+--splunkOutputProxy=
+
 # Splunk Output Source
 --splunkOutputSource=dnsmonster
 

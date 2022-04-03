@@ -7,6 +7,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -28,9 +29,19 @@ func handleInterrupt() {
 		for range c {
 			for {
 				log.Infof("SIGINT Received. Stopping capture...")
-				for i := 0; i < runtime.NumGoroutine(); i++ {
-					*util.GeneralFlags.GetExit() <- true
-				}
+
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
+				go func() {
+					for i := 0; i < runtime.NumGoroutine(); i++ {
+						*util.GeneralFlags.GetExit() <- true
+					}
+					select {
+					case <-ctx.Done():
+						fmt.Println("Canceled by timeout")
+						return
+					}
+				}()
 				<-time.After(2 * time.Second)
 				log.Fatal("emergency exit")
 				return

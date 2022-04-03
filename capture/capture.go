@@ -3,6 +3,7 @@ package capture
 import (
 	"container/list"
 	"net"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -70,6 +71,15 @@ func (config CaptureConfig) GetResultChannel() *chan util.DNSResult {
 	return &config.resultChannel
 }
 
+func (config CaptureConfig) cleanExit() {
+
+	log.Infof("Stopping capture...")
+	for i := 0; i < runtime.NumGoroutine(); i++ {
+		*util.GeneralFlags.GetExit() <- true
+	}
+	return
+}
+
 func (config CaptureConfig) CheckFlagsAndStart() {
 	if config.Port > 65535 {
 		log.Fatal("--port must be between 1 and 65535")
@@ -131,9 +141,11 @@ func (config CaptureConfig) CheckFlagsAndStart() {
 
 	// Start listening if we're not using DNSTap
 	if config.DnstapSocket == "" {
+		util.GeneralFlags.GetWg().Add(1)
 		go config.StartNonDnsTap()
 	} else {
 		// dnstap is totally different, hence only the result channel is being pushed to it
+		util.GeneralFlags.GetWg().Add(1)
 		go config.StartDnsTap()
 	}
 }

@@ -28,7 +28,9 @@ func handleInterrupt() {
 		for range c {
 			for {
 				log.Infof("SIGINT Received. Stopping capture...")
-				util.GeneralFlags.GetExit() <- true
+				for i := 0; i < runtime.NumGoroutine(); i++ {
+					*util.GeneralFlags.GetExit() <- true
+				}
 				<-time.After(2 * time.Second)
 				log.Fatal("emergency exit")
 				return

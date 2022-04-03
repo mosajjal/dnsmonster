@@ -55,8 +55,8 @@ var GeneralFlags GeneralConfig
 func (g GeneralConfig) GetWg() *sync.WaitGroup {
 	return g.wg
 }
-func (g GeneralConfig) GetExit() chan bool {
-	return g.exiting
+func (g GeneralConfig) GetExit() *chan bool {
+	return &g.exiting
 }
 
 var helpOptions struct {
@@ -71,7 +71,7 @@ var helpOptions struct {
 func ProcessFlags() {
 	//todo: flags are camel-case but ini is not. this needs to be consistent
 	GeneralFlags.wg = &sync.WaitGroup{}
-	GeneralFlags.exiting = make(chan bool)
+	GeneralFlags.exiting = make(chan bool, 1)
 
 	iniParser := flags.NewIniParser(GlobalParser)
 	GlobalParser.AddGroup("general", "General Options", &GeneralFlags)

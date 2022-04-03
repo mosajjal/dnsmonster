@@ -61,6 +61,7 @@ func (config CaptureConfig) StartNonDnsTap() {
 			log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 2 seconds waiting for processing to finish")
 			time.Sleep(time.Second * 2)
 			util.GeneralFlags.GetWg().Done()
+			config.cleanExit()
 			return
 		}
 

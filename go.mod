@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/deathowl/go-metrics-prometheus v0.0.0-20200518174047-74482eab5bfb
 	github.com/google/gopacket v1.1.19
-	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/influxdata/influxdb-client-go/v2 v2.8.1
 	github.com/prometheus/client_golang v1.12.1
@@ -21,6 +20,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.9.1 // indirect
 	github.com/farsightsec/golang-framestream v0.3.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
@@ -42,7 +42,7 @@ require (
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.0.12
-	github.com/bytedance/sonic v1.1.1
+	github.com/bytedance/sonic v1.2.0
 	github.com/chenzhuoyu/base64x v0.0.0-20211229061535-45e1f0233683 // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect

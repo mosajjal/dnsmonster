@@ -1,5 +1,5 @@
-//go:build linux && amd64 && !go1.18
-// +build linux,amd64,!go1.18
+//go:build linux && amd64
+// +build linux,amd64
 
 package util
 

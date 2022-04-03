@@ -133,6 +133,8 @@ func (config CaptureConfig) StartDnsTap() {
 			if msg == nil {
 				log.Info("dnstap socket is returning nil. exiting..")
 				time.Sleep(time.Second * 2)
+				util.GeneralFlags.GetWg().Done()
+				config.cleanExit()
 				return
 			}
 			if ratioCnt%config.ratioB < config.ratioA {

@@ -49,22 +49,24 @@ The code before version 1.x is considered beta quality and is subject to breakin
 
 # Main features
 
-- Can use Linux's `afpacket` and zero-copy packet capture.
+- Ability to use Linux's `afpacket` and zero-copy packet capture.
 - Supports BPF
-- Can mask IP to enhance privacy
-- Can have a pre-processing sampling ratio
-- Can have a list of "skip" `fqdn`s to avoid writing some domains/suffix/prefix to storage, thus improving DB performance
-- Can have a list of "allow" domains to only log hits of certain domains in Clickhouse/Stdout/File
-- Modular output with different logic per output stream. See [Supported Outputs](#supported-outputs)
-- Hot-reload of skip and allow domain files
+- Ability to mask IP address to enhance privacy
+- Ability to have a pre-processing sampling ratio
+- Ability to have a list of "skip" `fqdn`s to avoid writing some domains/suffix/prefix to storage
+- Ability to have a list of "allow" domains, used to log access to certain domains
+- Hot-reload of skip and allow domain files/urls
+- Modular output with configurable logic per output stream.
 - Automatic data retention policy using ClickHouse's TTL attribute
-- Simple Grafana dashboard for Clickhouse tables
-- Can be shipped as a single, statically-linked binary
-- Ability to be configured using Env variables, command line options or configuration file
-- Ability to sample output metrics using ClickHouse's SAMPLE capability
+- Built-in Grafana dashboard for ClickHouse output.
+- Ability to be shipped as a single, statically-linked binary
+- Ability to be configured using environment variables, command line options or configuration file
+- Ability to sample outputs using ClickHouse's SAMPLE capability
+- Ability to send metrics using `prometheus` and `statstd`
 - High compression ratio thanks to ClickHouse's built-in LZ4 storage
 - Supports DNS Over TCP, Fragmented DNS (udp/tcp) and IPv6
 - Supports [dnstrap](https://github.com/dnstap/golang-dnstap) over Unix socket or TCP
+- built-in SIEM integration with Splunk and Microsoft Sentinel
 
 # Installation
 

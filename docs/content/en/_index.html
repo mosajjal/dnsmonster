@@ -1,0 +1,46 @@
++++
+title = "DNSMonster"
+linkTitle = "DNSMonster"
+
++++
+
+{{< blocks/cover title="DNSMonster: passive DNS monitoring" image_anchor="top" height="full" color="orange" >}}
+<div class="mx-auto">
+	<a class="btn btn-lg btn-primary mr-3 mb-4" href="{{< relref "/docs" >}}">
+		Documentation <i class="fas fa-arrow-alt-circle-right ml-2"></i>
+	</a>
+	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="https://github.com/mosajjal/dnsmonster">
+		Download <i class="fab fa-github ml-2 "></i>
+	</a>
+	<p class="lead mt-5">More info</p>
+	{{< blocks/link-down color="info" >}}
+</div>
+{{< /blocks/cover >}}
+
+
+{{% blocks/lead color="primary" %}}
+DNSMonster is a Passive DNS monitoring framework written in Golang. It can accept traffic from a `pcap` file, a network interface (802.1q, Ethernet, IP Packet, VXLAN) or a dnstap socket, and can be used to index and store hundreds of thousands of DNS queries per second. It aims to be scalable, simple and easy to use, and to help security and operation teams to gain visibility over DNS.
+
+`dnsmonster` does not look to follow DNS conversations, rather it aims to index DNS packets as soon as they come in. It also does not aim to breach the privacy of the end-users, with the ability to mask Layer 3 IPs (IPv4 and IPv6), enabling teams to perform trend analysis on aggregated data without being able to trace back the queries to an individual.
+
+
+{{% /blocks/lead %}}
+
+{{< blocks/section color="dark" >}}
+{{% blocks/feature icon="fa-question" title="FAQ" url="/docs/faq" %}}
+Check out the Frequently Asked Questions in the Docs.
+
+{{% /blocks/feature %}}
+
+
+{{% blocks/feature icon="fab fa-github" title="Contributions welcome!" url="https://github.com/mosajjal/dnsmonster" %}}
+Open an Issue or a [Pull Request](https://github.com/mosajjal/dnsmonster/pulls) on **GitHub**. New users are always welcome!
+{{% /blocks/feature %}}
+
+
+{{% blocks/feature icon="fas fa-comments" title="Join the discussion" url="https://github.com/mosajjal/dnsmonster/discussions" %}}
+For announcement of latest features, discussions around the project's roadmap and showcase your setup, discussions is the best place to start.
+{{% /blocks/feature %}}
+
+
+{{< /blocks/section >}}

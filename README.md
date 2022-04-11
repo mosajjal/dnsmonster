@@ -7,7 +7,7 @@
 ![Logo](static/dnsmonster-logo.svg)
 
 Table of Contents
-- [DNS Monster](#dns-monster)
+- [dnsmonster](#dnsmonster)
 - [Main features](#main-features)
 - [Installation](#installation)
   - [Linux](#linux)
@@ -17,8 +17,8 @@ Table of Contents
   - [Windows](#windows)
   - [FreeBSD and MacOS](#freebsd-and-macos)
 - [Architecture](#architecture)
-  - [AIO Installation using Docker](#aio-installation-using-docker)
-    - [AIO Demo](#aio-demo)
+  - [All-in-one Installation using Docker](#all-in-one-installation-using-docker)
+    - [All-in-one Demo](#all-in-one-demo)
   - [Enterprise Deployment](#enterprise-deployment)
 - [Configuration](#configuration)
   - [Command line options](#command-line-options)
@@ -35,15 +35,15 @@ Table of Contents
 - [Roadmap](#roadmap)
 - [Related projects](#related-projects)
 
-# DNS Monster
+# Dnsmonster
 
 Passive DNS monitoring framework built on Golang. 
 `dnsmonster` implements a packet sniffer for DNS traffic. It can accept traffic from a `pcap` file, a live interface or a `dnstap` socket, 
-and can be used to index and store hundreds of thousands of DNS queries per second as it has shown to be capable of indexing 200k+ DNS queries per second on a commodity computer. It aims to be scalable, simple and easy to use, and help
-security teams to understand the details about an enterprise's DNS traffic. `dnsmonster` does not look to follow DNS conversations, rather it aims to index DNS packets as soon as they come in. It also does not aim to breach
+and can be used to index and store hundreds of thousands of DNS queries per second as it has shown to be capable of indexing 200k+ DNS queries per second on a commodity computer. It aims to be scalable, simple, and easy to use, and help
+security teams to understand the details about an enterprise's DNS traffic. `dnsmonster` doesn't look to follow DNS conversations, rather it aims to index DNS packets as soon as they come in. It also doesn't aim to breach
 the privacy of the end-users, with the ability to mask Layer 3 IPs (IPv4 and IPv6), enabling teams to perform trend analysis on aggregated data without being able to trace back the queries to an individual. [Blogpost](https://blog.n0p.me/dnsmonster/)
 
-The code before version 1.x is considered beta quality and is subject to breaking changes. Please check the release notes for each tag to see the list of breaking scenarios between each release, and how to mitigate potential data loss.
+The code before version 1.x is considered beta quality and is subject to breaking changes. Please visit the release notes for each tag to see the list of breaking scenarios between each release, and how to mitigate potential data loss.
 
 ![Inner logic of dnsmonster](static/dnsmonster-inner.svg)
 
@@ -59,7 +59,7 @@ The code before version 1.x is considered beta quality and is subject to breakin
 - Modular output with configurable logic per output stream.
 - Automatic data retention policy using ClickHouse's TTL attribute
 - Built-in Grafana dashboard for ClickHouse output.
-- Ability to be shipped as a single, statically-linked binary
+- Ability to be shipped as a single, statically linked binary
 - Ability to be configured using environment variables, command line options or configuration file
 - Ability to sample outputs using ClickHouse's SAMPLE capability
 - Ability to send metrics using `prometheus` and `statstd`
@@ -72,7 +72,7 @@ The code before version 1.x is considered beta quality and is subject to breakin
 
 ## Linux
 
-Best way to get started with `dnsmonster` is to download the binary from the release section. The binary is statically built against `musl`, hence it should work out of the box for many distros. For `afpacket` support, you must use kernel 3.x+. Any modern Linux distribution (CentOS/RHEL 7+, Ubuntu 14.0.4.2+, Debian 7+) is shipped with a 3.x+ version so it should work out of the box. If your distro is not working with the pre-compiled version properly, please submit an issue with the details, and build `dnsmonster` manually using this section [Build Manually](#build-manually).
+Best way to get started with `dnsmonster` is to download the binary from the release section. The binary is statically built against `musl`, hence it should work out of the box for many distros. For `afpacket` support, you must use kernel 3.x+. Any modern Linux distribution (CentOS/RHEL 7+, Ubuntu 14.0.4.2+, Debian 7+) is shipped with a 3.x+ version so it should work out of the box. If your distro isn't working with the pre-compiled version, please submit an issue with the details, and build `dnsmonster` manually using this section [Build Manually](#build-manually).
 
 ### Container
 
@@ -83,7 +83,7 @@ sudo docker run --rm -it --net=host --cap-add NET_RAW --cap-add NET_ADMIN --name
 ```
 
 
-### Build Manually
+### Build manually
 
 - with `libpcap`:
   Make sure you have `go`, `libpcap-devel` and `linux-headers` packages installed. The name of the packages might differ based on your distribution. After this, simply clone the repository and run `go build .`
@@ -96,7 +96,7 @@ go build -o dnsmonster .
 ```
 
 - without `libpcap`:
-`dnsmonster` only uses one function from `libpcap`, and that is converting the `tcpdump`-style filters into BPF bytecode. If you can live with no BPF support, you can build `dnsmonster` without `libpcap`. Note that for any other platform, the packet capture falls back to `libpcap` so it becomes a hard dependency (*BSD, Windows, Darwin)
+`dnsmonster` only uses one function from `libpcap`, and that's converting the `tcpdump`-style filters into BPF bytecode. If you can live with no BPF support, you can build `dnsmonster` without `libpcap`. Note that for any other platform, the packet capture falls back to `libpcap` so it becomes a hard dependency (*BSD, Windows, Darwin)
 
 ```sh
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
@@ -107,7 +107,7 @@ go build -o dnsmonster -tags nolibpcap .
 
 The above build also works on ARMv7 (RPi4) and AArch64.
 
-### Build Statically
+### Build statically
 
 If you have a copy of `libpcap.a`, you can build the statically link it to `dnsmonster` and build it fully statically. In the code below, please change `/root/libpcap-1.9.1/libpcap.a` to the location of your copy.
 
@@ -124,7 +124,7 @@ For more information on how the statically linked binary is created, take a look
 
 Bulding on Windows is much the same as Linux. Just make sure that you have `npcap`. Clone the repository (`--history 1` works), and run `go get` and `go build .`
 
-As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. I've tested it in a Windows 10 environment and it ran without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
+As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. It's been tested in a Windows 10 environment and it executed without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
 
   - open cmd.exe as Administrator and run the following: `getmac.exe`, you'll see a table with your interfaces' MAC address and a Transport Name column with something like this: `\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}`
   - run `dnsmonster.exe` in `cmd.exe` like this:
@@ -148,11 +148,11 @@ go build -o dnsmonster .
 
 # Architecture
 
-## AIO Installation using Docker
+## All-in-one Installation using Docker
 
 ![Basic AIO Diagram](static/dnsmonster-basic.svg)
 
-In the example diagram, the egress/ingress of the DNS server traffic is captured, after that, an optional layer of packet aggregation is added before hitting the DNSMonster Server. The outbound data going out of DNS Servers is quite useful to perform cache and performance analysis on the DNS fleet. If an aggregator is not available for you, you can have both TAPs connected directly to DNSMonster and have two DNSMonster Agents looking at the traffic. 
+In the example diagram, the egress/ingress of the DNS server traffic is captured, after that, an optional layer of packet aggregation is added before hitting the DNSMonster Server. The outbound data going out of DNS Servers is quite useful to perform cache and performance analysis on the DNS fleet. If an aggregator isn't available for you, you can have both TAPs connected directly to DNSMonster and have two DNSMonster Agents looking at the traffic. 
 
 running `./autobuild.sh` creates multiple containers:
 
@@ -161,7 +161,7 @@ running `./autobuild.sh` creates multiple containers:
 * an instance of `grafana` looking at the `clickhouse` data with pre-built dashboard.
 
 
-### AIO Demo
+### All-in-one Demo
 
 [![AIO Demo](static/aio_demo.svg)](static/aio_demo.svg)
 
@@ -239,7 +239,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Use AFPacket for live captures. Supported on Linux 3.0+ only
 --useAfpacket
 
-# The PCAP capture does not contain ethernet frames
+# The PCAP capture doesn't contain ethernet frames
 --noEthernetframe
 
 # Deduplicate incoming packets, Only supported with --devName and --pcapFile. Experimental 
@@ -556,7 +556,9 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 [//]: <> (end of command line options)
 
 ## Environment variables
-all the flags can also be set via env variables. Keep in mind that the name of each parameter is always all upper case and the prefix for all the variables is "DNSMONSTER". Example:
+all the flags can also be set via env variables. Keep in mind that the name of each parameter is always all upper case and the prefix for all the variables is "DNSMONSTER."
+
+Example:
 
 ```shell
 $ export DNSMONSTER_PORT=53
@@ -565,7 +567,7 @@ $ sudo -E dnsmonster
 ```
 
 ## Configuration file
-you can run `dnsmonster` using the following command to in order to use configuration file:
+you can run `dnsmonster` using the following command to use configuration file:
 
 ```shell
 $ sudo dnsmonster --config=dnsmonster.ini
@@ -601,18 +603,18 @@ ALTER TABLE `.inner.DNS_RESPONSECODE` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ALTER TABLE `.inner.DNS_SRCIP_MASK` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ```
 
-UPDATE: in the latest version of `clickhouse`, the .inner tables do not have the same name as the corresponding aggregation views. In order to modify the TTL you have to find the table names in UUID format using `SHOW TABLES` and repeat the `ALTER` command with those UUIDs.
+UPDATE: in the latest version of `clickhouse`, the .inner tables don't have the same name as the corresponding aggregation views. To modify the TTL you have to find the table names in UUID format using `SHOW TABLES` and repeat the `ALTER` command with those UUIDs.
 
 # Sampling and Skipping
 
 ## pre-process sampling
-`dnsmonster` supports pre-processing sampling of packet using a simple parameter: `sampleRatio`. this parameter accepts a "ratio" value, like "1:2". "1:2" means for each 2 packet that arrives, only process one of them (50% sampling). Note that this sampling happens AFTER `bpf` filters and not before. if you have an issue keeping up with the volume of your DNS traffic, you can set this to something like "2:10", meaning 20% of the packets that pass your `bpf` filter, will be processed by `dnsmonster`. 
+`dnsmonster` supports pre-processing sampling of packet using a simple parameter: `sampleRatio`. this parameter accepts a "ratio" value, like `1:2`. `1:2` means for each 2 packet that arrives, only process one of them (50% sampling). Note that this sampling happens AFTER `bpf` filters and not before. if you have an issue keeping up with the volume of your DNS traffic, you can set this to something like `2:10`, meaning 20% of the packets that pass your `bpf` filter, will be processed by `dnsmonster`. 
 
 ## skip domains
-`dnsmonster` supports a post-processing domain skip list to avoid writing noisy, repetitive data to your Database. The domain skip list is a csv-formatted file, with only two columns: a string and a logic for that particular string. `dnsmonster` supports three logics: `prefix`, `suffix` and `fqdn`. `prefix` and `suffix` means that only the domains starting/ending with the mentioned string will be skipped to be written to DB. Note that since we're talking about DNS questions, your string will most likely have a trailing `.` that needs to be included in your skip list row as well (take a look at [skipdomains.csv.sample](skipdomains.csv.sample) for a better view). You can also have a full FQDN match to avoid writing highly noisy FQDNs into your database.
+`dnsmonster` supports a post-processing domain skip list to avoid writing noisy, repetitive data to your Database. The domain skip list is a csv-formatted file, with only two columns: a string and a logic for that particular string. `dnsmonster` supports three logics: `prefix`, `suffix` and `fqdn`. `prefix` and `suffix` means that only the domains starting/ending with the mentioned string will be skipped to be written to DB. Note that since the process is being done on DNS questions, your string will most likely have a trailing `.` that needs to be included in your skip list row as well (take a look at [skipdomains.csv.sample](skipdomains.csv.sample) for a better view). You can also have a full FQDN match to avoid writing highly noisy FQDNs into your database.
 
 ## allow domains
-`dnsmonster` has the concept of "allowdomains", which helps building the detection if certain FQDNs, prefixes or suffixes are present in the DNS traffic. Given the fact that `dnsmonster` supports multiple output streams with different logic for each one, it's possible to collect all DNS traffic in ClickHouse, but collect only "allowlist" domains in stdout or in a file in the same instance of `dnsmonster`.
+`dnsmonster` has the concept of allowdomains, which helps building the detection if certain FQDNs, prefixes or suffixes are present in the DNS traffic. Given the fact that `dnsmonster` supports multiple output streams with different logic for each one, it's possible to collect all DNS traffic in ClickHouse, but collect only allowlist domains in stdout or in a file in the same instance of `dnsmonster`.
 
 ## SAMPLE in clickhouse SELECT queries
 By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS_LOG`) file have the ability to sample down a result as needed, since each DNS question has a semi-unique UUID associated with it. For more information about SAMPLE queries in Clickhouse, please check out [this](https://clickhouse.tech/docs/en/sql-reference/statements/select/sample/) document.
@@ -623,7 +625,7 @@ By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS
 * Dnstap socket (listen mode)
 * Pcap file (Ethernet frame)
 
-NOTE: if your `pcap` file is captured by one of Linux's meta-interfaces (eg tcpdump -i any), dnsmonster will not be able to read the Ethernet frame off of it since it doesn't exist. you can use a tool like `tcprewrite` to convert the pcap file to Ethernet.
+NOTE: if your `pcap` file is captured by one of Linux's meta-interfaces (for example tcpdump -i any), dnsmonster won't be able to read the Ethernet frame off of it since it doesn't exist. you can use a tool like `tcprewrite` to convert the pcap file to Ethernet.
 
 # Supported Outputs
 

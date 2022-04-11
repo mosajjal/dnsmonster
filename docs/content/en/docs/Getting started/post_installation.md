@@ -8,11 +8,11 @@ description: >
 
 ## Post-install
 
-After you install dnsmonster, you might need to take a few extra steps to build services so `dnsmonster` runs automatically on system startup. These steps are not included in the installation process by default.
+After you install dnsmonster, you might need to take a few extra steps to build services so `dnsmonster` runs automatically on system startup. These steps aren't included in the installation process by default.
 
 ### Systemd service
 
-If you're using a modern and popular distro like Debian, Ubuntu, Fedora, Arch, RHEL, you're probably using `systemd` as your init system. In order to add `dnsmonster` as a service, created a file in `/etc/systemd/system/` named `dnsmonster.service`, and define your systemd unit there. The name `dnsmonster` as a service name is totally optional.
+If you're using a modern and popular distro like Debian, Ubuntu, Fedora, Arch, RHEL, you're probably using `systemd` as your init system. To have `dnsmonster` as a service, created a file in `/etc/systemd/system/` named `dnsmonster.service`, and define your systemd unit there. The name `dnsmonster` as a service name is totally optional.
 
 ```sh
 cat > /etc/systemd/system/dnsmonster.service << EOF

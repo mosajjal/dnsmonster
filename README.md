@@ -239,7 +239,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Use AFPacket for live captures. Supported on Linux 3.0+ only
 --useAfpacket
 
-# The PCAP capture doesn't contain ethernet frames
+# The PCAP capture does not contain ethernet frames
 --noEthernetframe
 
 # Deduplicate incoming packets, Only supported with --devName and --pcapFile. Experimental 

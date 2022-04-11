@@ -6,7 +6,7 @@ description: >
   Learn about the command line arguments and what they mean
 ---
 
-to run `dnsmonster`, one input and at least one output must be defined. The input could be any of `devName` for live packet capture, `pcapFile` to read off a pcap file, or `dnstapSocket` address to listen to. Currently, running `dnsmonster` with more than one input stream at a time is not supported. For output however, it's supported to have more than one channel. In some cases, it's also possible to have multiple instances of the same output (eg Splunk) to provide load balancing and high availability.
+to run `dnsmonster`, one input and at least one output must be defined. The input could be any of `devName` for live packet capture, `pcapFile` to read off a pcap file, or `dnstapSocket` address to listen to. Currently, running `dnsmonster` with more than one input stream at a time isn't supported. For output however, it's supported to have more than one channel. Sometimes, it's also possible to have multiple instances of the same output (for example Splunk) to provide load balancing and high availability.
 
 Note that in case of specifying different output streams, the output data is replicated across all. For example, if you put `stdoutOutputType=1` and `--fileOutputType=1 --fileOutputPath=/dev/stdout`, you'll see each packet twice in your stdout. One coming from the stdout output type, and the other from the file output type which happens to have the same address (`/dev/stdout`).  
 
@@ -26,7 +26,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 To see the current list of command-line options, run `dnsmonster --help` or checkout the repository's README.md.
 
 ## Environment variables
-all the flags can also be set via env variables. Keep in mind that the name of each parameter is always all upper case and the prefix for all the variables is "DNSMONSTER". Example:
+all the flags can also be set via env variables. Keep in mind that the name of each parameter is always all upper case and the prefix for all the variables is "DNSMONSTER." Example:
 
 ```shell
 $ export DNSMONSTER_PORT=53
@@ -34,7 +34,7 @@ $ export DNSMONSTER_DEVNAME=lo
 $ sudo -E dnsmonster
 ```
 ## Configuration file
-you can run `dnsmonster` using the following command to in order to use configuration file:
+you can run `dnsmonster` using the following command to use configuration file:
 
 ```shell
 $ sudo dnsmonster --config=dnsmonster.ini

@@ -9,7 +9,7 @@ description: >
 Passive DNS monitoring framework built on Golang. 
 `dnsmonster` implements a packet sniffer for DNS traffic. It Ability to accept traffic from a `pcap` file, a live interface or a `dnstap` socket, 
 and Ability to be used to index and store hundreds of thousands of DNS queries per second as it has shown to be capable of indexing 200k+ DNS queries per second on a commodity computer. It aims to be scalable, simple and easy to use, and help
-security teams to understand the details about an enterprise's DNS traffic. `dnsmonster` does not look to follow DNS conversations, rather it aims to index DNS packets as soon as they come in. It also does not aim to breach
+security teams to understand the details about an enterprise's DNS traffic. `dnsmonster` doesn't look to follow DNS conversations, rather it aims to index DNS packets as soon as they come in. It also doesn't aim to breach
 the privacy of the end-users, with the ability to mask Layer 3 IPs (IPv4 and IPv6), enabling teams to perform trend analysis on aggregated data without being able to trace back the queries to an individual. [Blogpost](https://blog.n0p.me/dnsmonster/)
 
 
@@ -29,7 +29,7 @@ The code before version 1.x is considered beta quality and is subject to breakin
 - Modular output with configurable logic per output stream.
 - Automatic data retention policy using ClickHouse's TTL attribute
 - Built-in Grafana dashboard for ClickHouse output.
-- Ability to be shipped as a single, statically-linked binary
+- Ability to be shipped as a single, statically linked binary
 - Ability to be configured using environment variables, command line options or configuration file
 - Ability to sample outputs using ClickHouse's SAMPLE capability
 - Ability to send metrics using `prometheus` and `statstd`

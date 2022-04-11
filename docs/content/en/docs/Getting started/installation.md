@@ -16,7 +16,7 @@ Each relase of `dnsmonster` will ship with two binaries. One for Linux amd64, bu
 
 ### Prebuilt packages
 
-Per each release, the statically-linked binary mentioned above is also wrapped into `deb` and `rpm` packages with no dependencies, making it easy to deploy it in Debian and RHEL based distributions. Note that the packages do not generate any service files or configuration templates at installation time. 
+Per each release, the statically-linked binary mentioned above is also wrapped into `deb` and `rpm` packages with no dependencies, making it easy to deploy it in Debian and RHEL based distributions. Note that the packages don't generate any service files or configuration templates at installation time. 
 
 ### Run as a container
 
@@ -41,7 +41,7 @@ go build -o dnsmonster .
 ```
 
 - without `libpcap`:
-`dnsmonster` only uses one function from `libpcap`, and that is converting the `tcpdump`-style filters into BPF bytecode. If you can live with no BPF support, you can build `dnsmonster` without `libpcap`. Note that for any other platform, the packet capture falls back to `libpcap` so it becomes a hard dependency (*BSD, Windows, Darwin)
+`dnsmonster` only uses one function from `libpcap`, and that's converting the `tcpdump`-style filters into BPF bytecode. If you can live with no BPF support, you can build `dnsmonster` without `libpcap`. Note that for any other platform, the packet capture falls back to `libpcap` so it becomes a hard dependency (*BSD, Windows, Darwin)
 
 ```sh
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 

@@ -6,12 +6,12 @@ weight: 4
 
 There are a few ways to manipulate incoming packets in various steps of `dnsmonster` pipeline. They operate in different levels of stack and have different performance implications.
 
-### BPF
+## BPF
 {{< alert >}}Applied at kernel level{{< /alert >}} 
 
 BPF is by far the most performant way to filter incoming packets. It's only supported on live capture (`--devName`). It uses the `tcpdump`'s [pcap-filter](https://www.tcpdump.org/manpages/pcap-filter.7.html) language to filter out the packets. There are plans to potentially move away from this method and accept base64-encoded `bpf` bytecode in the future. 
 
-### Sample Ratio
+## Sample Ratio
 {{< alert >}}Applied at capture level{{< /alert >}} 
 
 Sample ratio (`--sampleRatio`) is an easy way to reduce the number of packets being pushed to the pipeline purely by numbers. the default value is 1:1 meaning for each 1 incoming packet, 1 gets pushed to the pipeline. you can change that if you have a huge number of packets or your output is not catching up with the input. Checkout [performance guide](../../configuration/performance#sampling-and-bpf-based-split-of-traffic) for more detail. 
@@ -27,7 +27,7 @@ There's also the option `--dedupCleanupInterval` to specify cleanup time for the
 
 Applied after Sample Ratio for each packet.
 
-### Port
+## Port
 {{< alert >}}Applied at early process level{{< /alert >}} 
 
 There's an additional filter specifying the port (`--port`) of each packet. since the vast majority of the DNS packets are served out of port 53, this parameter shouldn't have any effect by default. note that this filter will not be applied to fragmented packets.

@@ -20,7 +20,7 @@ import (
 type CaptureConfig struct {
 	DevName                    string        `long:"devName"                    env:"DNSMONSTER_DEVNAME"                    default:""                                                                                                  description:"Device used to capture"`
 	PcapFile                   string        `long:"pcapFile"                   env:"DNSMONSTER_PCAPFILE"                   default:""                                                                                                  description:"Pcap filename to run"`
-	DnstapSocket               string        `long:"dnstapSocket"               env:"DNSMONSTER_DNSTAPSOCKET"               default:""                                                                                                  description:"dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
+	DnstapSocket               string        `long:"dnstapSocket"               env:"DNSMONSTER_DNSTAPSOCKET"               default:""                                                                                                  description:"dnstap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
 	Port                       uint          `long:"port"                       env:"DNSMONSTER_PORT"                       default:"53"                                                                                                description:"Port selected to filter packets"`
 	SampleRatio                string        `long:"sampleRatio"                env:"DNSMONSTER_SAMPLERATIO"                default:"1:1"                                                                                               description:"Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets"`
 	DedupCleanupInterval       time.Duration `long:"dedupCleanupInterval"       env:"DNSMONSTER_DEDUPCLEANUPINTERVAL"       default:"60s"                                                                                               description:"Cleans up packet hash table used for deduplication"`
@@ -28,7 +28,7 @@ type CaptureConfig struct {
 	PacketHandlerCount         uint          `long:"packetHandlerCount"         env:"DNSMONSTER_PACKETHANDLERCOUNT"         default:"2"                                                                                                 description:"Number of routines used to handle received packets"`
 	TcpAssemblyChannelSize     uint          `long:"tcpAssemblyChannelSize"     env:"DNSMONSTER_TCPASSEMBLYCHANNELSIZE"     default:"10000"                                                                                             description:"Size of the tcp assembler"`
 	TcpResultChannelSize       uint          `long:"tcpResultChannelSize"       env:"DNSMONSTER_TCPRESULTCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the tcp result channel"`
-	TcpHandlerCount            uint          `long:"tcpHandlerCount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                                                                                                 description:"Number of routines used to handle tcp assembly"`
+	TcpHandlerCount            uint          `long:"tcpHandlerCount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                                                                                                 description:"Number of routines used to handle tcp packets"`
 	DefraggerChannelSize       uint          `long:"defraggerChannelSize"       env:"DNSMONSTER_DEFRAGGERCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the channel to send packets to be defragged"`
 	DefraggerChannelReturnSize uint          `long:"defraggerChannelReturnSize" env:"DNSMONSTER_DEFRAGGERCHANNELRETURNSIZE" default:"10000"                                                                                             description:"Size of the channel where the defragged packets are returned"`
 	PacketChannelSize          uint          `long:"packetChannelSize"          env:"DNSMONSTER_PACKETCHANNELSIZE"          default:"1000"                                                                                              description:"Size of the packet handler channel"`
@@ -248,7 +248,7 @@ type rawPacketBytes struct {
 	info  gopacket.CaptureInfo
 }
 
-// a very fast hashing function, mainly used for deduplication
+// a very fast hashing function, mainly used for de-duplication
 func FNV1A(input []byte) uint64 {
 	var hash uint64 = 0xcbf29ce484222325
 	var fnv_prime uint64 = 0x100000001b3

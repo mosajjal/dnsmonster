@@ -14,9 +14,16 @@ type pcapFileHandle struct {
 }
 
 func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
-	f, err := os.Open(fileName)
-	if err != nil {
-		log.Fatal(err)
+	var f *os.File
+	if fileName == "-" {
+		f = os.Stdin
+
+	} else {
+		var err error
+		f, err = os.Open(fileName)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	handle, err := pcapgo.NewReader(f)
 

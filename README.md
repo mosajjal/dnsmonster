@@ -7,13 +7,13 @@
 ![Logo](static/dnsmonster-logo.svg)
 
 Table of Contents
-- [dnsmonster](#dnsmonster)
+- [Dnsmonster](#dnsmonster)
 - [Main features](#main-features)
 - [Installation](#installation)
   - [Linux](#linux)
     - [Container](#container)
-    - [Build Manually](#build-manually)
-    - [Build Statically](#build-statically)
+    - [Build manually](#build-manually)
+    - [Build statically](#build-statically)
   - [Windows](#windows)
   - [FreeBSD and MacOS](#freebsd-and-macos)
 - [Architecture](#architecture)
@@ -124,7 +124,7 @@ For more information on how the statically linked binary is created, take a look
 
 Bulding on Windows is much the same as Linux. Just make sure that you have `npcap`. Clone the repository (`--history 1` works), and run `go get` and `go build .`
 
-As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. It's been tested in a Windows 10 environment and it executed without an issue. To find interface names to give `-devName` parameter and start sniffing, you'll need to do the following:
+As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. It's been tested in a Windows 10 environment and it executed without an issue. To find interface names to give `--devName` parameter and start sniffing, you'll need to do the following:
 
   - open cmd.exe as Administrator and run the following: `getmac.exe`, you'll see a table with your interfaces' MAC address and a Transport Name column with something like this: `\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}`
   - run `dnsmonster.exe` in `cmd.exe` like this:

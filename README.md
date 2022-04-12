@@ -194,7 +194,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Pcap filename to run
 --pcapFile=
 
-# dnstrap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
+# dnstap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
 --dnstapSocket=
 
 # Port selected to filter packets
@@ -218,7 +218,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Size of the tcp result channel
 --tcpResultChannelSize=10000
 
-# Number of routines used to handle tcp assembly
+# Number of routines used to handle tcp packets
 --tcpHandlerCount=1
 
 # Size of the channel to send packets to be defragged

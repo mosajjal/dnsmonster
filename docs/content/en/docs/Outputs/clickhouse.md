@@ -11,20 +11,20 @@ Currently, `dnsmonster`'s implementation requires the table name to be set to DN
 ## configuration parameters
 
 - `--clickhouseAddress`: Address of the ClickHouse database to save the results (default: localhost:9000)
-- `--clickhouseUsername`: Username to connect to the ClickHouse database 
-- `--clickhousePassword`: Password to connect to the ClickHouse database 
+- `--clickhouseUsername`: Username to connect to the ClickHouse database (default: empty)
+- `--clickhousePassword`: Password to connect to the ClickHouse database (default: empty)
 - `--clickhouseDatabase`: Database to connect to the ClickHouse database (default: default)
 - `--clickhouseDelay`: Interval between sending results to ClickHouse (default: 1s) 
-- `--clickhouseDebug`: Debug ClickHouse connection
-- `--clickhouseCompress`: Compress ClickHouse connection
-- `--clickhouseSecure`: Use TLS for ClickHouse connection 
-- `--clickhouseSaveFullQuery`: Save full packet query and response in JSON format.
-- `--clickhouseOutputType`: ClickHouse output type. Options: 
+- `--clickhouseDebug`: Debug ClickHouse connection  (default: false)
+- `--clickhouseCompress`: Compress ClickHouse connection (default: false)
+- `--clickhouseSecure`: Use TLS for ClickHouse connection  (default: false)
+- `--clickhouseSaveFullQuery`: Save full packet query and response in JSON format. (default: false)
+- `--clickhouseOutputType`: ClickHouse output type. Options: (default: 0)
   - 0: Disable Output
   - 1: Enable Output without any filters
   - 2: Enable Output and apply skipdomains logic
   - 3: Enable Output and apply allowdomains logic
-  - 4: Enable Output and apply both skip and allow domains logic (default: 0)
+  - 4: Enable Output and apply both skip and allow domains logic
 - `--clickhouseBatchSize`: Minimum capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations (default: 100000)
 - `--clickhouseWorkers`: Number of ClickHouse output Workers (default: 1)
 - `--clickhouseWorkerChannelSize`: Channel Size for each ClickHouse Worker (default: 100000)

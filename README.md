@@ -284,7 +284,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	4: Enable Output and apply both skip and allow domains logic
 --clickhouseOutputType=0
 
-# Minimun capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
+# Minimum capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
 --clickhouseBatchSize=100000
 
 # Number of Clickhouse output Workers
@@ -350,10 +350,10 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Influx Server Org
 --influxOutputOrg=dnsmonster
 
-# Minimun capacity of the cache array used to send data to Influx
+# Minimum capacity of the cache array used to send data to Influx
 --influxOutputWorkers=8
 
-# Minimun capacity of the cache array used to send data to Influx
+# Minimum capacity of the cache array used to send data to Influx
 --influxBatchSize=1000
 
 # [kafka_output]
@@ -371,7 +371,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Kafka topic for logging
 --kafkaOutputTopic=dnsmonster
 
-# Minimun capacity of the cache array used to send data to Kafka
+# Minimum capacity of the cache array used to send data to Kafka
 --kafkaBatchSize=1000
 
 # Kafka connection timeout in seconds

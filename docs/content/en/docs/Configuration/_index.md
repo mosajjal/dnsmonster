@@ -8,7 +8,7 @@ description: >
 
 to run `dnsmonster`, one input and at least one output must be defined. The input could be any of `devName` for live packet capture, `pcapFile` to read off a pcap file, or `dnstapSocket` address to listen to. Currently, running `dnsmonster` with more than one input stream at a time isn't supported. For output however, it's supported to have more than one channel. Sometimes, it's also possible to have multiple instances of the same output (for example Splunk) to provide load balancing and high availability.
 
-Note that in case of specifying different output streams, the output data is replicated across all. For example, if you put `stdoutOutputType=1` and `--fileOutputType=1 --fileOutputPath=/dev/stdout`, you'll see each packet twice in your stdout. One coming from the stdout output type, and the other from the file output type which happens to have the same address (`/dev/stdout`).  
+Note that in case of specifying multiple output streams, the output data is copied to all. For example, if you put `stdoutOutputType=1` and `--fileOutputType=1 --fileOutputPath=/dev/stdout`, you'll see each processed output twice in your stdout. One coming from the stdout output type, and the other from the file output type which happens to have the same address (`/dev/stdout`).  
 
 dnsmonster can be configured in 3 different ways. Command line options, Environment variables and a configuration file. You can also use any combination of them at the same time. The precedence order is as follows:
 

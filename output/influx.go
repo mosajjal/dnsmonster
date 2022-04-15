@@ -16,8 +16,8 @@ type InfluxConfig struct {
 	InfluxOutputToken   string `long:"influxOutputToken"            env:"DNSMONSTER_INFLUXOUTPUTTOKEN"            default:"dnsmonster"                                              description:"Influx Server Auth Token"`
 	InfluxOutputBucket  string `long:"influxOutputBucket"           env:"DNSMONSTER_INFLUXOUTPUTBUCKET"           default:"dnsmonster"                                              description:"Influx Server Bucket"`
 	InfluxOutputOrg     string `long:"influxOutputOrg"              env:"DNSMONSTER_INFLUXOUTPUTORG"              default:"dnsmonster"                                              description:"Influx Server Org"`
-	InfluxOutputWorkers uint   `long:"influxOutputWorkers"          env:"DNSMONSTER_INFLUXOUTPUTWORKERS"          default:"8"                                                       description:"Minimun capacity of the cache array used to send data to Influx"`
-	InfluxBatchSize     uint   `long:"influxBatchSize"              env:"DNSMONSTER_INFLUXBATCHSIZE"              default:"1000"                                                    description:"Minimun capacity of the cache array used to send data to Influx"`
+	InfluxOutputWorkers uint   `long:"influxOutputWorkers"          env:"DNSMONSTER_INFLUXOUTPUTWORKERS"          default:"8"                                                       description:"Minimum capacity of the cache array used to send data to Influx"`
+	InfluxBatchSize     uint   `long:"influxBatchSize"              env:"DNSMONSTER_INFLUXBATCHSIZE"              default:"1000"                                                    description:"Minimum capacity of the cache array used to send data to Influx"`
 	outputChannel       chan util.DNSResult
 	closeChannel        chan bool
 }

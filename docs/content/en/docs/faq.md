@@ -71,7 +71,7 @@ If you're keen to build a new solution from scratch, I would recommend looking a
 
 # Why am I dropping packets
 
-There could be many reasons behind packet loss. I went through some of them with possible solutions in the [performance](/performance) section.
+There could be many reasons behind packet loss. I went through some of them with possible solutions in the [performance](/docs/configuration/performance) section.
 
 # Is there a Slack or Discord I can join
 

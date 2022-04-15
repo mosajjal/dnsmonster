@@ -1,6 +1,6 @@
 module github.com/mosajjal/dnsmonster
 
-go 1.17
+go 1.18
 
 require (
 	github.com/deathowl/go-metrics-prometheus v0.0.0-20200518174047-74482eab5bfb
@@ -28,7 +28,7 @@ require (
 	github.com/paulmach/orb v0.5.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.32.1 // indirect
+	github.com/prometheus/common v0.33.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

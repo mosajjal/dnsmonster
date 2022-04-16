@@ -3,7 +3,7 @@ title: "Outputs"
 linkTitle: "Outputs"
 weight: 4
 description: >
-  Set up output(s) and metric gathering
+  Set up output(s) and gather metrics
 ---
 
 `dnsmonster` follows a pipeline architecture for each individual packet. After the Capture and filter, each processed packet arrives at the output dispatcher. The dispatcher sends a copy of the output to each individual output module that have been configured to produce output. For instance, if you specify `stdoutOutputType=1` and `--fileOutputType=1 --fileOutputPath=/dev/stdout`, you'll see each processed output twice in your stdout. One coming from the stdout output type, and the other from the file output type which happens to have the same address (`/dev/stdout`).  

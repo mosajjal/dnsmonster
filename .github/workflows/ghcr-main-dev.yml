@@ -36,5 +36,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: dev
-          labels: dev
+          tags:  ${{ env.REGISTRY }}/${{ github.actor }}/dnsmonster:dev
+          labels: ${{ env.REGISTRY }}/${{ github.actor }}/dnsmonster:dev

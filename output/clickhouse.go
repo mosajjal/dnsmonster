@@ -160,14 +160,22 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 				if chConfig.ClickhouseSaveFullQuery {
 					fullQuery = data.GetJson()
 				}
-				var SrcIP, DstIP uint64
+				var SrcIP, DstIP uint64 = 0, 0
 
 				if data.IPVersion == 4 {
-					SrcIP = uint64(binary.BigEndian.Uint32(data.SrcIP))
-					DstIP = uint64(binary.BigEndian.Uint32(data.DstIP))
+					if s := data.SrcIP.To4(); s != nil {
+						SrcIP = uint64(binary.BigEndian.Uint32(s))
+					}
+					if d := data.SrcIP.To16(); d != nil {
+						DstIP = uint64(binary.BigEndian.Uint32(d))
+					}
 				} else {
-					SrcIP = binary.BigEndian.Uint64(data.SrcIP[:8]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
-					DstIP = binary.BigEndian.Uint64(data.DstIP[:8])
+					if s := data.SrcIP.To16(); s != nil {
+						SrcIP = binary.BigEndian.Uint64(s[:8]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+					}
+					if d := data.SrcIP.To16(); d != nil {
+						DstIP = binary.BigEndian.Uint64(d[:8])
+					}
 				}
 				QR := uint8(0)
 				if data.DNS.Response {

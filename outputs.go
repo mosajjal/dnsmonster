@@ -35,6 +35,7 @@ func setupOutputs(resultChannel *chan util.DNSResult) {
 	if len(util.GlobalDispatchList) == 0 {
 		log.Fatal("No output specified. Please specify at least one output")
 	}
+	//todo: currently, there's no check to see if allowdomains and skipdomains are provided if the output type demands it.
 
 	skipDomainsFileTicker := time.NewTicker(util.GeneralFlags.SkipDomainsRefreshInterval)
 	skipDomainsFileTickerChan := skipDomainsFileTicker.C
@@ -64,17 +65,9 @@ func setupOutputs(resultChannel *chan util.DNSResult) {
 				}
 
 			case <-skipDomainsFileTickerChan:
-				if util.SkipDomainMapBool {
-					util.SkipDomainMap = util.LoadDomainsToMap(util.GeneralFlags.SkipDomainsFile)
-				} else {
-					util.SkipDomainList = util.LoadDomainsToList(util.GeneralFlags.SkipDomainsFile)
-				}
+				util.GeneralFlags.LoadSkipDomain()
 			case <-allowDomainsFileTickerChan:
-				if util.AllowDomainMapBool {
-					util.AllowDomainMap = util.LoadDomainsToMap(util.GeneralFlags.AllowDomainsFile)
-				} else {
-					util.AllowDomainList = util.LoadDomainsToList(util.GeneralFlags.AllowDomainsFile)
-				}
+				util.GeneralFlags.LoadAllowDomain()
 			}
 		}
 	}()

@@ -149,7 +149,7 @@ docker-compose up -d
 echo "Waiting 20 seconds for Containers to be fully up and running "
 sleep 20
 
-echo "Crete tables for Clickhouse"
+echo "Create tables for Clickhouse"
 docker-compose exec ch /bin/sh -c 'cat /tmp/tables.sql | clickhouse-client -h 127.0.0.1 --multiquery'
 
 echo "downloading latest version of Clickhouse plugin for Grafana"

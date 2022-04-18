@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/capture"
@@ -25,6 +26,9 @@ import (
 func handleInterrupt() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
+	if runtime.GOOS == "linux" {
+		signal.Notify(c, syscall.SIGPIPE)
+	}
 	go func() {
 		for range c {
 			for {

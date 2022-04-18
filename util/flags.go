@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang-collections/collections/tst"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 )
@@ -13,16 +14,6 @@ import (
 var releaseVersion string = "DEVELOPMENT"
 var GlobalParser = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
 var GlobalMetricConfig MetricConfig
-
-var SkipDomainMapBool = false
-var AllowDomainMapBool = false
-
-// skipDomainList represents the list of skipped domains
-var SkipDomainList [][]string
-var AllowDomainList [][]string
-
-var SkipDomainMap = make(map[string]bool)
-var AllowDomainMap = make(map[string]bool)
 
 type GeneralConfig struct {
 	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
@@ -40,14 +31,22 @@ type GeneralConfig struct {
 	PacketLimit                 int            `long:"packetLimit"                 env:"DNSMONSTER_PACKETLIMIT"                 default:"0"                                                       description:"Limit of packets logged to clickhouse every iteration. Default 0 (disabled)"`
 	SkipDomainsFile             string         `long:"skipDomainsFile"             env:"DNSMONSTER_SKIPDOMAINSFILE"             default:""                                                        description:"Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path"`
 	SkipDomainsRefreshInterval  time.Duration  `long:"skipDomainsRefreshInterval"  env:"DNSMONSTER_SKIPDOMAINSREFRESHINTERVAL"  default:"60s"                                                     description:"Hot-Reload skipDomainsFile interval"`
-	SkipDomainsFileType         string         `long:"skipDomainsFileType"         env:"DNSMONSTER_SKIPDOMAINSFILETYPE"         default:"csv"                                                     description:"skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower"`
+	SkipDomainsFileType         string         `long:"skipDomainsFileType"         env:"DNSMONSTER_SKIPDOMAINSFILETYPE"         default:""            hidden:"true"                               description:"skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower"`
 	AllowDomainsFile            string         `long:"allowDomainsFile"            env:"DNSMONSTER_ALLOWDOMAINSFILE"            default:""                                                        description:"Allow Domains logic input file. Can accept a URL (http:// or https://) or path"`
 	AllowDomainsRefreshInterval time.Duration  `long:"allowDomainsRefreshInterval" env:"DNSMONSTER_ALLOWDOMAINSREFRESHINTERVAL" default:"60s"                                                     description:"Hot-Reload allowDomainsFile file interval"`
-	AllowDomainsFileType        string         `long:"allowDomainsFileType"        env:"DNSMONSTER_ALLOWDOMAINSFILETYPE"        default:"csv"                                                     description:"allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower"`
+	AllowDomainsFileType        string         `long:"allowDomainsFileType"        env:"DNSMONSTER_ALLOWDOMAINSFILETYPE"        default:""            hidden:"true"                               description:"allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower"`
 	SkipTLSVerification         bool           `long:"skipTLSVerification"         env:"DNSMONSTER_SKIPTLSVERIFICATION"         description:"Skip TLS verification when making HTTPS connections"`
 	Version                     bool           `long:"version"                     env:"DNSMONSTER_VERSION"                     description:"show version and quit."  no-ini:"true" `
 	wg                          *sync.WaitGroup
 	exiting                     chan bool // used to signal exit to all goroutines
+	// used to implement allowdomains logic
+	allowPrefixTst *tst.TernarySearchTree
+	allowSuffixTst *tst.TernarySearchTree
+	allowTypeHt    map[string]uint8
+	// used to implement skipdomains logic
+	skipPrefixTst *tst.TernarySearchTree
+	skipSuffixTst *tst.TernarySearchTree
+	skipTypeHt    map[string]uint8
 }
 
 var GeneralFlags GeneralConfig
@@ -57,6 +56,16 @@ func (g GeneralConfig) GetWg() *sync.WaitGroup {
 }
 func (g GeneralConfig) GetExit() *chan bool {
 	return &g.exiting
+}
+
+func (g GeneralConfig) LoadAllowDomain() {
+	GeneralFlags.allowPrefixTst, GeneralFlags.allowSuffixTst, GeneralFlags.allowTypeHt = LoadDomainsCsv(GeneralFlags.AllowDomainsFile)
+
+}
+
+func (g GeneralConfig) LoadSkipDomain() {
+	GeneralFlags.skipPrefixTst, GeneralFlags.skipSuffixTst, GeneralFlags.skipTypeHt = LoadDomainsCsv(GeneralFlags.SkipDomainsFile)
+
 }
 
 var helpOptions struct {
@@ -149,22 +158,20 @@ func ProcessFlags() {
 
 	if GeneralFlags.SkipDomainsFile != "" {
 		log.Info("skipDomainsFile is provided")
-		if GeneralFlags.SkipDomainsFileType != "csv" && GeneralFlags.SkipDomainsFileType != "hashtable" {
-			log.Fatal("skipDomainsFileType must be either csv or hashtable")
-		}
-		if GeneralFlags.SkipDomainsFileType == "hashtable" {
-			SkipDomainMapBool = true
-		}
+		GeneralFlags.LoadSkipDomain()
 	}
 
 	if GeneralFlags.AllowDomainsFile != "" {
 		log.Info("allowDomainsFile is provided")
-		if GeneralFlags.AllowDomainsFileType != "csv" && GeneralFlags.AllowDomainsFileType != "hashtable" {
-			log.Fatal("allowDomainsFileType must be either csv or hashtable")
-		}
-		if GeneralFlags.AllowDomainsFileType == "hashtable" {
-			AllowDomainMapBool = true
-		}
+		GeneralFlags.LoadAllowDomain()
+	}
+
+	// ! show deprecation warning for skipDomainsFileType and allowDomainsFileType
+	if GeneralFlags.SkipDomainsFileType != "" {
+		log.Warn("skipDomainsFileType is a deprecated option and will be removed in future releases.")
+	}
+	if GeneralFlags.AllowDomainsFileType != "" {
+		log.Warn("allowDomainsFileType is a deprecated option and will be removed in future releases.")
 	}
 
 	if GeneralFlags.MaskSize4 > 32 || GeneralFlags.MaskSize4 < 0 {
@@ -176,22 +183,6 @@ func ProcessFlags() {
 
 	if GeneralFlags.PacketLimit < 0 {
 		log.Fatal("--packetLimit must be equal or greather than 0")
-	}
-
-	// load the skipDomainFile if exists
-	if GeneralFlags.SkipDomainsFile != "" {
-		if SkipDomainMapBool {
-			SkipDomainMap = LoadDomainsToMap(GeneralFlags.SkipDomainsFile)
-		} else {
-			SkipDomainList = LoadDomainsToList(GeneralFlags.SkipDomainsFile)
-		}
-	}
-	if GeneralFlags.AllowDomainsFile != "" {
-		if AllowDomainMapBool {
-			AllowDomainMap = LoadDomainsToMap(GeneralFlags.AllowDomainsFile)
-		} else {
-			AllowDomainList = LoadDomainsToList(GeneralFlags.AllowDomainsFile)
-		}
 	}
 
 }

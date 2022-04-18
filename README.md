@@ -525,17 +525,11 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Hot-Reload skipDomainsFile interval
 --skipDomainsRefreshInterval=1m0s
 
-# skipDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
---skipDomainsFileType=csv
-
 # Allow Domains logic input file. Can accept a URL (http:// or https://) or path
 --allowDomainsFile=
 
 # Hot-Reload allowDomainsFile file interval
 --allowDomainsRefreshInterval=1m0s
-
-# allowDomainsFile type. Options: csv and hashtable. Hashtable is ONLY fqdn, csv can support fqdn, prefix and suffix logic but it's much slower
---allowDomainsFileType=csv
 
 # Skip TLS verification when making HTTPS connections
 --skipTLSVerification

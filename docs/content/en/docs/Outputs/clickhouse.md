@@ -61,3 +61,21 @@ UPDATE: in the latest version of `clickhouse`, the .inner tables don't have the 
 
 ## SAMPLE in clickhouse SELECT queries
 By default, the main tables created by [tables.sql](clickhouse/tables.sql) (`DNS_LOG`) file have the ability to sample down a result as needed, since each DNS question has a semi-unique UUID associated with it. For more information about SAMPLE queries in Clickhouse, please check out [this](https://clickhouse.tech/docs/en/sql-reference/statements/select/sample/) document.
+
+## Useful queries 
+
+- List of unique domains visited over the past 24 hours
+
+```sql
+-- using domain_count table
+SELECT DISTINCT Question FROM DNS_DOMAIN_COUNT WHERE t > Now() - toIntervalHour(24)
+
+-- only the number
+SELECT count(DISTINCT Question) FROM DNS_DOMAIN_COUNT WHERE t > Now() - toIntervalHour(24)
+
+-- see memory usage of the above query in bytes
+SELECT memory_usage FROM system.query_log WHERE query_kind='Select' AND  arrayExists(x-> x='default.DNS_DOMAIN_COUNT', tables) ORDER BY event_time DESC LIMIT 1 format Vertical
+
+-- you can also get the memory usage of each query by query ID. There should be only 1 result so we will cut it off at one to optimize performance
+SELECT sum(memory_usage) FROM system.query_log WHERE initial_query_id = '8de8fe3c-d46a-4a32-83da-4f4ba4dc49e5' format Vertical
+```

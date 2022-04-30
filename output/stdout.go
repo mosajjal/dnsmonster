@@ -40,7 +40,7 @@ func (config StdoutConfig) Initialize() error {
 }
 
 func (config StdoutConfig) Close() {
-	//todo: implement this
+	// todo: implement this
 	<-config.closeChannel
 }
 
@@ -67,14 +67,13 @@ func (stdConfig StdoutConfig) stdoutOutputWorker() {
 			}
 		}
 	}
-
 }
 
 func (stdConfig StdoutConfig) Output() {
 	if stdConfig.StdoutOutputFormat == "csv" {
 		fmt.Print(util.GetCsvHeaderRow() + "\n")
 	}
-	for i := 0; i < int(stdConfig.StdoutOutputWorkerCount); i++ { //todo: make this configurable
+	for i := 0; i < int(stdConfig.StdoutOutputWorkerCount); i++ { // todo: make this configurable
 		go stdConfig.stdoutOutputWorker()
 	}
 }

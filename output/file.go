@@ -41,7 +41,7 @@ func (config FileConfig) Initialize() error {
 }
 
 func (config FileConfig) Close() {
-	//todo: implement this
+	// todo: implement this
 	<-config.closeChannel
 }
 
@@ -55,7 +55,7 @@ func (fConfig FileConfig) Output() {
 	var fileObject *os.File
 	if fConfig.FileOutputType > 0 {
 		var err error
-		fileObject, err = os.OpenFile(string(fConfig.FileOutputPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		fileObject, err = os.OpenFile(string(fConfig.FileOutputPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
 			log.Fatal(err)
 		}

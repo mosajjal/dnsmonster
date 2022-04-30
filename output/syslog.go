@@ -42,7 +42,7 @@ func (config SyslogConfig) Initialize() error {
 }
 
 func (config SyslogConfig) Close() {
-	//todo: implement this
+	// todo: implement this
 	<-config.closeChannel
 }
 
@@ -75,7 +75,7 @@ func (sysConfig SyslogConfig) connectSyslogRetry() syslog.Syslogger {
 func (sysConfig SyslogConfig) connectSyslog() (syslog.Syslogger, error) {
 	u, _ := url.Parse(sysConfig.SyslogOutputEndpoint)
 	log.Infof("Connecting to syslog server %v with protocol %v", u.Host, u.Scheme)
-	sysLog, err := syslog.DialLogger(u.Scheme, u.Host, syslog.LOG_WARNING, "USER", util.GeneralFlags.ServerName) //todo: maybe facility as a parameter?
+	sysLog, err := syslog.DialLogger(u.Scheme, u.Host, syslog.LOG_WARNING, "USER", util.GeneralFlags.ServerName) // todo: maybe facility as a parameter?
 	if err != nil {
 		return nil, err
 	}

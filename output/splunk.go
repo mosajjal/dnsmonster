@@ -60,7 +60,7 @@ func (config SplunkConfig) Initialize() error {
 }
 
 func (config SplunkConfig) Close() {
-	//todo: implement this
+	// todo: implement this
 	<-config.closeChannel
 }
 
@@ -95,11 +95,9 @@ func (spConfig SplunkConfig) connectSplunkRetry(splunkEndpoint string) {
 			splunkConnectionList[splunkEndpoint] = spConfig.connectSplunk(splunkEndpoint)
 		}
 	}
-
 }
 
 func (spConfig SplunkConfig) connectSplunk(splunkEndpoint string) SplunkConnection {
-
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification}}
 	httpClient := &http.Client{Timeout: time.Second * 20, Transport: tr}
 
@@ -165,7 +163,6 @@ func (spConfig SplunkConfig) Output() {
 		case <-ticker.C:
 			healthyId := selectHealthyConnection()
 			if conn, ok := splunkConnectionList[healthyId]; ok {
-
 				if err := spConfig.splunkSendData(conn.Client, batch); err != nil {
 					log.Warn(err)
 					log.Warnf("marking connection as unhealthy")

@@ -46,7 +46,7 @@ func (config ElasticConfig) Initialize() error {
 }
 
 func (config ElasticConfig) Close() {
-	//todo: implement this
+	// todo: implement this
 	<-config.closeChannel
 }
 
@@ -161,7 +161,6 @@ func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []ut
 				Type("_doc").
 				BodyString(string(batch[i].GetJson())).
 				Do(ctx)
-
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -169,7 +168,6 @@ func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []ut
 	}
 	_, err := client.Flush().Index(esConfig.ElasticOutputIndex).Do(ctx)
 	return err
-
 }
 
 // This will allow an instance to be spawned at import time

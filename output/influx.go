@@ -45,7 +45,7 @@ func (config InfluxConfig) Initialize() error {
 }
 
 func (config InfluxConfig) Close() {
-	//todo: implement this
+	// todo: implement this
 	<-config.closeChannel
 }
 
@@ -127,14 +127,12 @@ func (influxConfig InfluxConfig) InfluxWorker() {
 			}, row, data.Timestamp)
 			writeAPI.WritePoint(p)
 		}
-
 	}
 
 	// Force all unwritten data to be sent
 	writeAPI.Flush()
 	// Ensures background processes finishes
 	client.Close()
-
 }
 
 // This will allow an instance to be spawned at import time

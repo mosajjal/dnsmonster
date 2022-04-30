@@ -53,7 +53,7 @@ func (seConfig SentinelConfig) Initialize() error {
 }
 
 func (seConfig SentinelConfig) Close() {
-	//todo: implement this
+	// todo: implement this
 	<-seConfig.closeChannel
 }
 
@@ -77,7 +77,6 @@ func (seConfig SentinelConfig) BuildSignature(sigelements SignatureElements) str
 {{.ContentType}}
 x-ms-date:{{.Date}}
 {{.Resource}}`)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -151,17 +150,16 @@ func (seConfig SentinelConfig) sendBatch(batch string, count int) {
 		log.Errorf("batch not sent, with code %d", res.StatusCode)
 		sentinelFailed.Inc(int64(count))
 	}
-
 }
-func (seConfig SentinelConfig) Output() {
 
+func (seConfig SentinelConfig) Output() {
 	log.Infof("starting SentinelOutput")
 	sentinelSkipped := metrics.GetOrRegisterCounter("sentinelSkipped", metrics.DefaultRegistry)
 
 	batch := "["
 	cnt := 0
-	//todo: test the batch delay solution
-	var now = time.Now()
+	// todo: test the batch delay solution
+	now := time.Now()
 	for data := range seConfig.outputChannel {
 		for _, dnsQuery := range data.DNS.Question {
 
@@ -178,7 +176,7 @@ func (seConfig SentinelConfig) Output() {
 				batch = strings.TrimSuffix(batch, ",")
 				batch += "]"
 				seConfig.sendBatch(batch, cnt)
-				//reset counters
+				// reset counters
 				batch = "["
 				cnt = 0
 				now = time.Now()

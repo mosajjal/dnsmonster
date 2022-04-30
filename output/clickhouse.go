@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/binary"
 	"errors"
-
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
@@ -59,7 +58,7 @@ func (chConfig ClickhouseConfig) Initialize() error {
 }
 
 func (chConfig ClickhouseConfig) Close() {
-	//todo: implement this
+	// todo: implement this
 	<-chConfig.closeChannel
 }
 
@@ -145,7 +144,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 
 	c := uint(0)
 	for {
-		var now = time.Now()
+		now := time.Now()
 		select {
 		case data := <-chConfig.outputChannel:
 			for _, dnsQuery := range data.DNS.Question {
@@ -156,7 +155,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 				}
 				clickhouseSentToOutput.Inc(1)
 
-				var fullQuery = ""
+				fullQuery := ""
 				if chConfig.ClickhouseSaveFullQuery {
 					fullQuery = data.GetJson()
 				}
@@ -171,7 +170,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 					}
 				} else {
 					if s := data.SrcIP.To16(); s != nil {
-						SrcIP = binary.BigEndian.Uint64(s[:8]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+						SrcIP = binary.BigEndian.Uint64(s[:8]) // limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
 					}
 					if d := data.SrcIP.To16(); d != nil {
 						DstIP = binary.BigEndian.Uint64(d[:8])
@@ -215,7 +214,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 					log.Warnf("Error while executing batch: %v", err)
 					clickhouseFailed.Inc(1)
 				}
-				//todo: test batch timeout here.
+				// todo: test batch timeout here.
 				if c%chConfig.ClickhouseBatchSize == 0 || time.Since(now) > chConfig.ClickhouseDelay {
 
 					err = batch.Send()

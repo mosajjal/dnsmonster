@@ -55,7 +55,7 @@ Before the product hits 1.x.x, breaking changes between each release is expected
 
 After 1.x.x, the plan is to maintain backwards compatibility in major versions (eg every 1.x.x installation will work as part of an upgrade). However, that will not necessarily be the case for ClickHouse tables. Since ClickHouse is a fast moving product, there might be a need to change the schema of the tables regardless of `dnsmonster`'s major release. 
 
-The JSON output fields, which is the basis for the majority of `dnsmonster` outputs, is bound to Miekg's [dns library](https://github.com/miekg/dns). The library seems to be fairly stable and have used the same data structure for years. For `dnsmonster`, the plan is to maintain the JSON schema the same for each major release so SIEM parsers such as ASIM and CIM can maintain functionality.
+The JSON output fields, which is the basis for the majority of `dnsmonster` outputs, is bound to Miekg's [dns library](https://github.com/miekg/dns). The library seems to be fairly stable and have used the same data structure for years. For `dnsmonster`, the plan is to maintain the JSON schema the same for each major release so SIEM parsers such as ASIM and CIM can maintain functionality. `dnsmonster` also supports `go-template` output similar to `kubectl` and makes it easy to customize and standardize your output to cater for your needs.
 
 ## How fast is dnsmonster
 

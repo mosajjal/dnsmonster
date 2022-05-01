@@ -30,6 +30,7 @@ type KafkaConfig struct {
 	KafkaTLSCertificatePath string        `long:"kafkaTLSCertificatePath"     env:"DNSMONSTER_KAFKATLSCERTIFICATEPATH"     default:""                                                        description:"Path of TLS certificate to present to broker"`
 	KafkaTLSKeyPath         string        `long:"kafkaTLSKeyPath"             env:"DNSMONSTER_KAFKATLSKEYPATH"             default:""                                                        description:"Path of TLS certificate key"`
 	outputChannel           chan util.DNSResult
+	outputMarshaller        util.OutputMarshaller
 	closeChannel            chan bool
 }
 
@@ -45,6 +46,13 @@ func (kafConfig KafkaConfig) initializeFlags() error {
 
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (kafConfig KafkaConfig) Initialize() error {
+	var err error
+	kafConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
+	if err != nil {
+		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
+		return err
+	}
+
 	if kafConfig.KafkaOutputType > 0 && kafConfig.KafkaOutputType < 5 {
 		log.Info("Creating Kafka Output Channel")
 		go kafConfig.Output()
@@ -152,7 +160,7 @@ func (kafConfig KafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util
 
 	return kWriter.WriteMessages(context.Background(), kafka.Message{
 		Key:   []byte(myUUID),
-		Value: []byte(dnsresult.GetJson()),
+		Value: []byte(kafConfig.outputMarshaller.Marshal(dnsresult)),
 	})
 }
 

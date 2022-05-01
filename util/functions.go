@@ -2,6 +2,7 @@ package util
 
 import (
 	"bufio"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -22,12 +23,12 @@ const (
 	MATCH_FQDN   = 3
 )
 
-//0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic.
+// 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic.
 func CheckIfWeSkip(outputType uint, fqdn string) bool {
 	fqdnLower := strings.ToLower(fqdn) //todo:check performance for this function
 	switch outputType {
 	case OUTPUT_NONE:
-		return true //always skip
+		return true // always skip
 	case OUTPUT_ALL:
 		return false // never skip
 	case OUTPUT_SKIP:
@@ -80,6 +81,7 @@ func CheckIfWeSkip(outputType uint, fqdn string) bool {
 	}
 	return true
 }
+
 func Reverse(s string) string {
 	r := []rune(s)
 	for i, j := 0, len(r)-1; i < len(r)/2; i, j = i+1, j-1 {
@@ -151,4 +153,22 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 	}
 	log.Infof("%s loaded with %d prefix, %d suffix and %d fqdn", Filename, prefixTst.Len(), suffixTst.Len(), len(entryTypeHt)-prefixTst.Len()-suffixTst.Len())
 	return prefixTst, suffixTst, entryTypeHt
+}
+
+func OutputFormatToMarshaller(outputFormat string, t string) (OutputMarshaller, string, error) {
+	switch outputFormat {
+	case "json":
+		return JsonOutput{}, "", nil
+	case "csv":
+		csvOut := CsvOutput{}
+		header, _ := csvOut.Init()
+		return csvOut, header, nil
+	case "csv_no_header":
+		return CsvOutput{}, "", nil
+	case "gotemplate":
+		goOut := GoTemplateOutput{RawTemplate: t}
+		_, err := goOut.Init()
+		return &goOut, "", err
+	}
+	return nil, "", fmt.Errorf("%s is not a valid output format", outputFormat)
 }

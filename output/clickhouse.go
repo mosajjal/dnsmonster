@@ -32,6 +32,7 @@ type ClickhouseConfig struct {
 	ClickhouseWorkers           uint          `long:"clickhouseWorkers"           env:"DNSMONSTER_CLICKHOUSEWORKERS"           default:"1"                                                       description:"Number of Clickhouse output Workers"`
 	ClickhouseWorkerChannelSize uint          `long:"clickhouseWorkerChannelSize" env:"DNSMONSTER_CLICKHOUSEWORKERCHANNELSIZE" default:"100000"                                                  description:"Channel Size for each Clickhouse Worker"`
 	outputChannel               chan util.DNSResult
+	outputMarshaller            util.OutputMarshaller
 	closeChannel                chan bool
 }
 
@@ -47,6 +48,13 @@ func (chConfig ClickhouseConfig) initializeFlags() error {
 
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (chConfig ClickhouseConfig) Initialize() error {
+	var err error
+	chConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
+	if err != nil {
+		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
+		return err
+	}
+
 	if chConfig.ClickhouseOutputType > 0 && chConfig.ClickhouseOutputType < 5 {
 		log.Info("Creating Clickhouse Output Channel")
 		go chConfig.Output()
@@ -157,7 +165,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 
 				fullQuery := ""
 				if chConfig.ClickhouseSaveFullQuery {
-					fullQuery = data.GetJson()
+					fullQuery = chConfig.outputMarshaller.Marshal(data)
 				}
 				var SrcIP, DstIP uint64 = 0, 0
 

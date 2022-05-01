@@ -23,9 +23,11 @@ FileOutputType = 0
 ; Path to output file. Used if fileOutputType is not none
 FileOutputPath =
 
-; Output format for file. options:json,csv. note that the csv splits the datetime format into multiple fields
+; Output format for file. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
 FileOutputFormat = json
 
+; Go Template to format the output as needed
+FileOutputGoTemplate = {{.}}
 
 [stdout_output]
 ; What should be written to stdout. options:
@@ -36,8 +38,11 @@ FileOutputFormat = json
 ;	4: Enable Output and apply both skip and allow domains logic
 StdoutOutputType = 0
 
-; Output format for stdout. options:json,csv. note that the csv splits the datetime format into multiple fields
+; Output format for stdout. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
 StdoutOutputFormat = json
+
+; Go Template to format the output as needed
+StdoutOutputGoTemplate = {{.}}
 
 ; Number of workers
 StdoutOutputWorkerCount = 8

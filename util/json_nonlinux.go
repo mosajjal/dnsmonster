@@ -5,7 +5,13 @@ package util
 
 import "encoding/json"
 
-func (d *DNSResult) GetJson() string {
+type JsonOutput struct{}
+
+func (j JsonOutput) Marshal(d DNSResult) string {
 	res, _ := json.Marshal(d)
 	return string(res)
+}
+
+func (j JsonOutput) Init() (string, error) {
+	return "", nil
 }

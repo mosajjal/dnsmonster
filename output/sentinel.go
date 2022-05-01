@@ -27,6 +27,7 @@ type SentinelConfig struct {
 	SentinelBatchSize        uint          `long:"sentinelBatchSize"           env:"DNSMONSTER_SENTINELBATCHSIZE"           default:"100"                                                     description:"Sentinel Batch Size"`
 	SentinelBatchDelay       time.Duration `long:"sentinelBatchDelay"          env:"DNSMONSTER_SENTINELBATCHDELAY"          default:"1s"                                                      description:"Interval between sending results to Sentinel if Batch size is not filled"`
 	outputChannel            chan util.DNSResult
+	outputMarshaller         util.OutputMarshaller
 	closeChannel             chan bool
 }
 
@@ -42,6 +43,13 @@ func (seConfig SentinelConfig) initializeFlags() error {
 
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (seConfig SentinelConfig) Initialize() error {
+	var err error
+	seConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
+	if err != nil {
+		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
+		return err
+	}
+
 	if seConfig.SentinelOutputType > 0 && seConfig.SentinelOutputType < 5 {
 		log.Info("Creating Sentinel Output Channel")
 		go seConfig.Output()
@@ -169,7 +177,7 @@ func (seConfig SentinelConfig) Output() {
 			}
 
 			cnt++
-			batch += data.GetJson()
+			batch += seConfig.outputMarshaller.Marshal(data)
 			batch += ","
 			if cnt == int(seConfig.SentinelBatchSize) || time.Since(now) > seConfig.SentinelBatchDelay {
 				// remove the last ,

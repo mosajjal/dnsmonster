@@ -17,6 +17,7 @@ type SyslogConfig struct {
 	SyslogOutputEndpoint string `long:"syslogOutputEndpoint"        env:"DNSMONSTER_SYSLOGOUTPUTENDPOINT"        default:"udp://127.0.0.1:514"                                     description:"Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none"`
 	outputChannel        chan util.DNSResult
 	closeChannel         chan bool
+	outputMarshaller     util.OutputMarshaller
 }
 
 func (config SyslogConfig) initializeFlags() error {
@@ -31,6 +32,12 @@ func (config SyslogConfig) initializeFlags() error {
 
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (config SyslogConfig) Initialize() error {
+	var err error
+	config.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
+	if err != nil {
+		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
+		return err
+	}
 	if config.SyslogOutputType > 0 && config.SyslogOutputType < 5 {
 		log.Info("Creating Syslog Output Channel")
 		go config.Output()
@@ -96,7 +103,7 @@ func (sysConfig SyslogConfig) Output() {
 			}
 			syslogSentToOutput.Inc(1)
 
-			err := writer.WriteLevel(syslog.LOG_ALERT, []byte(data.GetJson()))
+			err := writer.WriteLevel(syslog.LOG_ALERT, []byte(sysConfig.outputMarshaller.Marshal(data)))
 			// don't exit on connection failure, try to connect again if need be
 			if err != nil {
 				log.Info(err)

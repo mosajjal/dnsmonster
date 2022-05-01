@@ -6,6 +6,8 @@ import (
 	"reflect"
 )
 
+type CsvOutput struct{}
+
 type CsvRow struct {
 	Year         int
 	Month        int
@@ -59,14 +61,14 @@ func formatCsvRow(csvrow CsvRow) string {
 	)
 }
 
-func (d *DNSResult) GetCsvRow() string {
+func (c CsvOutput) Marshal(d DNSResult) string {
 	// the integer version of the IP is much more useful in Machine learning than the string
 	var SrcIP, DstIP uint64
 	if d.IPVersion == 4 {
 		SrcIP = uint64(binary.BigEndian.Uint32(d.SrcIP))
 		DstIP = uint64(binary.BigEndian.Uint32(d.DstIP))
 	} else {
-		SrcIP = binary.BigEndian.Uint64(d.SrcIP[:8]) //limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
+		SrcIP = binary.BigEndian.Uint64(d.SrcIP[:8]) // limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
 		DstIP = binary.BigEndian.Uint64(d.DstIP[:8])
 	}
 
@@ -120,7 +122,7 @@ func (d *DNSResult) GetCsvRow() string {
 }
 
 // return headers for above csv
-func GetCsvHeaderRow() string {
+func (c CsvOutput) Init() (string, error) {
 	v := reflect.ValueOf(CsvRow{})
 	typeOfV := v.Type()
 	csvHeader := ""
@@ -128,6 +130,6 @@ func GetCsvHeaderRow() string {
 		// Get the field, returns https://golang.org/pkg/reflect/#StructField
 		csvHeader += typeOfV.Field(i).Name + "," // todo: do we need to lowercase the headers
 	}
-	//remove trailing comma
-	return csvHeader[:len(csvHeader)-1]
+	// remove trailing comma
+	return csvHeader[:len(csvHeader)-1], nil
 }

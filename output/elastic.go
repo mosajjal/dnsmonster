@@ -20,6 +20,7 @@ type ElasticConfig struct {
 	ElasticBatchSize      uint          `long:"elasticBatchSize"            env:"DNSMONSTER_ELASTICBATCHSIZE"            default:"1000"                                                    description:"Send data to Elastic in batch sizes"`
 	ElasticBatchDelay     time.Duration `long:"elasticBatchDelay"           env:"DNSMONSTER_ELASTICBATCHDELAY"           default:"1s"                                                      description:"Interval between sending results to Elastic if Batch size is not filled"`
 	outputChannel         chan util.DNSResult
+	outputMarshaller      util.OutputMarshaller
 	closeChannel          chan bool
 }
 
@@ -35,6 +36,13 @@ func (config ElasticConfig) initializeFlags() error {
 
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (config ElasticConfig) Initialize() error {
+	var err error
+	config.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
+	if err != nil {
+		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
+		return err
+	}
+
 	if config.ElasticOutputType > 0 && config.ElasticOutputType < 5 {
 		log.Info("Creating Elastic Output Channel")
 		go config.Output()
@@ -159,7 +167,7 @@ func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []ut
 			_, err := client.Index().
 				Index(esConfig.ElasticOutputIndex).
 				Type("_doc").
-				BodyString(string(batch[i].GetJson())).
+				BodyString(esConfig.outputMarshaller.Marshal(batch[i])).
 				Do(ctx)
 			if err != nil {
 				log.Fatal(err)

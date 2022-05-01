@@ -11,11 +11,14 @@ import (
 )
 
 type FileConfig struct {
-	FileOutputType   uint           `long:"fileOutputType"              env:"DNSMONSTER_FILEOUTPUTTYPE"              default:"0"                                                       description:"What should be written to file. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"          choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	FileOutputPath   flags.Filename `long:"fileOutputPath"              env:"DNSMONSTER_FILEOUTPUTPATH"              default:""                                                        description:"Path to output file. Used if fileOutputType is not none"`
-	FileOutputFormat string         `long:"fileOutputFormat"            env:"DNSMONSTER_FILEOUTPUTFORMAT"            default:"json"                                                    description:"Output format for file. options:json,csv. note that the csv splits the datetime format into multiple fields"                                                                                                                                                                          choice:"json" choice:"csv"`
-	outputChannel    chan util.DNSResult
-	closeChannel     chan bool
+	FileOutputType       uint           `long:"fileOutputType"              env:"DNSMONSTER_FILEOUTPUTTYPE"              default:"0"                                                       description:"What should be written to file. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"          choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
+	FileOutputPath       flags.Filename `long:"fileOutputPath"              env:"DNSMONSTER_FILEOUTPUTPATH"              default:""                                                        description:"Path to output file. Used if fileOutputType is not none"`
+	FileOutputFormat     string         `long:"fileOutputFormat"            env:"DNSMONSTER_FILEOUTPUTFORMAT"            default:"json"                                                    description:"Output format for file. options:json,csv. note that the csv splits the datetime format into multiple fields"                                                                                                                                                                          choice:"json" choice:"csv" choice:"csv_no_header" choice:"gotemplate"`
+	FileOutputGoTemplate string         `long:"fileOutputGoTemplate"        env:"DNSMONSTER_FILEOUTPUTGOTEMPLATE"        default:"{{.}}"                                                   description:"Go Template to format the output as needed"`
+	outputChannel        chan util.DNSResult
+	closeChannel         chan bool
+	outputMarshaller     util.OutputMarshaller
+	fileObject           *os.File
 }
 
 func (config FileConfig) initializeFlags() error {
@@ -25,19 +28,39 @@ func (config FileConfig) initializeFlags() error {
 	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 
 	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
+
 	return err
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (config FileConfig) Initialize() error {
+	var err error
+	var header string
+	config.outputMarshaller, header, err = util.OutputFormatToMarshaller(config.FileOutputFormat, config.FileOutputGoTemplate)
+	if err != nil {
+		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
+		return err
+	}
+
 	if config.FileOutputType > 0 && config.FileOutputType < 5 {
 		log.Info("Creating File Output Channel")
+
+		config.fileObject, err = os.OpenFile(string(config.FileOutputPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer config.Close()
+
 		go config.Output()
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
 	}
-	return nil
+
+	// print the header
+	_, err = config.fileObject.WriteString(header + "\n")
+
+	return err
 }
 
 func (config FileConfig) Close() {
@@ -52,24 +75,8 @@ func (config FileConfig) OutputChannel() chan util.DNSResult {
 func (fConfig FileConfig) Output() {
 	fileSentToOutput := metrics.GetOrRegisterCounter("fileSentToOutput", metrics.DefaultRegistry)
 	fileSkipped := metrics.GetOrRegisterCounter("fileSkipped", metrics.DefaultRegistry)
-	var fileObject *os.File
-	if fConfig.FileOutputType > 0 {
-		var err error
-		fileObject, err = os.OpenFile(string(fConfig.FileOutputPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer fileObject.Close()
-	}
 
-	isOutputJson := fConfig.FileOutputFormat == "json"
-	if !isOutputJson {
-		_, err := fileObject.WriteString(util.GetCsvHeaderRow() + "\n")
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
+	// todo: output channel will duplicate output when we have malformed DNS packets with multiple questions
 	for data := range fConfig.outputChannel {
 		for _, dnsQuery := range data.DNS.Question {
 
@@ -78,17 +85,11 @@ func (fConfig FileConfig) Output() {
 				continue
 			}
 			fileSentToOutput.Inc(1)
-			if isOutputJson {
-				_, err := fileObject.WriteString(data.GetJson() + "\n")
-				if err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				_, err := fileObject.WriteString(data.GetCsvRow() + "\n")
-				if err != nil {
-					log.Fatal(err)
-				}
+			_, err := fConfig.fileObject.WriteString(fConfig.outputMarshaller.Marshal(data) + "\n")
+			if err != nil {
+				log.Fatal(err)
 			}
+
 		}
 	}
 }

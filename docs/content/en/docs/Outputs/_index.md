@@ -18,3 +18,25 @@ In general, each output has its own configuration section. You can see the secti
 
 Other than `Type`, each output module may require additional configuration parameters. For more information, refer to each module's documentation.
 
+## Output Formats
+
+`dnsmonster` supports multiple output formats:
+
+- `json`: the standard JSON output. The output looks like below sample
+```json
+{"Timestamp":"2020-08-08T00:19:42.567768Z","DNS":{"Id":54443,"Response":true,"Opcode":0,"Authoritative":false,"Truncated":false,"RecursionDesired":true,"RecursionAvailable":true,"Zero":false,"AuthenticatedData":false,"CheckingDisabled":false,"Rcode":0,"Question":[{"Name":"imap.gmail.com.","Qtype":1,"Qclass":1}],"Answer":[{"Hdr":{"Name":"imap.gmail.com.","Rrtype":1,"Class":1,"Ttl":242,"Rdlength":4},"A":"172.217.194.108"},{"Hdr":{"Name":"imap.gmail.com.","Rrtype":1,"Class":1,"Ttl":242,"Rdlength":4},"A":"172.217.194.109"}],"Ns":null,"Extra":null},"IPVersion":4,"SrcIP":"1.1.1.1","DstIP":"2.2.2.2","Protocol":"udp","PacketLength":64}
+```
+- `csv`: the CSV output. The fields and headers are non-customizable at the moment. to get a custom output, please look at `gotemplate`.
+```csv
+Year,Month,Day,Hour,Minute,Second,Ns,Server,IpVersion,SrcIP,DstIP,Protocol,Qr,OpCode,Class,Type,ResponseCode,Question,Size,Edns0Present,DoBit,Id
+2020,8,8,0,19,42,567768000,default,4,2050551041,2050598324,17,1,0,1,1,0,imap.gmail.com.,64,0,0,54443
+```
+- `csv_no_headers`: Looks exactly like the CSV but with no header print at the beginning
+- `gotemplate`: Customizable template to come up with your own formatting. let's look at a few examples with the same packet we've looked at using JSON and CSV
+
+```sh
+$ dnsmonster --pcapFile input.pcap --stdoutOutputType=1 --stdoutOutputFormat=gotemplate --stdoutOutputGoTemplate="timestamp=\"{{.Timestamp}}\" id={{.DNS.Id}} question={{(index .DNS.Question 0).Name}}"
+timestamp="2020-08-08 00:19:42.567735 +0000 UTC" id=54443 question=imap.gmail.com.
+```
+
+Take a look at the [official docs](https://pkg.go.dev/text/template) for more info regarding text/template and your various options.

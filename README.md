@@ -326,7 +326,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Path to output file. Used if fileOutputType is not none
 --fileOutputPath=
 
-# Output format for file. options:json,csv. note that the csv splits the datetime format into multiple fields
+# Output format for file. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
 --fileOutputFormat=json
 
 # Go Template to format the output as needed
@@ -467,7 +467,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	4: Enable Output and apply both skip and allow domains logic
 --stdoutOutputType=0
 
-# Output format for stdout. options:json,csv. note that the csv splits the datetime format into multiple fields
+# Output format for stdout. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
 --stdoutOutputFormat=json
 
 # Go Template to format the output as needed

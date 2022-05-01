@@ -329,6 +329,9 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Output format for file. options:json,csv. note that the csv splits the datetime format into multiple fields
 --fileOutputFormat=json
 
+# Go Template to format the output as needed
+--fileOutputGoTemplate={{.}}
+
 # [influx_output]
 # What should be written to influx. options:
 #	0: Disable Output
@@ -466,6 +469,9 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 
 # Output format for stdout. options:json,csv. note that the csv splits the datetime format into multiple fields
 --stdoutOutputFormat=json
+
+# Go Template to format the output as needed
+--stdoutOutputGoTemplate={{.}}
 
 # Number of workers
 --stdoutOutputWorkerCount=8

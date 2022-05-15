@@ -2,9 +2,8 @@ package capture
 
 import (
 	"math/rand"
-	"time"
-
 	"net"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -28,8 +27,9 @@ func (config CaptureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 						MaskSize = util.GeneralFlags.MaskSize6
 						BitSize = 8 * net.IPv6len
 					}
-					config.resultChannel <- util.DNSResult{Timestamp: timestamp,
-						DNS: msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+					config.resultChannel <- util.DNSResult{
+						Timestamp: timestamp,
+						DNS:       msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
 						DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
 					}
 				}
@@ -45,15 +45,13 @@ func (config CaptureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 			}
 		}
 	}
-
 }
 
 func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
-
 	var detectIP DetectIP
 	var ethLayer layers.Ethernet
 	var vlan layers.Dot1Q
-	var vxlan layers.VXLAN //todo: investigate the performance impact of adding another layer to decoder
+	var vxlan layers.VXLAN
 	var ip4 layers.IPv4
 	var ip6 layers.IPv6
 	var udp layers.UDP
@@ -118,11 +116,9 @@ func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
 		}
 
 	}
-
 }
 
 func (config CaptureConfig) StartPacketDecoder() {
-
 	rand.Seed(20)
 	var ip4 layers.IPv4
 
@@ -156,8 +152,9 @@ func (config CaptureConfig) StartPacketDecoder() {
 					MaskSize = util.GeneralFlags.MaskSize6
 					BitSize = 8 * net.IPv6len
 				}
-				config.resultChannel <- util.DNSResult{Timestamp: data.timestamp,
-					DNS: msg, IPVersion: data.IPVersion, SrcIP: data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+				config.resultChannel <- util.DNSResult{
+					Timestamp: data.timestamp,
+					DNS:       msg, IPVersion: data.IPVersion, SrcIP: data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
 					DstIP: data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "tcp", PacketLength: uint16(len(data.data)),
 				}
 			}

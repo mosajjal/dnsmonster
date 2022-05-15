@@ -23,7 +23,6 @@ const (
 	MATCH_FQDN   = 3
 )
 
-// 0: none, 1: all, 2: apply skipdomains logic, 3: apply allowdomains logic, 4: apply both skip and allow domains logic.
 func CheckIfWeSkip(outputType uint, fqdn string) bool {
 	fqdnLower := strings.ToLower(fqdn) //todo:check performance for this function
 	switch outputType {

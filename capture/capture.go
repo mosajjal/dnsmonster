@@ -72,7 +72,6 @@ func (config CaptureConfig) GetResultChannel() *chan util.DNSResult {
 }
 
 func (config CaptureConfig) cleanExit() {
-
 	log.Infof("Stopping capture...")
 	for i := 0; i < runtime.NumGoroutine(); i++ {
 		*util.GeneralFlags.GetExit() <- true

@@ -17,7 +17,6 @@ func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
 	var f *os.File
 	if fileName == "-" {
 		f = os.Stdin
-
 	} else {
 		var err error
 		f, err = os.Open(fileName)
@@ -35,9 +34,11 @@ func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
 	}
 	return &pcapFileHandle{handle, f}
 }
+
 func (h *pcapFileHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	return h.reader.ReadPacketData()
 }
+
 func (h *pcapFileHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	return h.reader.ZeroCopyReadPacketData()
 }

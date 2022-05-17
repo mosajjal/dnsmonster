@@ -26,6 +26,7 @@ func initializeLivePcap(devName, filter string) *livePcapHandle {
 func (h *livePcapHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	return h.handle.ReadPacketData()
 }
+
 func (h *livePcapHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	return h.handle.ZeroCopyReadPacketData()
 }

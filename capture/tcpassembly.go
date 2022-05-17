@@ -14,7 +14,7 @@ import (
 
 func (ds *dnsStream) processStream() {
 	var data []byte
-	var tmp = make([]byte, 4096)
+	tmp := make([]byte, 4096)
 
 	for {
 		count, err := ds.reader.Read(tmp)
@@ -64,7 +64,7 @@ func (stream *dnsStreamFactory) New(net, transport gopacket.Flow) tcpassembly.St
 }
 
 func tcpAssembler(tcpchannel chan tcpPacket, tcpReturnChannel chan tcpData, gcTime time.Duration) {
-	//TCP reassembly init
+	// TCP reassembly init
 	streamFactoryV4 := &dnsStreamFactory{
 		tcpReturnChannel: tcpReturnChannel,
 		IPVersion:        4,

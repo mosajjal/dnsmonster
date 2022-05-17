@@ -9,7 +9,6 @@ import (
 )
 
 func (config CaptureConfig) StartNonDnsTap() {
-
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
 	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
 	packetsDuplicate := metrics.GetOrRegisterCounter("packetsDuplicate", metrics.DefaultRegistry)
@@ -36,8 +35,8 @@ func (config CaptureConfig) StartNonDnsTap() {
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
 
-	var ratioCnt = 0
-	var totalCnt = int64(0)
+	ratioCnt := 0
+	totalCnt := int64(0)
 
 	// updating the metrics in a separate goroutine
 	go func() {
@@ -56,7 +55,7 @@ func (config CaptureConfig) StartNonDnsTap() {
 
 	// blocking loop to capture packets and send them to processing channel
 	for {
-		data, ci, err := myHandler.ReadPacketData() //todo: ZeroCopyReadPacketData is slower than ReadPacketData. need to investigate why
+		data, ci, err := myHandler.ReadPacketData() // todo: ZeroCopyReadPacketData is slower than ReadPacketData. need to investigate why
 		if data == nil || err != nil {
 			log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 2 seconds waiting for processing to finish")
 			time.Sleep(time.Second * 2)
@@ -71,7 +70,7 @@ func (config CaptureConfig) StartNonDnsTap() {
 		if config.ratioA != config.ratioB { // this confirms the ratio is in use
 			ratioCnt++
 			if ratioCnt%config.ratioB < config.ratioA {
-				if ratioCnt > config.ratioB*config.ratioA { //reset ratiocount before it goes to an absurdly high number
+				if ratioCnt > config.ratioB*config.ratioA { // reset ratiocount before it goes to an absurdly high number
 					ratioCnt = 0
 				}
 				packetsOverRatio.Inc(1)

@@ -51,8 +51,8 @@ func (h *afpacketHandle) Close() {
 }
 
 func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
-	frameSize uint, blockSize uint, numBlocks uint, err error) {
-
+	frameSize uint, blockSize uint, numBlocks uint, err error,
+) {
 	if snaplen < pageSize {
 		frameSize = pageSize / (pageSize / snaplen)
 	} else {

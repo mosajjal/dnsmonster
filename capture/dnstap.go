@@ -87,7 +87,6 @@ func dnsTapMsgToDNSResult(msg []byte) (*util.DNSResult, error) {
 	if message != nil {
 		// query
 		myDNSResult.Timestamp = time.Unix(int64(dnstapObject.Message.GetQueryTimeSec()), int64(dnstapObject.Message.GetQueryTimeNsec()))
-
 	} else {
 		// response
 		myDNSResult.Timestamp = time.Unix(int64(dnstapObject.Message.GetResponseTimeSec()), int64(dnstapObject.Message.GetResponseTimeNsec()))

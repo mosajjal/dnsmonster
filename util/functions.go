@@ -141,7 +141,7 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 			prefixTst.Insert(fqdn[0], fqdn[0])
 		case "suffix":
 			entryTypeHt[fqdn[0]] = MATCH_SUFFIX
-			// suffix match is much faster if we rever(se the strings and match for prefix
+			// suffix match is much faster if we reverse the strings and match for prefix
 			suffixTst.Insert(Reverse(fqdn[0]), fqdn[0])
 		case "fqdn":
 			entryTypeHt[fqdn[0]] = MATCH_FQDN

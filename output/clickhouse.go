@@ -89,6 +89,7 @@ func (chConfig ClickhouseConfig) connectClickhouseRetry() (driver.Conn, driver.B
 			return c, b
 		} else {
 			log.Errorf("Error connecting to Clickhouse: %s", err)
+			// todo: try and create table if it doesn't exist
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
@@ -114,9 +115,9 @@ func (chConfig ClickhouseConfig) connectClickhouse() (driver.Conn, driver.Batch,
 			Username: chConfig.ClickhouseUsername,
 			Password: chConfig.ClickhousePassword,
 		},
-		DialTimeout:     time.Second,
-		MaxOpenConns:    16,
-		MaxIdleConns:    5,
+		DialTimeout:     time.Second * 2,
+		MaxOpenConns:    32,
+		MaxIdleConns:    16,
 		ConnMaxLifetime: time.Hour,
 		TLS:             tlsOption,
 		Debug:           chConfig.ClickhouseDebug,

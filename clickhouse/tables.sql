@@ -39,8 +39,13 @@ ENGINE=SummingMergeTree
 
 -- View for unique domain count
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_UNIQUE
-ENGINE=AggregatingMergeTree(DnsDate, (timestamp, Server), 8192) AS
-  SELECT DnsDate, timestamp, Server, uniqState(Question) AS UniqueDnsCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
+ENGINE=AggregatingMergeTree
+  PARTITION BY toYYYYMMDD(DnsDate)
+  PRIMARY KEY (DnsDate, (timestamp, Server)) 
+  ORDER BY (DnsDate, (timestamp, Server))
+  TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
+  SETTINGS index_granularity = 8192
+  AS SELECT DnsDate, timestamp, Server, uniqState(Question) AS UniqueDnsCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
 
 -- View for count by protocol
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_PROTOCOL
@@ -56,14 +61,24 @@ ENGINE=SummingMergeTree
 
 -- View with packet sizes
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_GENERAL_AGGREGATIONS
-ENGINE=AggregatingMergeTree(DnsDate, (timestamp, Server), 8192) AS
-SELECT DnsDate, timestamp, Server, sumState(Size) AS TotalSize, avgState(Size) AS AverageSize FROM DNS_LOG GROUP BY Server, DnsDate, timestamp;
+ENGINE=AggregatingMergeTree
+  PARTITION BY toYYYYMMDD(DnsDate)
+  PRIMARY KEY (DnsDate, (timestamp, Server)) 
+  ORDER BY (DnsDate, (timestamp, Server))
+  TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
+  SETTINGS index_granularity = 8192
+  AS SELECT DnsDate, timestamp, Server, sumState(Size) AS TotalSize, avgState(Size) AS AverageSize FROM DNS_LOG GROUP BY Server, DnsDate, timestamp;
 
 
 -- View with edns information
 CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_EDNS
-ENGINE=AggregatingMergeTree(DnsDate, (timestamp, Server), 8192) AS
-  SELECT DnsDate, timestamp, Server, sumState(Edns0Present) as EdnsCount, sumState(DoBit) as DoBitCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
+ENGINE=AggregatingMergeTree
+  PARTITION BY toYYYYMMDD(DnsDate)
+  PRIMARY KEY (DnsDate, (timestamp, Server)) 
+  ORDER BY (DnsDate, (timestamp, Server))
+  TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
+  SETTINGS index_granularity = 8192
+  AS SELECT DnsDate, timestamp, Server, sumState(Edns0Present) as EdnsCount, sumState(DoBit) as DoBitCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
 
 
 -- View wih query OpCode

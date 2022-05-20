@@ -11,9 +11,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var releaseVersion string = "DEVELOPMENT"
-var GlobalParser = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
-var GlobalMetricConfig MetricConfig
+var (
+	releaseVersion     string = "DEVELOPMENT"
+	GlobalParser              = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
+	GlobalMetricConfig MetricConfig
+)
 
 type GeneralConfig struct {
 	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
@@ -54,31 +56,30 @@ var GeneralFlags GeneralConfig
 func (g GeneralConfig) GetWg() *sync.WaitGroup {
 	return g.wg
 }
+
 func (g GeneralConfig) GetExit() *chan bool {
 	return &g.exiting
 }
 
 func (g GeneralConfig) LoadAllowDomain() {
 	GeneralFlags.allowPrefixTst, GeneralFlags.allowSuffixTst, GeneralFlags.allowTypeHt = LoadDomainsCsv(GeneralFlags.AllowDomainsFile)
-
 }
 
 func (g GeneralConfig) LoadSkipDomain() {
 	GeneralFlags.skipPrefixTst, GeneralFlags.skipSuffixTst, GeneralFlags.skipTypeHt = LoadDomainsCsv(GeneralFlags.SkipDomainsFile)
-
 }
 
 var helpOptions struct {
-	Help           bool `long:"help"  short:"h" no-ini:"true"      description:"Print this help to stdout"`
-	ManPage        bool `long:"manPage"         no-ini:"true"      description:"Print Manpage for dnsmonster to stdout"`
-	BashCompletion bool `long:"bashCompletion"  no-ini:"true"      description:"Print bash completion script to stdout"`
-	FishCompletion bool `long:"fishCompletion"  no-ini:"true"      description:"Print fish completion script to stdout"`
-	// SystemdService bool           `long:"systemdService"  no-ini:"true"      description:"Print a sample systemd service to stdout"`
-	WriteConfig flags.Filename `long:"writeConfig"     no-ini:"true"      description:"generate a config file based on current inputs (flags, input config file and environment variables) and write to provided path" default:""`
+	Help           bool           `long:"help"  short:"h" no-ini:"true"      description:"Print this help to stdout"`
+	ManPage        bool           `long:"manPage"         no-ini:"true"      description:"Print Manpage for dnsmonster to stdout"`
+	BashCompletion bool           `long:"bashCompletion"  no-ini:"true"      description:"Print bash completion script to stdout"`
+	FishCompletion bool           `long:"fishCompletion"  no-ini:"true"      description:"Print fish completion script to stdout"`
+	SystemdService bool           `long:"systemdService"  no-ini:"true"      description:"Print a sample systemd service to stdout"`
+	WriteConfig    flags.Filename `long:"writeConfig"     no-ini:"true"      description:"generate a config file based on current inputs (flags, input config file and environment variables) and write to provided path" default:""`
 }
 
 func ProcessFlags() {
-	//todo: flags are camel-case but ini is not. this needs to be consistent
+	// todo: flags are camel-case but ini is not. this needs to be consistent
 	GeneralFlags.wg = &sync.WaitGroup{}
 	GeneralFlags.exiting = make(chan bool, 1)
 
@@ -102,6 +103,10 @@ func ProcessFlags() {
 	}
 	if helpOptions.BashCompletion {
 		fmt.Print(BASH_COMPLETION_TEMPLATE)
+		os.Exit(0)
+	}
+	if helpOptions.SystemdService {
+		fmt.Print(SYSTEMD_SERVICE_TEMPLATE)
 		os.Exit(0)
 	}
 	if helpOptions.FishCompletion {
@@ -139,7 +144,7 @@ func ProcessFlags() {
 		lvl = log.WarnLevel
 	case 3:
 		lvl = log.InfoLevel
-	case 4: //debug caller shows the function name
+	case 4: // debug caller shows the function name
 		lvl = log.DebugLevel
 		log.SetReportCaller(true)
 	}
@@ -184,5 +189,4 @@ func ProcessFlags() {
 	if GeneralFlags.PacketLimit < 0 {
 		log.Fatal("--packetLimit must be equal or greather than 0")
 	}
-
 }

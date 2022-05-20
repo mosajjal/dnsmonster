@@ -16,3 +16,17 @@ _completion_dnsmonster() {
 
 complete -F _completion_dnsmonster dnsmonster
 `
+
+var SYSTEMD_SERVICE_TEMPLATE = `
+[Unit]
+Description=dnsmonster service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+ExecStart=/usr/bin/dnsmonster --config /etc/dnsmonster.ini
+
+[Install]
+WantedBy=multi-user.target
+`

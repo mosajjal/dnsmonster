@@ -550,6 +550,9 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric
 --metricPrometheusEndpoint=
 
+# Format for  output.
+--metricStderrFormat=json
+
 # Interval between sending results to Metric Endpoint
 --metricFlushInterval=10s
 ```

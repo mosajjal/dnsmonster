@@ -128,6 +128,7 @@ func (chConfig ClickhouseConfig) connectClickhouse() (driver.Conn, driver.Batch,
 		log.Error(err)
 		return connection, nil, err
 	}
+
 	batch, err := connection.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
 	return connection, batch, err
 }

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 	"time"
 
 	prometheusmetrics "github.com/deathowl/go-metrics-prometheus"
@@ -22,6 +23,7 @@ type MetricConfig struct {
 	MetricEndpointType       string        `long:"metricEndpointType"       env:"DNSMONSTER_METRICENDPOINTTYPE"       default:"stderr" description:"Metric Endpoint Service"    choice:"statsd" choice:"prometheus" choice:"stderr"`
 	MetricStatsdAgent        string        `long:"metricStatsdAgent"        env:"DNSMONSTER_METRICSTATSDAGENT"        default:""       description:"Statsd endpoint. Example: 127.0.0.1:8125 "`
 	MetricPrometheusEndpoint string        `long:"metricPrometheusEndpoint" env:"DNSMONSTER_METRICPROMETHEUSENDPOINT" default:""       description:"Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric"`
+	MetricStderrFormat       string        `long:"metricStderrFormat"       env:"DNSMONSTER_METRICSTDERRFORMAT"       default:"json"   description:"Format for stderr output."  choice:"json" choice:"kv"`
 	MetricFlushInterval      time.Duration `long:"metricFlushInterval"      env:"DNSMONSTER_METRICFLUSHINTERVAL"      default:"10s"    description:"Interval between sending results to Metric Endpoint"`
 	// MetricProxy             string        `long:"metricProxy"              env:"DNSMONSTER_METRICPROXY"             default:""       description:"URI formatted proxy server to use for metric endpoint. Example: http://username:password@hostname:port"`
 }
@@ -63,8 +65,17 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 		// go metrics.Log(metrics.DefaultRegistry, metricConfig.MetricFlushInterval, log.StandardLogger())
 		go func() {
 			for range time.Tick(metricConfig.MetricFlushInterval) {
-				metricsJson, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
-				os.Stderr.WriteString(fmt.Sprintf("metrics: %s\n", metricsJson))
+				out := ""
+				switch metricConfig.MetricStderrFormat {
+				case "json":
+					metricsJson, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
+					out = string(metricsJson)
+				case "kv":
+					for k1, v := range metrics.DefaultRegistry.GetAll() {
+						out += fmt.Sprintf("%s=%v ", k1, v[reflect.ValueOf(v).MapKeys()[0].String()])
+					}
+				}
+				os.Stderr.WriteString(fmt.Sprintf("%s metrics: %s\n", time.Now().Format(time.RFC3339), out))
 			}
 		}()
 

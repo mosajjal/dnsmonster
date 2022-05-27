@@ -158,7 +158,9 @@ func ProcessFlags() {
 	case "json":
 		log.SetFormatter(&log.JSONFormatter{})
 	case "text":
-		log.SetFormatter(&log.TextFormatter{})
+		log.SetFormatter(&log.TextFormatter{
+			FullTimestamp: true,
+		})
 	}
 
 	if GeneralFlags.SkipDomainsFile != "" {

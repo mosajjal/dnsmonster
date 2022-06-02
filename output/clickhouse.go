@@ -18,7 +18,7 @@ import (
 )
 
 type ClickhouseConfig struct {
-	ClickhouseAddress           string        `long:"clickhouseAddress"           env:"DNSMONSTER_CLICKHOUSEADDRESS"           default:"localhost:9000"                                          description:"Address of the clickhouse database to save the results"`
+	ClickhouseAddress           []string      `long:"clickhouseAddress"           env:"DNSMONSTER_CLICKHOUSEADDRESS"           default:"localhost:9000"                                          description:"Address of the clickhouse database to save the results. multiple values can be provided"`
 	ClickhouseUsername          string        `long:"clickhouseUsername"          env:"DNSMONSTER_CLICKHOUSEUSERNAME"          default:""                                                        description:"Username to connect to the clickhouse database"`
 	ClickhousePassword          string        `long:"clickhousePassword"          env:"DNSMONSTER_CLICKHOUSEPASSWORD"          default:""                                                        description:"Password to connect to the clickhouse database"`
 	ClickhouseDatabase          string        `long:"clickhouseDatabase"          env:"DNSMONSTER_CLICKHOUSEDATABASE"          default:"default"                                                 description:"Database to connect to the clickhouse database"`
@@ -109,7 +109,7 @@ func (chConfig ClickhouseConfig) connectClickhouse() (driver.Conn, driver.Batch,
 	}
 
 	connection, err := clickhouse.Open(&clickhouse.Options{
-		Addr: []string{chConfig.ClickhouseAddress},
+		Addr: chConfig.ClickhouseAddress,
 		Auth: clickhouse.Auth{
 			Database: chConfig.ClickhouseDatabase,
 			Username: chConfig.ClickhouseUsername,

@@ -249,7 +249,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --noPromiscuous
 
 # [clickhouse_output]
-# Address of the clickhouse database to save the results
+# Address of the clickhouse database to save the results. multiple values can be provided
 --clickhouseAddress=localhost:9000
 
 # Username to connect to the clickhouse database

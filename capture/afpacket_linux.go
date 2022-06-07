@@ -104,13 +104,17 @@ func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpa
 	if err != nil {
 		log.Fatal(err)
 	}
-	handle.SetBPFFilter(filter, 1024)
-
+	err = handle.SetBPFFilter(filter, 1024)
+	if err != nil {
+		log.Fatal("Error setting BPF filter.. exiting")
+	}
 	// set up promisc mode. first we need to get the fd for the interface we just opened. using a hacky mode
 	// v := reflect.ValueOf(handle.TPacket)
 	// fd := v.FieldByName("fd").Int()
-	config.setPromiscuous()
-
+	err = config.setPromiscuous()
+	if err != nil {
+		log.Fatal("Error setting the interface to promiscuous.. exiting")
+	}
 	log.Infof("Opened: %s", devName)
 	return handle
 }

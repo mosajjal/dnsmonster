@@ -40,8 +40,7 @@ func handleInterrupt() {
 					for i := 0; i < runtime.NumGoroutine(); i++ {
 						*util.GeneralFlags.GetExit() <- true
 					}
-					select {
-					case <-ctx.Done():
+					for range ctx.Done() {
 						fmt.Println("Canceled by timeout")
 						return
 					}
@@ -55,7 +54,6 @@ func handleInterrupt() {
 }
 
 func main() {
-
 	// process and handle flags
 	util.ProcessFlags()
 

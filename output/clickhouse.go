@@ -155,8 +155,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 	c := uint(0)
 	for {
 		now := time.Now()
-		select {
-		case data := <-chConfig.outputChannel:
+		for data := range chConfig.outputChannel {
 			for _, dnsQuery := range data.DNS.Question {
 				c++
 				if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {

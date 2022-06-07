@@ -76,7 +76,6 @@ func (config CaptureConfig) cleanExit() {
 	for i := 0; i < runtime.NumGoroutine(); i++ {
 		*util.GeneralFlags.GetExit() <- true
 	}
-	return
 }
 
 func (config CaptureConfig) CheckFlagsAndStart() {

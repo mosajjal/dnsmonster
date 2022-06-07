@@ -20,8 +20,10 @@ func initializeLivePcap(devName, filter string) *livePcapHandle {
 	if err != nil {
 		log.Fatal(err)
 	}
-	handle.SetPromiscuous(!GlobalCaptureConfig.NoPromiscuous)
-
+	err = handle.SetPromiscuous(!GlobalCaptureConfig.NoPromiscuous)
+	if err != nil {
+		log.Fatal("Error setting interface to promiscuous.. Exiting")
+	}
 	// Set Filter
 	log.Infof("Using Device: %s", devName)
 	bpf := TcpdumpToPcapgoBpf(filter)

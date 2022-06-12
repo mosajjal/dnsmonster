@@ -65,7 +65,7 @@ The code before version 1.x is considered beta quality and is subject to breakin
 - Ability to send metrics using `prometheus` and `statstd`
 - High compression ratio thanks to ClickHouse's built-in LZ4 storage
 - Supports DNS Over TCP, Fragmented DNS (udp/tcp) and IPv6
-- Supports [dnstrap](https://github.com/dnstap/golang-dnstap) over Unix socket or TCP
+- Supports [dnstap](https://github.com/dnstap/golang-dnstap) over Unix socket or TCP
 - built-in SIEM integration with Splunk and Microsoft Sentinel
 
 # Installation

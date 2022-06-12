@@ -69,7 +69,7 @@ func (config CaptureConfig) StartNonDnsTap() {
 		skipForRatio := false
 		if config.ratioA != config.ratioB { // this confirms the ratio is in use
 			ratioCnt++
-			if ratioCnt%config.ratioB < config.ratioA {
+			if ratioCnt%config.ratioB > config.ratioA {
 				if ratioCnt > config.ratioB*config.ratioA { // reset ratiocount before it goes to an absurdly high number
 					ratioCnt = 0
 				}

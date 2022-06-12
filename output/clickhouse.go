@@ -3,17 +3,14 @@ package output
 import (
 	"context"
 	"crypto/tls"
-	"encoding/binary"
 	"errors"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/compress"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/google/uuid"
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
-	"github.com/rogpeppe/fastuuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -73,8 +70,6 @@ func (chConfig ClickhouseConfig) Close() {
 func (chConfig ClickhouseConfig) OutputChannel() chan util.DNSResult {
 	return chConfig.outputChannel
 }
-
-var uuidGen = fastuuid.MustNewGenerator()
 
 func (chConfig ClickhouseConfig) connectClickhouseRetry() (driver.Conn, driver.Batch) {
 	tick := time.NewTicker(5 * time.Second)
@@ -168,23 +163,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 				if chConfig.ClickhouseSaveFullQuery {
 					fullQuery = chConfig.outputMarshaller.Marshal(data)
 				}
-				var SrcIP, DstIP uint64 = 0, 0
 
-				if data.IPVersion == 4 {
-					if s := data.SrcIP.To4(); s != nil {
-						SrcIP = uint64(binary.BigEndian.Uint32(s))
-					}
-					if d := data.SrcIP.To16(); d != nil {
-						DstIP = uint64(binary.BigEndian.Uint32(d))
-					}
-				} else {
-					if s := data.SrcIP.To16(); s != nil {
-						SrcIP = binary.BigEndian.Uint64(s[:8]) // limitation of clickhouse-go doesn't let us go more than 64 bits for ipv6 at the moment
-					}
-					if d := data.SrcIP.To16(); d != nil {
-						DstIP = binary.BigEndian.Uint64(d[:8])
-					}
-				}
 				QR := uint8(0)
 				if data.DNS.Response {
 					QR = 1
@@ -196,16 +175,13 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 						doBit = 1
 					}
 				}
-				tempUuidGen := uuidGen.Next()
-				var myUUID uuid.UUID
-				copy(myUUID[:], tempUuidGen[:16])
 				err := batch.Append(
 					data.Timestamp,
 					time.Now(),
 					util.GeneralFlags.ServerName,
 					data.IPVersion,
-					SrcIP,
-					DstIP,
+					data.SrcIP.To16(),
+					data.DstIP.To16(),
 					data.Protocol,
 					QR,
 					uint8(data.DNS.Opcode),
@@ -217,7 +193,6 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 					uint8(data.DNS.Rcode),
 					dnsQuery.Name,
 					data.PacketLength,
-					myUUID,
 				)
 				if err != nil {
 					log.Warnf("Error while executing batch: %v", err)
@@ -225,7 +200,6 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 				}
 				// todo: test batch timeout here.
 				if c%chConfig.ClickhouseBatchSize == 0 || time.Since(now) > chConfig.ClickhouseDelay {
-
 					err = batch.Send()
 					if err != nil {
 						log.Warnf("Error while executing batch: %v", err)

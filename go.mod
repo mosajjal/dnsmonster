@@ -6,7 +6,6 @@ require (
 	github.com/deathowl/go-metrics-prometheus v0.0.0-20200518174047-74482eab5bfb
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/google/gopacket v1.1.19
-	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/influxdata/influxdb-client-go/v2 v2.9.0
 	github.com/prometheus/client_golang v1.12.2
@@ -22,6 +21,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.11.0 // indirect
 	github.com/farsightsec/golang-framestream v0.3.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.12 // indirect

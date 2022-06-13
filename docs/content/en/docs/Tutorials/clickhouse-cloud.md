@@ -23,7 +23,7 @@ when you checkout `dnsmonster` repository from GitHub, there is a [replicated ta
 for example, `/tmp/tables_replicated.sql`. Now let's use `clickhouse-client` tool to create the tables.
 
 ```sh
-cat /tmp/tables_replicated.sql | clickhouse-client --host INSTANCEID.REGION.PROVIDER.clickhouse.cloud --secure --port 9440 --password RANDOM_PASSWORD --multiquery
+clickhouse-client --host INSTANCEID.REGION.PROVIDER.clickhouse.cloud --secure --port 9440 --password RANDOM_PASSWORD --multiquery < /tmp/tables_replicated.sql
 ```
 
 replace the all caps variables with your server instance and this should create your primary tables. Everything should be in place for us to use `dnsmonster`. Now we can point the `dnsmonster` service to the ClickHouse instance and it should work without any issues.

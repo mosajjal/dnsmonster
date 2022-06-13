@@ -25,7 +25,7 @@ type SentinelConfig struct {
 	SentinelOutputLogType    string        `long:"sentinelOutputLogType"       env:"DNSMONSTER_SENTINELOUTPUTLOGTYPE"       default:"dnsmonster"                                              description:"Sentinel Output LogType"`
 	SentinelOutputProxy      string        `long:"sentinelOutputProxy"         env:"DNSMONSTER_SENTINELOUTPUTPROXY"         default:""                                                        description:"Sentinel Output Proxy in URI format"`
 	SentinelBatchSize        uint          `long:"sentinelBatchSize"           env:"DNSMONSTER_SENTINELBATCHSIZE"           default:"100"                                                     description:"Sentinel Batch Size"`
-	SentinelBatchDelay       time.Duration `long:"sentinelBatchDelay"          env:"DNSMONSTER_SENTINELBATCHDELAY"          default:"1s"                                                      description:"Interval between sending results to Sentinel if Batch size is not filled"`
+	SentinelBatchDelay       time.Duration `long:"sentinelBatchDelay"          env:"DNSMONSTER_SENTINELBATCHDELAY"          default:"0s"                                                      description:"Interval between sending results to Sentinel if Batch size is not filled. Any value larger than zero takes precedence over Batch Size"`
 	outputChannel            chan util.DNSResult
 	outputMarshaller         util.OutputMarshaller
 	closeChannel             chan bool
@@ -165,30 +165,47 @@ func (seConfig SentinelConfig) Output() {
 	sentinelSkipped := metrics.GetOrRegisterCounter("sentinelSkipped", metrics.DefaultRegistry)
 
 	batch := "["
-	cnt := 0
-	// todo: test the batch delay solution
-	now := time.Now()
-	for data := range seConfig.outputChannel {
-		for _, dnsQuery := range data.DNS.Question {
+	cnt := uint(0)
 
-			if util.CheckIfWeSkip(seConfig.SentinelOutputType, dnsQuery.Name) {
-				sentinelSkipped.Inc(1)
-				continue
-			}
+	ticker := time.NewTicker(time.Second * 5)
+	div := 0
+	if seConfig.SentinelBatchDelay > 0 {
+		seConfig.SentinelBatchSize = 1
+		div = -1
+		ticker = time.NewTicker(seConfig.SentinelBatchDelay)
+	} else {
+		ticker.Stop()
+	}
+	for {
+		select {
+		case data := <-seConfig.outputChannel:
+			for _, dnsQuery := range data.DNS.Question {
 
-			cnt++
-			batch += seConfig.outputMarshaller.Marshal(data)
-			batch += ","
-			if cnt == int(seConfig.SentinelBatchSize) || time.Since(now) > seConfig.SentinelBatchDelay {
-				// remove the last ,
-				batch = strings.TrimSuffix(batch, ",")
-				batch += "]"
-				seConfig.sendBatch(batch, cnt)
-				// reset counters
-				batch = "["
-				cnt = 0
-				now = time.Now()
+				if util.CheckIfWeSkip(seConfig.SentinelOutputType, dnsQuery.Name) {
+					sentinelSkipped.Inc(1)
+					continue
+				}
+
+				cnt++
+				batch += seConfig.outputMarshaller.Marshal(data)
+				batch += ","
+				if int(cnt%seConfig.SentinelBatchSize) == div {
+					// remove the last ,
+					batch = strings.TrimSuffix(batch, ",")
+					batch += "]"
+					seConfig.sendBatch(batch, int(cnt))
+					// reset counters
+					batch = "["
+					cnt = 0
+				}
 			}
+		case <-ticker.C:
+			batch = strings.TrimSuffix(batch, ",")
+			batch += "]"
+			seConfig.sendBatch(batch, int(cnt))
+			// reset counters
+			batch = "["
+			cnt = 0
 		}
 	}
 }

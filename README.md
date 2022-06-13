@@ -261,8 +261,8 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Database to connect to the clickhouse database
 --clickhouseDatabase=default
 
-# Interval between sending results to ClickHouse
---clickhouseDelay=1s
+# Interval between sending results to ClickHouse. If non-0, Batch size is ignored and batch delay is used
+--clickhouseDelay=0s
 
 # Debug Clickhouse connection
 --clickhouseDebug
@@ -422,8 +422,8 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Sentinel Batch Size
 --sentinelBatchSize=100
 
-# Interval between sending results to Sentinel if Batch size is not filled
---sentinelBatchDelay=1s
+# Interval between sending results to Sentinel if Batch size is not filled. Any value larger than zero takes precedence over Batch Size
+--sentinelBatchDelay=0s
 
 # [splunk_output]
 # What should be written to HEC. options:

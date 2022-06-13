@@ -19,7 +19,7 @@ type ClickhouseConfig struct {
 	ClickhouseUsername          string        `long:"clickhouseUsername"          env:"DNSMONSTER_CLICKHOUSEUSERNAME"          default:""                                                        description:"Username to connect to the clickhouse database"`
 	ClickhousePassword          string        `long:"clickhousePassword"          env:"DNSMONSTER_CLICKHOUSEPASSWORD"          default:""                                                        description:"Password to connect to the clickhouse database"`
 	ClickhouseDatabase          string        `long:"clickhouseDatabase"          env:"DNSMONSTER_CLICKHOUSEDATABASE"          default:"default"                                                 description:"Database to connect to the clickhouse database"`
-	ClickhouseDelay             time.Duration `long:"clickhouseDelay"             env:"DNSMONSTER_CLICKHOUSEDELAY"             default:"1s"                                                      description:"Interval between sending results to ClickHouse"`
+	ClickhouseDelay             time.Duration `long:"clickhouseDelay"             env:"DNSMONSTER_CLICKHOUSEDELAY"             default:"0s"                                                      description:"Interval between sending results to ClickHouse. If non-0, Batch size is ignored and batch delay is used"`
 	ClickhouseDebug             bool          `long:"clickhouseDebug"             env:"DNSMONSTER_CLICKHOUSEDEBUG"             description:"Debug Clickhouse connection"`
 	ClickhouseCompress          bool          `long:"clickhouseCompress"          env:"DNSMONSTER_CLICKHOUSECOMPRESS"          description:"Compress Clickhouse connection"`
 	ClickhouseSecure            bool          `long:"clickhouseSecure"            env:"DNSMONSTER_CLICKHOUSESECURE"            description:"Use TLS for Clickhouse connection"`
@@ -148,9 +148,23 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 	clickhouseFailed := metrics.GetOrRegisterCounter("clickhouseFailed", metrics.DefaultRegistry)
 
 	c := uint(0)
+
+	now := time.Now()
+
+	ticker := time.NewTicker(time.Second * 5)
+	div := 0
+
+	if chConfig.ClickhouseDelay > 0 {
+		chConfig.ClickhouseBatchSize = 1
+		div = -1
+		ticker = time.NewTicker(chConfig.ClickhouseDelay)
+	} else {
+		ticker.Stop()
+	}
+
 	for {
-		now := time.Now()
-		for data := range chConfig.outputChannel {
+		select {
+		case data := <-chConfig.outputChannel:
 			for _, dnsQuery := range data.DNS.Question {
 				c++
 				if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {
@@ -177,7 +191,7 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 				}
 				err := batch.Append(
 					data.Timestamp,
-					time.Now(),
+					now,
 					util.GeneralFlags.ServerName,
 					data.IPVersion,
 					data.SrcIP.To16(),
@@ -198,8 +212,8 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 					log.Warnf("Error while executing batch: %v", err)
 					clickhouseFailed.Inc(1)
 				}
-				// todo: test batch timeout here.
-				if c%chConfig.ClickhouseBatchSize == 0 || time.Since(now) > chConfig.ClickhouseDelay {
+				if int(c%chConfig.ClickhouseBatchSize) == div {
+					now = time.Now()
 					err = batch.Send()
 					if err != nil {
 						log.Warnf("Error while executing batch: %v", err)
@@ -207,9 +221,17 @@ func (chConfig ClickhouseConfig) clickhouseOutputWorker() {
 					}
 					c = 0
 					batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
-					now = time.Now()
 				}
 			}
+		case <-ticker.C:
+			now = time.Now()
+			err := batch.Send()
+			if err != nil {
+				log.Warnf("Error while executing batch: %v", err)
+				clickhouseFailed.Inc(int64(c))
+			}
+			c = 0
+			batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
 		}
 	}
 }

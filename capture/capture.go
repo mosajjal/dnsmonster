@@ -1,3 +1,7 @@
+// Capture package provides the configuration and all the modules for capturing input
+// and converting them to a dns result type. Like output, capture tries to leverage 
+// common behaviour of inputs and design an interface around it, but unlike the output module
+// it does not have configuration granulaity based on each module. 
 package capture
 
 import (

@@ -1,3 +1,5 @@
+// Util package provides the general configuration and variable types needed for differnet parts of dnsmonster
+// Logging, metrics, and the search trees for allowlist and skiplist are generated and updated here.
 package util
 
 import (

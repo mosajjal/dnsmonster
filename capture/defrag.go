@@ -1,4 +1,3 @@
-// Package ip6defrag implements a IPv6 defragmenter
 package capture
 
 import (

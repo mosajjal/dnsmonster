@@ -33,7 +33,6 @@ func handleInterrupt() {
 		for range c {
 			for {
 				log.Infof("SIGINT Received. Stopping capture...")
-
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				go func() {

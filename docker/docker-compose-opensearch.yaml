@@ -1,0 +1,67 @@
+version: "3.3"
+
+services:
+  opensearch-node1:
+    image: opensearchproject/opensearch:2.0.0
+    container_name: opensearch-node1
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    healthcheck:
+      interval: 10s
+      retries: 80
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent -k --output /dev/null https://admin:admin@localhost:9200/
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.0.0
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200"]' # must be a string with no spaces when specified as an environment variable
+
+  grafana:
+    image: grafana/grafana:8.4.3
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - opensearch-node1
+
+  dnsmonster:
+    image: ghcr.io/mosajjal/dnsmonster:latest
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    depends_on:
+      - opensearch-node1
+    environment:
+      - PUID=1000
+      - PGID=1000
+    command:
+      - "--serverName=HOSTNAME"
+      - "--devName=lo"
+      - "--elasticOutputType=1"
+      - "--elasticOutputEndpoint=https://admin:admin@127.0.0.1:9200"
+      - "--skipTLSVerification"
+
+volumes:
+  opensearch-data1:

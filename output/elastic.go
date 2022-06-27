@@ -2,8 +2,10 @@ package output
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/util"
@@ -86,7 +88,13 @@ func (esConfig ElasticConfig) connectelasticRetry() *elastic.Client {
 }
 
 func (esConfig ElasticConfig) connectelastic() (*elastic.Client, error) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification},
+	}
+	httpClient := &http.Client{Transport: tr}
+
 	client, err := elastic.NewClient(
+		elastic.SetHttpClient(httpClient),
 		elastic.SetURL(esConfig.ElasticOutputEndpoint),
 		elastic.SetSniff(false),
 		elastic.SetHealthcheckInterval(10*time.Second),

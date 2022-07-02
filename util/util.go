@@ -133,7 +133,10 @@ func ProcessFlags() {
 			}
 		}
 		//  re-parse the argument from command line to give them priority
-		GlobalParser.Parse()
+		_, err = GlobalParser.Parse()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	var lvl log.Level = log.WarnLevel

@@ -7,7 +7,8 @@ require (
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/google/gopacket v1.1.19
 	github.com/hashicorp/go-syslog v1.0.0
-	github.com/influxdata/influxdb-client-go/v2 v2.9.0
+	github.com/influxdata/influxdb-client-go/v2 v2.9.1
+	github.com/jackc/pgx/v4 v4.16.1
 	github.com/prometheus/client_golang v1.12.2
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/syntaqx/go-metrics-datadog v0.1.1
@@ -23,6 +24,14 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
+	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	github.com/jackc/pgconn v1.12.1 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/jackc/pgtype v1.11.0 // indirect
+	github.com/jackc/puddle v1.2.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
@@ -33,22 +42,23 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	go.opentelemetry.io/otel v1.7.0 // indirect
-	go.opentelemetry.io/otel/trace v1.7.0 // indirect
+	go.opentelemetry.io/otel v1.8.0 // indirect
+	go.opentelemetry.io/otel/trace v1.8.0 // indirect
 	golang.org/x/arch v0.0.0-20220412001346-fc48f9fe4c15 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.11 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (
-	github.com/ClickHouse/clickhouse-go/v2 v2.1.0
-	github.com/bytedance/sonic v1.3.1
+	github.com/ClickHouse/clickhouse-go/v2 v2.2.0
+	github.com/bytedance/sonic v1.3.3
 	github.com/chenzhuoyu/base64x v0.0.0-20220526154910-8bf9453eb81a // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/klauspost/compress v1.15.6 // indirect
+	github.com/klauspost/compress v1.15.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/miekg/dns v1.1.50
 	github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.7
@@ -59,8 +69,7 @@ require (
 	github.com/segmentio/kafka-go v0.4.32
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
-	golang.org/x/net v0.0.0-20220622184535-263ec571b305
-	golang.org/x/sys v0.0.0-20220622161953-175b2fd9d664 // indirect
-	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
+	golang.org/x/net v0.0.0-20220708220712-1185a9018129
+	golang.org/x/sys v0.0.0-20220708085239-5a0f0661e09d // indirect
 	google.golang.org/protobuf v1.28.0
 )

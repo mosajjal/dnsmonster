@@ -43,7 +43,7 @@ func (chConfig ClickhouseConfig) initializeFlags() error {
 	return err
 }
 
-// initialize function should not block. otherwise the dispatcher will get stuck
+// Initialize function should not block. otherwise the dispatcher will get stuck
 func (chConfig ClickhouseConfig) Initialize() error {
 	var err error
 	chConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
@@ -128,12 +128,14 @@ func (chConfig ClickhouseConfig) connectClickhouse() (driver.Conn, driver.Batch,
 	return connection, batch, err
 }
 
-// Main handler for Clickhouse output. the data from the dispatched output channel will reach this function
-// Essentially, the function is responsible to hold an available connection ready by calling another goroutine,
-// maintain the incoming data batch and try to INSERT them as quick as possible into the Clickhouse table
-// the table structure of Clickhouse is hardcoded into the code so before outputing to Clickhouse, the user
-// needs to make sure that there is proper Database connection and table are present. Refer to the project's
-// clickhouse folder for the file tables.sql
+/*
+Output function brings up the workers. the data from the dispatched output channel will reach this function
+Essentially, the function is responsible to hold an available connection ready by calling another goroutine,
+maintain the incoming data batch and try to INSERT them as quick as possible into the Clickhouse table
+the table structure of Clickhouse is hardcoded into the code so before outputting to Clickhouse, the user
+needs to make sure that there is proper Database connection and table are present. Refer to the project's
+clickhouse folder for the file tables.sql
+*/
 func (chConfig ClickhouseConfig) Output() {
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
 		go chConfig.clickhouseOutputWorker()

@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type InfluxConfig struct {
+type influxConfig struct {
 	InfluxOutputType    uint   `long:"influxOutputType"             env:"DNSMONSTER_INFLUXOUTPUTTYPE"             default:"0"                                                       description:"What should be written to influx. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"         choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	InfluxOutputServer  string `long:"influxOutputServer"           env:"DNSMONSTER_INFLUXOUTPUTSERVER"           default:""                                                        description:"influx Server address, example: http://localhost:8086. Used if influxOutputType is not none"`
 	InfluxOutputToken   string `long:"influxOutputToken"            env:"DNSMONSTER_INFLUXOUTPUTTOKEN"            default:"dnsmonster"                                              description:"Influx Server Auth Token"`
@@ -22,21 +22,20 @@ type InfluxConfig struct {
 	closeChannel        chan bool
 }
 
-func (config InfluxConfig) initializeFlags() error {
-	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
-	_, err := util.GlobalParser.AddGroup("influx_output", "Influx Output", &config)
-
-	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
-	return err
+func init() {
+	c := influxConfig{}
+	if _, err := util.GlobalParser.AddGroup("influx_output", "Influx Output", &c); err != nil {
+		log.Fatalf("error adding output Module")
+	}
+	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 }
 
-// initialize function should not block. otherwise the dispatcher will get stuck
-func (config InfluxConfig) Initialize() error {
-	if config.InfluxOutputType > 0 && config.InfluxOutputType < 5 {
+// Initialize function should not block. otherwise the dispatcher will get stuck
+func (c influxConfig) Initialize() error {
+	if c.InfluxOutputType > 0 && c.InfluxOutputType < 5 {
 		log.Info("Creating Influx Output Channel")
-		go config.Output()
+		go c.Output()
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -44,24 +43,24 @@ func (config InfluxConfig) Initialize() error {
 	return nil
 }
 
-func (config InfluxConfig) Close() {
+func (c influxConfig) Close() {
 	// todo: implement this
-	<-config.closeChannel
+	<-c.closeChannel
 }
 
-func (config InfluxConfig) OutputChannel() chan util.DNSResult {
-	return config.outputChannel
+func (c influxConfig) OutputChannel() chan util.DNSResult {
+	return c.outputChannel
 }
 
-func (influxConfig InfluxConfig) connectInfluxRetry() influxdb2.Client {
+func (c influxConfig) connectInfluxRetry() influxdb2.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if influxConfig.InfluxOutputType == 0 {
+	if c.InfluxOutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
 	for {
-		conn := influxConfig.connectInflux()
+		conn := c.connectInflux()
 		if conn != nil {
 			return conn
 		}
@@ -73,26 +72,26 @@ func (influxConfig InfluxConfig) connectInfluxRetry() influxdb2.Client {
 	}
 }
 
-func (influxConfig InfluxConfig) connectInflux() influxdb2.Client {
-	client := influxdb2.NewClientWithOptions(influxConfig.InfluxOutputServer, influxConfig.InfluxOutputToken, influxdb2.DefaultOptions().SetBatchSize(influxConfig.InfluxBatchSize))
+func (c influxConfig) connectInflux() influxdb2.Client {
+	client := influxdb2.NewClientWithOptions(c.InfluxOutputServer, c.InfluxOutputToken, influxdb2.DefaultOptions().SetBatchSize(c.InfluxBatchSize))
 	return client
 }
 
-func (influxConfig InfluxConfig) Output() {
-	for i := 0; i < int(influxConfig.InfluxOutputWorkers); i++ {
-		go influxConfig.InfluxWorker()
+func (c influxConfig) Output() {
+	for i := 0; i < int(c.InfluxOutputWorkers); i++ {
+		go c.InfluxWorker()
 	}
 }
 
-func (influxConfig InfluxConfig) InfluxWorker() {
+func (c influxConfig) InfluxWorker() {
 	influxSentToOutput := metrics.GetOrRegisterCounter("influxSentToOutput", metrics.DefaultRegistry)
 	influxSkipped := metrics.GetOrRegisterCounter("stdoutSkipped", metrics.DefaultRegistry)
-	client := influxConfig.connectInfluxRetry()
-	writeAPI := client.WriteAPI(influxConfig.InfluxOutputOrg, influxConfig.InfluxOutputBucket)
+	client := c.connectInfluxRetry()
+	writeAPI := client.WriteAPI(c.InfluxOutputOrg, c.InfluxOutputBucket)
 
-	for data := range influxConfig.outputChannel {
+	for data := range c.outputChannel {
 		for _, dnsQuery := range data.DNS.Question {
-			if util.CheckIfWeSkip(influxConfig.InfluxOutputType, dnsQuery.Name) {
+			if util.CheckIfWeSkip(c.InfluxOutputType, dnsQuery.Name) {
 				influxSkipped.Inc(1)
 				continue
 			}
@@ -136,4 +135,4 @@ func (influxConfig InfluxConfig) InfluxWorker() {
 }
 
 // This will allow an instance to be spawned at import time
-var _ = InfluxConfig{}.initializeFlags()
+// var _ = influxConfig{}.initializeFlags()

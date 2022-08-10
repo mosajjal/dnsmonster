@@ -17,7 +17,7 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-type KafkaConfig struct {
+type kafkaConfig struct {
 	KafkaOutputType         uint          `long:"kafkaOutputType"             env:"DNSMONSTER_KAFKAOUTPUTTYPE"             default:"0"                                                       description:"What should be written to kafka. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"         choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	KafkaOutputBroker       []string      `long:"kafkaOutputBroker"           env:"DNSMONSTER_KAFKAOUTPUTBROKER"           default:""                                                        description:"kafka broker address(es), example: 127.0.0.1:9092. Used if kafkaOutputType is not none"`
 	KafkaOutputTopic        string        `long:"kafkaOutputTopic"            env:"DNSMONSTER_KAFKAOUTPUTTOPIC"            default:"dnsmonster"                                              description:"Kafka topic for logging"`
@@ -34,18 +34,17 @@ type KafkaConfig struct {
 	closeChannel            chan bool
 }
 
-func (kafConfig KafkaConfig) initializeFlags() error {
-	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
-	_, err := util.GlobalParser.AddGroup("kafka_output", "Kafka Output", &kafConfig)
-
-	kafConfig.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &kafConfig)
-	return err
+func init() {
+	c := kafkaConfig{}
+	if _, err := util.GlobalParser.AddGroup("kafka_output", "Kafka Output", &c); err != nil {
+		log.Fatalf("error adding output Module")
+	}
+	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (kafConfig KafkaConfig) Initialize() error {
+func (kafConfig kafkaConfig) Initialize() error {
 	var err error
 	kafConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -63,15 +62,15 @@ func (kafConfig KafkaConfig) Initialize() error {
 	return nil
 }
 
-func (kafConfig KafkaConfig) Close() {
+func (kafConfig kafkaConfig) Close() {
 	close(kafConfig.closeChannel)
 }
 
-func (kafConfig KafkaConfig) OutputChannel() chan util.DNSResult {
+func (kafConfig kafkaConfig) OutputChannel() chan util.DNSResult {
 	return kafConfig.outputChannel
 }
 
-func (kafConfig KafkaConfig) getWriter() *kafka.Writer {
+func (kafConfig kafkaConfig) getWriter() *kafka.Writer {
 	transport := &kafka.Transport{
 		Dial: (&net.Dialer{
 			Timeout:   time.Duration(kafConfig.KafkaTimeout) * time.Second,
@@ -125,9 +124,9 @@ func (kafConfig KafkaConfig) getWriter() *kafka.Writer {
 	return kWriter
 }
 
-var kafkaUuidGen = fastuuid.MustNewGenerator()
+var kafkaUUIDGen = fastuuid.MustNewGenerator()
 
-func (kafConfig KafkaConfig) Output() {
+func (kafConfig kafkaConfig) Output() {
 	kWriter := kafConfig.getWriter()
 
 	for {
@@ -144,7 +143,7 @@ func (kafConfig KafkaConfig) Output() {
 	}
 }
 
-func (kafConfig KafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util.DNSResult) error {
+func (kafConfig kafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util.DNSResult) error {
 	kafkaSentToOutput := metrics.GetOrRegisterCounter("kafkaSentToOutput", metrics.DefaultRegistry)
 	kafkaSkipped := metrics.GetOrRegisterCounter("stdoutSkipped", metrics.DefaultRegistry)
 
@@ -156,7 +155,7 @@ func (kafConfig KafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util
 	}
 	kafkaSentToOutput.Inc(1)
 
-	myUUID := kafkaUuidGen.Hex128()
+	myUUID := kafkaUUIDGen.Hex128()
 
 	return kWriter.WriteMessages(context.Background(), kafka.Message{
 		Key:   []byte(myUUID),
@@ -165,4 +164,4 @@ func (kafConfig KafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util
 }
 
 // This will allow an instance to be spawned at import time
-var _ = KafkaConfig{}.initializeFlags()
+// var _ = kafkaConfig{}.initializeFlags()

@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type PsqlConfig struct {
+type psqlConfig struct {
 	PsqlOutputType    uint          `long:"psqlOutputType"          env:"DNSMONSTER_PSQLOUTPUTTYPE"          default:"0"                                                       description:"What should be written to Microsoft Psql. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	PsqlEndpoint      string        `long:"psqlEndpoint"            env:"DNSMONSTER_PSQLOUTPUTENDPOINT"      default:""                                                        description:"Psql endpoint used. must be in uri format. example: postgres://username:password@hostname:port/database?sslmode=disable"`
 	PsqlWorkers       uint          `long:"psqlWorkers"             env:"DNSMONSTER_PSQLWORKERS"             default:"1"                                                       description:"Number of PSQL workers"`
@@ -26,17 +26,17 @@ type PsqlConfig struct {
 	closeChannel      chan bool
 }
 
-func (psqConf PsqlConfig) initializeFlags() error {
-	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
-	_, err := util.GlobalParser.AddGroup("psql_output", "PSQL Output", &psqConf)
-
-	psqConf.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &psqConf)
-	return err
+func init() {
+	c := psqlConfig{}
+	if _, err := util.GlobalParser.AddGroup("psql_output", "PSQL Output", &c); err != nil {
+		log.Fatalf("error adding output Module")
+	}
+	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (psqConf PsqlConfig) Initialize() error {
+func (psqConf psqlConfig) Initialize() error {
 	var err error
 	psqConf.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -54,16 +54,16 @@ func (psqConf PsqlConfig) Initialize() error {
 	return nil
 }
 
-func (psqConf PsqlConfig) Close() {
+func (psqConf psqlConfig) Close() {
 	// todo: implement this
 	<-psqConf.closeChannel
 }
 
-func (psqConf PsqlConfig) OutputChannel() chan util.DNSResult {
+func (psqConf psqlConfig) OutputChannel() chan util.DNSResult {
 	return psqConf.outputChannel
 }
 
-func (psqConf PsqlConfig) connectPsql() *pgxpool.Pool {
+func (psqConf psqlConfig) connectPsql() *pgxpool.Pool {
 	c, err := pgxpool.Connect(context.Background(), psqConf.PsqlEndpoint)
 	if err != nil {
 		// This will not be a connection error, but a DSN parse error or
@@ -89,13 +89,13 @@ func (psqConf PsqlConfig) connectPsql() *pgxpool.Pool {
 	return c
 }
 
-func (psqConf PsqlConfig) Output() {
+func (psqConf psqlConfig) Output() {
 	for i := 0; i < int(psqConf.PsqlWorkers); i++ {
 		go psqConf.OutputWorker()
 	}
 }
 
-func (psqConf PsqlConfig) OutputWorker() {
+func (psqConf psqlConfig) OutputWorker() {
 	psqlSkipped := metrics.GetOrRegisterCounter("psqlSkipped", metrics.DefaultRegistry)
 	psqlSentToOutput := metrics.GetOrRegisterCounter("psqlSentToOutput", metrics.DefaultRegistry)
 	psqlFailed := metrics.GetOrRegisterCounter("psqlFailed", metrics.DefaultRegistry)
@@ -202,4 +202,4 @@ func (psqConf PsqlConfig) OutputWorker() {
 }
 
 // This will allow an instance to be spawned at import time
-var _ = PsqlConfig{}.initializeFlags()
+// var _ = psqlConfig{}.initializeFlags()

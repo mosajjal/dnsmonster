@@ -15,7 +15,7 @@ import (
 	"github.com/olivere/elastic"
 )
 
-type ElasticConfig struct {
+type elasticConfig struct {
 	ElasticOutputType     uint          `long:"elasticOutputType"           env:"DNSMONSTER_ELASTICOUTPUTTYPE"           default:"0"                                                       description:"What should be written to elastic. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"       choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	ElasticOutputEndpoint string        `long:"elasticOutputEndpoint"       env:"DNSMONSTER_ELASTICOUTPUTENDPOINT"       default:""                                                        description:"elastic endpoint address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none"`
 	ElasticOutputIndex    string        `long:"elasticOutputIndex"          env:"DNSMONSTER_ELASTICOUTPUTINDEX"          default:"default"                                                 description:"elastic index"`
@@ -26,28 +26,27 @@ type ElasticConfig struct {
 	closeChannel          chan bool
 }
 
-func (config ElasticConfig) initializeFlags() error {
-	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
-	_, err := util.GlobalParser.AddGroup("elastic_output", "Elastic Output", &config)
-
-	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
-	return err
+func init() {
+	c := elasticConfig{}
+	if _, err := util.GlobalParser.AddGroup("elastic_output", "Elastic Output", &c); err != nil {
+		log.Fatalf("error adding output Module")
+	}
+	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (config ElasticConfig) Initialize() error {
+func (esConfig elasticConfig) Initialize() error {
 	var err error
-	config.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
+	esConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
 		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
 		return err
 	}
 
-	if config.ElasticOutputType > 0 && config.ElasticOutputType < 5 {
+	if esConfig.ElasticOutputType > 0 && esConfig.ElasticOutputType < 5 {
 		log.Info("Creating Elastic Output Channel")
-		go config.Output()
+		go esConfig.Output()
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -55,19 +54,19 @@ func (config ElasticConfig) Initialize() error {
 	return nil
 }
 
-func (config ElasticConfig) Close() {
+func (esConfig elasticConfig) Close() {
 	// todo: implement this
-	<-config.closeChannel
+	<-esConfig.closeChannel
 }
 
-func (config ElasticConfig) OutputChannel() chan util.DNSResult {
-	return config.outputChannel
+func (esConfig elasticConfig) OutputChannel() chan util.DNSResult {
+	return esConfig.outputChannel
 }
 
 // var elasticUuidGen = fastuuid.MustNewGenerator()
 var ctx = context.Background()
 
-func (esConfig ElasticConfig) connectelasticRetry() *elastic.Client {
+func (esConfig elasticConfig) connectelasticRetry() *elastic.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if esConfig.ElasticOutputType == 0 {
@@ -87,7 +86,7 @@ func (esConfig ElasticConfig) connectelasticRetry() *elastic.Client {
 	}
 }
 
-func (esConfig ElasticConfig) connectelastic() (*elastic.Client, error) {
+func (esConfig elasticConfig) connectelastic() (*elastic.Client, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification},
 	}
@@ -116,7 +115,7 @@ func (esConfig ElasticConfig) connectelastic() (*elastic.Client, error) {
 	return client, err
 }
 
-func (esConfig ElasticConfig) Output() {
+func (esConfig elasticConfig) Output() {
 	client := esConfig.connectelasticRetry()
 	batch := make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
 
@@ -158,7 +157,7 @@ func (esConfig ElasticConfig) Output() {
 	}
 }
 
-func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []util.DNSResult) error {
+func (esConfig elasticConfig) elasticSendData(client *elastic.Client, batch []util.DNSResult) error {
 	elasticSentToOutput := metrics.GetOrRegisterCounter("elasticSentToOutput", metrics.DefaultRegistry)
 	elasticSkipped := metrics.GetOrRegisterCounter("elasticSkipped", metrics.DefaultRegistry)
 
@@ -187,4 +186,4 @@ func (esConfig ElasticConfig) elasticSendData(client *elastic.Client, batch []ut
 }
 
 // This will allow an instance to be spawned at import time
-var _ = ElasticConfig{}.initializeFlags()
+// var _ = elasticConfig{}.initializeFlags()

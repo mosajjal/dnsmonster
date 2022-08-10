@@ -18,10 +18,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type SentinelConfig struct {
+type sentinelConfig struct {
 	SentinelOutputType       uint          `long:"sentinelOutputType"          env:"DNSMONSTER_SENTINELOUTPUTTYPE"          default:"0"                                                       description:"What should be written to Microsoft Sentinel. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	SentinelOutputSharedKey  string        `long:"sentinelOutputSharedKey"     env:"DNSMONSTER_SENTINELOUTPUTSHAREDKEY"     default:""                                                        description:"Sentinel Shared Key, either the primary or secondary, can be found in Agents Management page under Log Analytics workspace"`
-	SentinelOutputCustomerId string        `long:"sentinelOutputCustomerId"    env:"DNSMONSTER_SENTINELOUTPUTCUSTOMERID"    default:""                                                        description:"Sentinel Customer Id. can be found in Agents Management page under Log Analytics workspace"`
+	SentinelOutputCustomerID string        `long:"sentinelOutputCustomerId"    env:"DNSMONSTER_SENTINELOUTPUTCUSTOMERID"    default:""                                                        description:"Sentinel Customer Id. can be found in Agents Management page under Log Analytics workspace"`
 	SentinelOutputLogType    string        `long:"sentinelOutputLogType"       env:"DNSMONSTER_SENTINELOUTPUTLOGTYPE"       default:"dnsmonster"                                              description:"Sentinel Output LogType"`
 	SentinelOutputProxy      string        `long:"sentinelOutputProxy"         env:"DNSMONSTER_SENTINELOUTPUTPROXY"         default:""                                                        description:"Sentinel Output Proxy in URI format"`
 	SentinelBatchSize        uint          `long:"sentinelBatchSize"           env:"DNSMONSTER_SENTINELBATCHSIZE"           default:"100"                                                     description:"Sentinel Batch Size"`
@@ -31,18 +31,17 @@ type SentinelConfig struct {
 	closeChannel             chan bool
 }
 
-func (seConfig SentinelConfig) initializeFlags() error {
-	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
-	_, err := util.GlobalParser.AddGroup("sentinel_output", "Microsoft Sentinel Output", &seConfig)
-
-	seConfig.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &seConfig)
-	return err
+func init() {
+	c := sentinelConfig{}
+	if _, err := util.GlobalParser.AddGroup("sentinel_output", "Microsoft Sentinel Output", &c); err != nil {
+		log.Fatalf("error adding output Module")
+	}
+	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (seConfig SentinelConfig) Initialize() error {
+func (seConfig sentinelConfig) Initialize() error {
 	var err error
 	seConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -60,17 +59,17 @@ func (seConfig SentinelConfig) Initialize() error {
 	return nil
 }
 
-func (seConfig SentinelConfig) Close() {
+func (seConfig sentinelConfig) Close() {
 	// todo: implement this
 	<-seConfig.closeChannel
 }
 
-func (seConfig SentinelConfig) OutputChannel() chan util.DNSResult {
+func (seConfig sentinelConfig) OutputChannel() chan util.DNSResult {
 	return seConfig.outputChannel
 }
 
-// don't think this needs to be a struct type, might be better to define it as a variable
-type SignatureElements struct {
+// todo: don't think this needs to be a struct type, might be better to define it as a variable
+type signatureElements struct {
 	Date          string // in rfc1123date format ('%a, %d %b %Y %H:%M:%S GMT')
 	ContentLength uint
 	Method        string
@@ -78,7 +77,7 @@ type SignatureElements struct {
 	Resource      string
 }
 
-func (seConfig SentinelConfig) BuildSignature(sigelements SignatureElements) string {
+func (seConfig sentinelConfig) BuildSignature(sigelements signatureElements) string {
 	// build HMAC signature
 	tmpl, err := template.New("sign").Parse(`{{.Method}}
 {{.ContentLength}}
@@ -98,17 +97,17 @@ x-ms-date:{{.Date}}
 	}
 	h := hmac.New(sha256.New, []byte(sharedKeyBytes))
 	h.Write(buf.Bytes())
-	signature := fmt.Sprintf("SharedKey %s:%s", seConfig.SentinelOutputCustomerId, base64.StdEncoding.EncodeToString(h.Sum(nil)))
+	signature := fmt.Sprintf("SharedKey %s:%s", seConfig.SentinelOutputCustomerID, base64.StdEncoding.EncodeToString(h.Sum(nil)))
 	return signature
 }
 
-func (seConfig SentinelConfig) sendBatch(batch string, count int) {
+func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 	sentinelSentToOutput := metrics.GetOrRegisterCounter("sentinelSentToOutput", metrics.DefaultRegistry)
 	sentinelFailed := metrics.GetOrRegisterCounter("sentinelFailed", metrics.DefaultRegistry)
 	// send batch to Microsoft Sentinel
 	// build signature
 	location, _ := time.LoadLocation("GMT")
-	s := SignatureElements{
+	s := signatureElements{
 		Date:          time.Now().In(location).Format(time.RFC1123),
 		Method:        "POST",
 		ContentLength: uint(len(batch)),
@@ -117,7 +116,7 @@ func (seConfig SentinelConfig) sendBatch(batch string, count int) {
 	}
 	signature := seConfig.BuildSignature(s)
 	// build request
-	uri := "https://" + seConfig.SentinelOutputCustomerId + ".ods.opinsights.azure.com" + s.Resource + "?api-version=2016-04-01"
+	uri := "https://" + seConfig.SentinelOutputCustomerID + ".ods.opinsights.azure.com" + s.Resource + "?api-version=2016-04-01"
 	headers := map[string]string{
 		"x-ms-date":     s.Date,
 		"content-type":  s.ContentType,
@@ -160,7 +159,7 @@ func (seConfig SentinelConfig) sendBatch(batch string, count int) {
 	}
 }
 
-func (seConfig SentinelConfig) Output() {
+func (seConfig sentinelConfig) Output() {
 	log.Infof("starting SentinelOutput")
 	sentinelSkipped := metrics.GetOrRegisterCounter("sentinelSkipped", metrics.DefaultRegistry)
 
@@ -211,4 +210,4 @@ func (seConfig SentinelConfig) Output() {
 }
 
 // This will allow an instance to be spawned at import time
-var _ = SentinelConfig{}.initializeFlags()
+// var _ = sentinelConfig{}.initializeFlags()

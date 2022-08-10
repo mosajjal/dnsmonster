@@ -17,7 +17,7 @@ import (
 	"github.com/mosajjal/dnsmonster/util"
 )
 
-type SplunkConfig struct {
+type splunkConfig struct {
 	SplunkOutputType       uint          `long:"splunkOutputType"            env:"DNSMONSTER_SPLUNKOUTPUTTYPE"            default:"0"                                                       description:"What should be written to HEC. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"           choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	SplunkOutputEndpoint   []string      `long:"splunkOutputEndpoint"        env:"DNSMONSTER_SPLUNKOUTPUTENDPOINT"        default:""                                                        description:"splunk endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none, can be specified multiple times for load balanace and HA"`
 	SplunkOutputToken      string        `long:"splunkOutputToken"           env:"DNSMONSTER_SPLUNKOUTPUTTOKEN"           default:"00000000-0000-0000-0000-000000000000"                    description:"Splunk HEC Token"`
@@ -32,34 +32,33 @@ type SplunkConfig struct {
 	closeChannel           chan bool
 }
 
-type SplunkConnection struct {
+type splunkConnection struct {
 	Client    *splunk.Client
 	Unhealthy uint
 	Err       error
 }
 
-func (config SplunkConfig) initializeFlags() error {
-	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
-	_, err := util.GlobalParser.AddGroup("splunk_output", "Splunk Output", &config)
-
-	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
-	return err
+func init() {
+	c := splunkConfig{}
+	if _, err := util.GlobalParser.AddGroup("splunk_output", "Splunk Output", &c); err != nil {
+		log.Fatalf("error adding output Module")
+	}
+	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (config SplunkConfig) Initialize() error {
+func (spConfig splunkConfig) Initialize() error {
 	var err error
-	config.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
+	spConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
 		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
 		return err
 	}
 
-	if config.SplunkOutputType > 0 && config.SplunkOutputType < 5 {
+	if spConfig.SplunkOutputType > 0 && spConfig.SplunkOutputType < 5 {
 		log.Info("Creating Splunk Output Channel")
-		go config.Output()
+		go spConfig.Output()
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -67,24 +66,24 @@ func (config SplunkConfig) Initialize() error {
 	return nil
 }
 
-func (config SplunkConfig) Close() {
+func (spConfig splunkConfig) Close() {
 	// todo: implement this
-	<-config.closeChannel
+	<-spConfig.closeChannel
 }
 
-func (config SplunkConfig) OutputChannel() chan util.DNSResult {
-	return config.outputChannel
+func (spConfig splunkConfig) OutputChannel() chan util.DNSResult {
+	return spConfig.outputChannel
 }
 
-var splunkConnectionList = make(map[string]SplunkConnection)
+var splunkConnectionList = make(map[string]splunkConnection)
 
-func (spConfig SplunkConfig) connectMultiSplunkRetry() {
+func (spConfig splunkConfig) connectMultiSplunkRetry() {
 	for _, splunkEndpoint := range spConfig.SplunkOutputEndpoint {
 		go spConfig.connectSplunkRetry(splunkEndpoint)
 	}
 }
 
-func (spConfig SplunkConfig) connectSplunkRetry(splunkEndpoint string) {
+func (spConfig splunkConfig) connectSplunkRetry(splunkEndpoint string) {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if spConfig.SplunkOutputType == 0 {
@@ -105,7 +104,7 @@ func (spConfig SplunkConfig) connectSplunkRetry(splunkEndpoint string) {
 	}
 }
 
-func (spConfig SplunkConfig) connectSplunk(splunkEndpoint string) SplunkConnection {
+func (spConfig splunkConfig) connectSplunk(splunkEndpoint string) splunkConnection {
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification}}
 	httpClient := &http.Client{Timeout: time.Second * 20, Transport: tr}
 
@@ -134,9 +133,9 @@ func (spConfig SplunkConfig) connectSplunk(splunkEndpoint string) SplunkConnecti
 	err := client.CheckHealth()
 	unhealthy := uint(0)
 	if err != nil {
-		unhealthy += 1
+		unhealthy++
 	}
-	myConn := SplunkConnection{Client: client, Unhealthy: unhealthy, Err: err}
+	myConn := splunkConnection{Client: client, Unhealthy: unhealthy, Err: err}
 	log.Warnf("new splunk connection")
 	return myConn
 }
@@ -152,7 +151,7 @@ func selectHealthyConnection() string {
 	return ""
 }
 
-func (spConfig SplunkConfig) Output() {
+func (spConfig splunkConfig) Output() {
 	splunkFailed := metrics.GetOrRegisterCounter("splunkFailed", metrics.DefaultRegistry)
 
 	log.Infof("Connecting to Splunk endpoints")
@@ -169,13 +168,13 @@ func (spConfig SplunkConfig) Output() {
 				batch = append(batch, data)
 			}
 		case <-ticker.C:
-			healthyId := selectHealthyConnection()
-			if conn, ok := splunkConnectionList[healthyId]; ok {
+			healthyID := selectHealthyConnection()
+			if conn, ok := splunkConnectionList[healthyID]; ok {
 				if err := spConfig.splunkSendData(conn.Client, batch); err != nil {
 					log.Warn(err)
 					log.Warnf("marking connection as unhealthy")
-					conn.Unhealthy += 1
-					splunkConnectionList[healthyId] = conn
+					conn.Unhealthy++
+					splunkConnectionList[healthyID] = conn
 					splunkFailed.Inc(int64(len(batch)))
 				} else {
 					batch = make([]util.DNSResult, 0, spConfig.SplunkBatchSize)
@@ -189,7 +188,7 @@ func (spConfig SplunkConfig) Output() {
 	}
 }
 
-func (spConfig SplunkConfig) splunkSendData(client *splunk.Client, batch []util.DNSResult) error {
+func (spConfig splunkConfig) splunkSendData(client *splunk.Client, batch []util.DNSResult) error {
 	splunkSentToOutput := metrics.GetOrRegisterCounter("splunkSentToOutput", metrics.DefaultRegistry)
 	splunkSkipped := metrics.GetOrRegisterCounter("splunkSkipped", metrics.DefaultRegistry)
 	var events []*splunk.Event
@@ -209,10 +208,9 @@ func (spConfig SplunkConfig) splunkSendData(client *splunk.Client, batch []util.
 	}
 	if len(events) > 0 {
 		return client.LogEvents(events)
-	} else {
-		return nil
 	}
+	return nil
 }
 
 // This will allow an instance to be spawned at import time
-var _ = SplunkConfig{}.initializeFlags()
+// var _ = splunkConfig{}.initializeFlags()

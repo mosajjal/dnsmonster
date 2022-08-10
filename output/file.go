@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type FileConfig struct {
+type fileConfig struct {
 	FileOutputType       uint           `long:"fileOutputType"              env:"DNSMONSTER_FILEOUTPUTTYPE"              default:"0"                                                       description:"What should be written to file. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"          choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	FileOutputPath       flags.Filename `long:"fileOutputPath"              env:"DNSMONSTER_FILEOUTPUTPATH"              default:""                                                        description:"Path to output file. Used if fileOutputType is not none"`
 	FileOutputFormat     string         `long:"fileOutputFormat"            env:"DNSMONSTER_FILEOUTPUTFORMAT"            default:"json"                                                    description:"Output format for file. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields"                                                                                                                                               choice:"json" choice:"csv" choice:"csv_no_header" choice:"gotemplate"`
@@ -21,19 +21,18 @@ type FileConfig struct {
 	fileObject           *os.File
 }
 
-func (config FileConfig) initializeFlags() error {
-	// this line will run at import time, before parsing the flags, hence showing up in --help as well as actually working
-	_, err := util.GlobalParser.AddGroup("file_output", "File Output", &config)
+func init() {
+	c := fileConfig{}
+	if _, err := util.GlobalParser.AddGroup("file_output", "File Output", &c); err != nil {
+		log.Fatalf("error adding output Module")
+	}
+	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
+	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 
-	config.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &config)
-
-	return err
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (config FileConfig) Initialize() error {
+func (config fileConfig) Initialize() error {
 	var err error
 	var header string
 	config.outputMarshaller, header, err = util.OutputFormatToMarshaller(config.FileOutputFormat, config.FileOutputGoTemplate)
@@ -63,29 +62,29 @@ func (config FileConfig) Initialize() error {
 	return err
 }
 
-func (config FileConfig) Close() {
+func (config fileConfig) Close() {
 	// todo: implement this
 	<-config.closeChannel
 }
 
-func (config FileConfig) OutputChannel() chan util.DNSResult {
+func (config fileConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 
-func (fConfig FileConfig) Output() {
+func (config fileConfig) Output() {
 	fileSentToOutput := metrics.GetOrRegisterCounter("fileSentToOutput", metrics.DefaultRegistry)
 	fileSkipped := metrics.GetOrRegisterCounter("fileSkipped", metrics.DefaultRegistry)
 
 	// todo: output channel will duplicate output when we have malformed DNS packets with multiple questions
-	for data := range fConfig.outputChannel {
+	for data := range config.outputChannel {
 		for _, dnsQuery := range data.DNS.Question {
 
-			if util.CheckIfWeSkip(fConfig.FileOutputType, dnsQuery.Name) {
+			if util.CheckIfWeSkip(config.FileOutputType, dnsQuery.Name) {
 				fileSkipped.Inc(1)
 				continue
 			}
 			fileSentToOutput.Inc(1)
-			_, err := fConfig.fileObject.WriteString(fConfig.outputMarshaller.Marshal(data) + "\n")
+			_, err := config.fileObject.WriteString(config.outputMarshaller.Marshal(data) + "\n")
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -95,4 +94,4 @@ func (fConfig FileConfig) Output() {
 }
 
 // This will allow an instance to be spawned at import time
-var _ = FileConfig{}.initializeFlags()
+// var _ = fileConfig{}.initializeFlags()

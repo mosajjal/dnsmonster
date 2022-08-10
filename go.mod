@@ -58,7 +58,7 @@ require (
 )
 
 require (
-	github.com/bytedance/sonic v1.3.4
+	github.com/bytedance/sonic v1.3.5-0.20220809045411-b36771ba37cc
 	github.com/chenzhuoyu/base64x v0.0.0-20220526154910-8bf9453eb81a // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect

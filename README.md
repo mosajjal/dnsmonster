@@ -249,7 +249,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --noPromiscuous
 
 # [clickhouse_output]
-# Address of the clickhouse database to save the results. multiple values can be provided
+# Address of the clickhouse database to save the results. multiple values can be provided.
 --clickhouseAddress=localhost:9000
 
 # Username to connect to the clickhouse database
@@ -264,11 +264,11 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 # Interval between sending results to ClickHouse. If non-0, Batch size is ignored and batch delay is used
 --clickhouseDelay=0s
 
+# Clickhouse connection LZ4 compression level, 0 means no compression
+--clickhouseCompress=0
+
 # Debug Clickhouse connection
 --clickhouseDebug
-
-# Compress Clickhouse connection
---clickhouseCompress
 
 # Use TLS for Clickhouse connection
 --clickhouseSecure
@@ -438,7 +438,7 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --sentinelOutputSharedKey=
 
 # Sentinel Customer Id. can be found in Agents Management page under Log Analytics workspace
---sentinelOutputCustomerId=
+--sentinelOutputCustomerID=
 
 # Sentinel Output LogType
 --sentinelOutputLogType=dnsmonster

@@ -10,11 +10,11 @@ import (
 // These functions implement the interface gopacket.DecodingLayer to detect
 // if a packet is either IPv4 or IPv6.
 
-func (i *DetectIP) LayerType() gopacket.LayerType {
-	return LayerTypeDetectIP
+func (i *detectIP) LayerType() gopacket.LayerType {
+	return layerTypeDetectIP
 }
 
-func (i *DetectIP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+func (i *detectIP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	family := int(data[0] >> 4)
 	switch family {
 	case 4:
@@ -28,10 +28,10 @@ func (i *DetectIP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) erro
 	return nil
 }
 
-func (i *DetectIP) CanDecode() gopacket.LayerClass {
-	return LayerTypeDetectIP
+func (i *detectIP) CanDecode() gopacket.LayerClass {
+	return layerTypeDetectIP
 }
 
-func (i *DetectIP) NextLayerType() gopacket.LayerType {
+func (i *detectIP) NextLayerType() gopacket.LayerType {
 	return i.family.LayerType()
 }

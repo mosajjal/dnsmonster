@@ -1,6 +1,6 @@
 package util
 
-var BASH_COMPLETION_TEMPLATE = `
+const bashCompletionTemplate = `
 _completion_dnsmonster() {
     # All arguments except the first one
     args=("${COMP_WORDS[@]:1:$COMP_CWORD}")
@@ -17,7 +17,7 @@ _completion_dnsmonster() {
 complete -F _completion_dnsmonster dnsmonster
 `
 
-var SYSTEMD_SERVICE_TEMPLATE = `
+const systemdServiceTemplate = `
 [Unit]
 Description=dnsmonster service
 

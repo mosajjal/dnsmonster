@@ -19,7 +19,7 @@ import (
 
 // the capture and output metrics and stats are handled here.
 
-type MetricConfig struct {
+type metricConfig struct {
 	MetricEndpointType       string        `long:"metricEndpointType"       env:"DNSMONSTER_METRICENDPOINTTYPE"       default:"stderr" description:"Metric Endpoint Service"    choice:"statsd" choice:"prometheus" choice:"stderr"`
 	MetricStatsdAgent        string        `long:"metricStatsdAgent"        env:"DNSMONSTER_METRICSTATSDAGENT"        default:""       description:"Statsd endpoint. Example: 127.0.0.1:8125 "`
 	MetricPrometheusEndpoint string        `long:"metricPrometheusEndpoint" env:"DNSMONSTER_METRICPROMETHEUSENDPOINT" default:""       description:"Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric"`
@@ -28,17 +28,17 @@ type MetricConfig struct {
 	// MetricProxy             string        `long:"metricProxy"              env:"DNSMONSTER_METRICPROXY"             default:""       description:"URI formatted proxy server to use for metric endpoint. Example: http://username:password@hostname:port"`
 }
 
-func (metricConfig MetricConfig) SetupMetrics() error {
-	switch metricConfig.MetricEndpointType {
+func (c metricConfig) SetupMetrics() error {
+	switch c.MetricEndpointType {
 	case "statsd":
-		if metricConfig.MetricStatsdAgent == "" {
+		if c.MetricStatsdAgent == "" {
 			return fmt.Errorf("statsd Agent is required")
 		}
 		statsdOptions := []statsd.ReporterOption{
-			statsd.UseFlushInterval(metricConfig.MetricFlushInterval),
+			statsd.UseFlushInterval(c.MetricFlushInterval),
 			statsd.UsePercentiles([]float64{0.25, 0.99}),
 		}
-		reporter, err := statsd.NewReporter(metrics.DefaultRegistry, metricConfig.MetricStatsdAgent, statsdOptions...)
+		reporter, err := statsd.NewReporter(metrics.DefaultRegistry, c.MetricStatsdAgent, statsdOptions...)
 		if err != nil {
 			return err
 		}
@@ -46,13 +46,13 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 
 	case "prometheus":
 		log.Infof("Prometheus Metrics enabled")
-		if metricConfig.MetricPrometheusEndpoint == "" {
+		if c.MetricPrometheusEndpoint == "" {
 			return fmt.Errorf("promethus Registry is required")
 		}
 		prometheusClient := prometheusmetrics.NewPrometheusProvider(metrics.DefaultRegistry, "dnsmonster", GeneralFlags.ServerName, prometheus.DefaultRegisterer, 1*time.Second)
 		go prometheusClient.UpdatePrometheusMetrics()
 
-		u, err := url.Parse(metricConfig.MetricPrometheusEndpoint)
+		u, err := url.Parse(c.MetricPrometheusEndpoint)
 		if err != nil || u.Path == "" {
 			return fmt.Errorf("invalid URL for Prometheus")
 		}
@@ -64,12 +64,15 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 	case "stderr":
 		// go metrics.Log(metrics.DefaultRegistry, metricConfig.MetricFlushInterval, log.StandardLogger())
 		go func() {
-			for range time.Tick(metricConfig.MetricFlushInterval) {
+			for range time.Tick(c.MetricFlushInterval) {
 				out := ""
-				switch metricConfig.MetricStderrFormat {
+				switch c.MetricStderrFormat {
 				case "json":
-					metricsJson, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
-					out = string(metricsJson)
+					if jMetrics, err := json.Marshal(metrics.DefaultRegistry.GetAll()); err != nil {
+						log.Warnf("failed to convert metrics to JSON.")
+					} else {
+						out = string(jMetrics)
+					}
 				case "kv":
 					for k1, v := range metrics.DefaultRegistry.GetAll() {
 						out += fmt.Sprintf("%s=%v ", k1, v[reflect.ValueOf(v).MapKeys()[0].String()])
@@ -80,7 +83,7 @@ func (metricConfig MetricConfig) SetupMetrics() error {
 		}()
 
 	default:
-		return fmt.Errorf("endpoint Type %s is not supported", metricConfig.MetricEndpointType)
+		return fmt.Errorf("endpoint Type %s is not supported", c.MetricEndpointType)
 	}
 
 	return nil

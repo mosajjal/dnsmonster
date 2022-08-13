@@ -32,7 +32,7 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 }
 
 func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
-	pcapBPF := TcpdumpToPcapgoBpf(filter)
+	pcapBPF := tcpdumpToPcapgoBpf(filter)
 	// nil means the binary is compiled w/o bpf support
 	if pcapBPF != nil {
 		log.Infof("Filter: %s", filter)
@@ -71,7 +71,7 @@ func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	return frameSize, blockSize, numBlocks, nil
 }
 
-func (config CaptureConfig) setPromiscuous() error {
+func (config captureConfig) setPromiscuous() error {
 	var err error
 	if !config.NoPromiscuous {
 		// TODO: replace with x/net/bpf or pcap
@@ -81,7 +81,7 @@ func (config CaptureConfig) setPromiscuous() error {
 	return err
 }
 
-func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
+func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	// Open device
 	// var tPacket *afpacket.TPacket
 	var err error
@@ -119,8 +119,8 @@ func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpa
 	return handle
 }
 
-func (afhandle *afpacketHandle) Stat() (uint, uint) {
-	mystats, statsv3, err := afhandle.TPacket.SocketStats()
+func (h *afpacketHandle) Stat() (uint, uint) {
+	mystats, statsv3, err := h.TPacket.SocketStats()
 	if err != nil {
 		return uint(mystats.Packets() + statsv3.Packets()), uint(mystats.Drops() + statsv3.Drops())
 	}

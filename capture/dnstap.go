@@ -102,7 +102,7 @@ func dnsTapMsgToDNSResult(msg []byte) (*util.DNSResult, error) {
 	return &myDNSResult, nil
 }
 
-func (config CaptureConfig) StartDnsTap() {
+func (config captureConfig) StartDNSTap() {
 	log.Info("Starting DNStap capture")
 
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
@@ -149,7 +149,7 @@ func (config CaptureConfig) StartDnsTap() {
 
 				config.resultChannel <- *res
 			} else {
-				droppedCnt += 1
+				droppedCnt++
 			}
 		case <-captureStatsTicker.C:
 			packetsCaptured.Update(totalCnt)

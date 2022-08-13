@@ -1,7 +1,7 @@
-// Capture package provides the configuration and all the modules for capturing input
-// and converting them to a dns result type. Like output, capture tries to leverage 
+// Package capture provides the configuration and all the modules for capturing input
+// and converting them to a dns result type. Like output, capture tries to leverage
 // common behaviour of inputs and design an interface around it, but unlike the output module
-// it does not have configuration granulaity based on each module. 
+// it does not have configuration granulaity based on each module.
 package capture
 
 import (
@@ -21,7 +21,7 @@ import (
 	"github.com/mosajjal/dnsmonster/util"
 )
 
-type CaptureConfig struct {
+type captureConfig struct {
 	DevName                    string        `long:"devName"                    env:"DNSMONSTER_DEVNAME"                    default:""                                                                                                  description:"Device used to capture"`
 	PcapFile                   string        `long:"pcapFile"                   env:"DNSMONSTER_PCAPFILE"                   default:""                                                                                                  description:"Pcap filename to run"`
 	DnstapSocket               string        `long:"dnstapSocket"               env:"DNSMONSTER_DNSTAPSOCKET"               default:""                                                                                                  description:"dnstap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
@@ -30,9 +30,9 @@ type CaptureConfig struct {
 	DedupCleanupInterval       time.Duration `long:"dedupCleanupInterval"       env:"DNSMONSTER_DEDUPCLEANUPINTERVAL"       default:"60s"                                                                                               description:"Cleans up packet hash table used for deduplication"`
 	DnstapPermission           string        `long:"dnstapPermission"           env:"DNSMONSTER_DNSTAPPERMISSION"           default:"755"                                                                                               description:"Set the dnstap socket permission, only applicable when unix:// is used"`
 	PacketHandlerCount         uint          `long:"packetHandlerCount"         env:"DNSMONSTER_PACKETHANDLERCOUNT"         default:"2"                                                                                                 description:"Number of routines used to handle received packets"`
-	TcpAssemblyChannelSize     uint          `long:"tcpAssemblyChannelSize"     env:"DNSMONSTER_TCPASSEMBLYCHANNELSIZE"     default:"10000"                                                                                             description:"Size of the tcp assembler"`
-	TcpResultChannelSize       uint          `long:"tcpResultChannelSize"       env:"DNSMONSTER_TCPRESULTCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the tcp result channel"`
-	TcpHandlerCount            uint          `long:"tcpHandlerCount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                                                                                                 description:"Number of routines used to handle tcp packets"`
+	TCPAssemblyChannelSize     uint          `long:"tcpAssemblyChannelSize"     env:"DNSMONSTER_TCPASSEMBLYCHANNELSIZE"     default:"10000"                                                                                             description:"Size of the tcp assembler"`
+	TCPResultChannelSize       uint          `long:"tcpResultChannelSize"       env:"DNSMONSTER_TCPRESULTCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the tcp result channel"`
+	TCPHandlerCount            uint          `long:"tcpHandlerCount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                                                                                                 description:"Number of routines used to handle tcp packets"`
 	DefraggerChannelSize       uint          `long:"defraggerChannelSize"       env:"DNSMONSTER_DEFRAGGERCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the channel to send packets to be defragged"`
 	DefraggerChannelReturnSize uint          `long:"defraggerChannelReturnSize" env:"DNSMONSTER_DEFRAGGERCHANNELRETURNSIZE" default:"10000"                                                                                             description:"Size of the channel where the defragged packets are returned"`
 	PacketChannelSize          uint          `long:"packetChannelSize"          env:"DNSMONSTER_PACKETCHANNELSIZE"          default:"1000"                                                                                              description:"Size of the packet handler channel"`
@@ -56,33 +56,35 @@ type CaptureConfig struct {
 }
 
 // this function will run at import time, before parsing the flags
-func (config CaptureConfig) initializeFlags() error {
-	_, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", &config)
+func init() {
+	config := captureConfig{}
+	if _, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", &config); err != nil {
+		log.Fatalf("error adding capture Module")
+	}
 	GlobalCaptureConfig = &config
 	config.resultChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-	config.tcpAssembly = make(chan tcpPacket, config.TcpAssemblyChannelSize)
-	config.tcpReturnChannel = make(chan tcpData, config.TcpResultChannelSize)
+	config.tcpAssembly = make(chan tcpPacket, config.TCPAssemblyChannelSize)
+	config.tcpReturnChannel = make(chan tcpData, config.TCPResultChannelSize)
 	config.processingChannel = make(chan *rawPacketBytes, config.PacketChannelSize)
 	config.ip4Defrgger = make(chan ipv4ToDefrag, config.DefraggerChannelSize)
 	config.ip6Defrgger = make(chan ipv6FragmentInfo, config.DefraggerChannelSize)
 	config.ip4DefrggerReturn = make(chan ipv4Defragged, config.DefraggerChannelReturnSize)
 	config.ip6DefrggerReturn = make(chan ipv6Defragged, config.DefraggerChannelReturnSize)
 
-	return err
 }
 
-func (config CaptureConfig) GetResultChannel() *chan util.DNSResult {
+func (config captureConfig) GetResultChannel() *chan util.DNSResult {
 	return &config.resultChannel
 }
 
-func (config CaptureConfig) cleanExit() {
+func (config captureConfig) cleanExit() {
 	log.Infof("Stopping capture...")
 	for i := 0; i < runtime.NumGoroutine(); i++ {
 		*util.GeneralFlags.GetExit() <- true
 	}
 }
 
-func (config CaptureConfig) CheckFlagsAndStart() {
+func (config captureConfig) CheckFlagsAndStart() {
 	if config.Port > 65535 {
 		log.Fatal("--port must be between 1 and 65535")
 	}
@@ -131,7 +133,7 @@ func (config CaptureConfig) CheckFlagsAndStart() {
 	}
 
 	// start the defrag goroutines
-	for i := uint(0); i < config.TcpHandlerCount; i++ {
+	for i := uint(0); i < config.TCPHandlerCount; i++ {
 		go tcpAssembler(config.tcpAssembly, config.tcpReturnChannel, util.GeneralFlags.GcTime)
 	}
 	go ipv4Defragger(config.ip4Defrgger, config.ip4DefrggerReturn, util.GeneralFlags.GcTime)
@@ -144,11 +146,11 @@ func (config CaptureConfig) CheckFlagsAndStart() {
 	// Start listening if we're not using DNSTap
 	if config.DnstapSocket == "" {
 		util.GeneralFlags.GetWg().Add(1)
-		go config.StartNonDnsTap()
+		go config.StartNonDNSTap()
 	} else {
 		// dnstap is totally different, hence only the result channel is being pushed to it
 		util.GeneralFlags.GetWg().Add(1)
-		go config.StartDnsTap()
+		go config.StartDNSTap()
 	}
 }
 
@@ -228,9 +230,9 @@ type IPv6Defragmenter struct {
 }
 
 // Register a new Layer to detect IPv4 and IPv6 packets without an ethernet frame.
-var LayerTypeDetectIP = gopacket.RegisterLayerType(250, gopacket.LayerTypeMetadata{Name: "DetectIP", Decoder: nil})
+var layerTypeDetectIP = gopacket.RegisterLayerType(250, gopacket.LayerTypeMetadata{Name: "DetectIP", Decoder: nil})
 
-type DetectIP struct {
+type detectIP struct {
 	layers.BaseLayer
 	family layers.EthernetType
 }
@@ -250,19 +252,19 @@ type rawPacketBytes struct {
 	info  gopacket.CaptureInfo
 }
 
-// a very fast hashing function, mainly used for de-duplication
+// FNV1A is a very fast hashing function, mainly used for de-duplication
 func FNV1A(input []byte) uint64 {
 	var hash uint64 = 0xcbf29ce484222325
-	var fnv_prime uint64 = 0x100000001b3
+	var fnvPrime uint64 = 0x100000001b3
 	for _, b := range input {
 		hash ^= uint64(b)
-		hash *= fnv_prime
+		hash *= fnvPrime
 	}
 	return hash
 }
 
-// This variable is accessible globally
-var GlobalCaptureConfig *CaptureConfig
+// GlobalCaptureConfig is accessible globally
+var GlobalCaptureConfig *captureConfig
 
 // The next line will allow an instance to be spawned at import time
-var _ = CaptureConfig{}.initializeFlags()
+// var _ = captureConfig{}.initializeFlags()

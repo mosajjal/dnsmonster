@@ -7,12 +7,12 @@ import (
 	"text/template"
 )
 
-type GoTemplateOutput struct {
+type goTemplateOutput struct {
 	RawTemplate string
 	template    *template.Template
 }
 
-func (g GoTemplateOutput) Marshal(r DNSResult) string {
+func (g goTemplateOutput) Marshal(r DNSResult) string {
 	var tpl bytes.Buffer
 	err := g.template.Execute(&tpl, r)
 	if err != nil {
@@ -21,7 +21,7 @@ func (g GoTemplateOutput) Marshal(r DNSResult) string {
 	return tpl.String()
 }
 
-func (g *GoTemplateOutput) Init() (string, error) {
+func (g *goTemplateOutput) Init() (string, error) {
 	var err error
 	g.template, err = template.New("gotemplate").Parse(g.RawTemplate) // todo:Fix
 	if err != nil {

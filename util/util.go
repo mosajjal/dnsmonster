@@ -1,4 +1,4 @@
-// package util provides the general configuration and variable types needed for differnet parts of dnsmonster
+// Package util provides the general configuration and variable types needed for differnet parts of dnsmonster
 // Logging, metrics, and the search trees for allowlist and skiplist are generated and updated here.
 package util
 
@@ -14,12 +14,17 @@ import (
 )
 
 var (
+	globalMetricConfig metricConfig
 	releaseVersion     string = "DEVELOPMENT"
-	GlobalParser              = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
-	GlobalMetricConfig MetricConfig
+	// GlobalParser is the top-level argument parser. each output, capture, metric etc flag is registered
+	// under Globalparser. This makes it easier for output modules to incorporate their own flags
+	GlobalParser = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
+	// GeneralFlags is an ad-hoc solution to make all the flags available
+	// to capture, metrics, util and output plugins.
+	GeneralFlags generalConfig
 )
 
-type GeneralConfig struct {
+type generalConfig struct {
 	Config                      flags.Filename `long:"config"                      env:"DNSMONSTER_CONFIG"                      default:""                            no-ini:"true"               description:"path to config file"`
 	GcTime                      time.Duration  `long:"gcTime"                      env:"DNSMONSTER_GCTIME"                      default:"10s"                                                     description:"Garbage Collection interval for tcp assembly and ip defragmentation"`
 	CaptureStatsDelay           time.Duration  `long:"captureStatsDelay"           env:"DNSMONSTER_CAPTURESTATSDELAY"           default:"1s"                                                      description:"Duration to calculate interface stats"`
@@ -53,21 +58,19 @@ type GeneralConfig struct {
 	skipTypeHt    map[string]uint8
 }
 
-var GeneralFlags GeneralConfig
-
-func (g GeneralConfig) GetWg() *sync.WaitGroup {
+func (g generalConfig) GetWg() *sync.WaitGroup {
 	return g.wg
 }
 
-func (g GeneralConfig) GetExit() *chan bool {
+func (g generalConfig) GetExit() *chan bool {
 	return &g.exiting
 }
 
-func (g GeneralConfig) LoadAllowDomain() {
+func (g generalConfig) LoadAllowDomain() {
 	GeneralFlags.allowPrefixTst, GeneralFlags.allowSuffixTst, GeneralFlags.allowTypeHt = LoadDomainsCsv(GeneralFlags.AllowDomainsFile)
 }
 
-func (g GeneralConfig) LoadSkipDomain() {
+func (g generalConfig) LoadSkipDomain() {
 	GeneralFlags.skipPrefixTst, GeneralFlags.skipSuffixTst, GeneralFlags.skipTypeHt = LoadDomainsCsv(GeneralFlags.SkipDomainsFile)
 }
 
@@ -80,6 +83,9 @@ var helpOptions struct {
 	WriteConfig    flags.Filename `long:"writeConfig"     no-ini:"true"      description:"generate a config file based on current inputs (flags, input config file and environment variables) and write to provided path" default:""`
 }
 
+// ProcessFlags kickstarts `dnsmonster`. it adds the basic module's flags
+// checks their validity, sets up logging, metrics and loads input files
+// associated with skipDomain and allowDomain
 func ProcessFlags() {
 	// todo: flags are camel-case but ini is not. this needs to be consistent
 	GeneralFlags.wg = &sync.WaitGroup{}
@@ -88,7 +94,7 @@ func ProcessFlags() {
 	iniParser := flags.NewIniParser(GlobalParser)
 	GlobalParser.AddGroup("general", "General Options", &GeneralFlags)
 	GlobalParser.AddGroup("help", "Help Options", &helpOptions)
-	GlobalParser.AddGroup("metric", "Metrics", &GlobalMetricConfig)
+	GlobalParser.AddGroup("metric", "Metrics", &globalMetricConfig)
 	f, err := GlobalParser.Parse()
 	if err != nil {
 		log.Fatalf("Error parsing flags %v with error %s", f, err)
@@ -104,11 +110,11 @@ func ProcessFlags() {
 		os.Exit(0)
 	}
 	if helpOptions.BashCompletion {
-		fmt.Print(BASH_COMPLETION_TEMPLATE)
+		fmt.Print(bashCompletionTemplate)
 		os.Exit(0)
 	}
 	if helpOptions.SystemdService {
-		fmt.Print(SYSTEMD_SERVICE_TEMPLATE)
+		fmt.Print(systemdServiceTemplate)
 		os.Exit(0)
 	}
 	if helpOptions.FishCompletion {
@@ -122,6 +128,11 @@ func ProcessFlags() {
 	if helpOptions.WriteConfig != "" {
 		iniParser.WriteFile(string(helpOptions.WriteConfig), flags.IniIncludeDefaults|flags.IniIncludeComments)
 		os.Exit(0)
+	}
+
+	err = globalMetricConfig.SetupMetrics()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// check for config file option and parse it

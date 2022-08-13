@@ -26,7 +26,7 @@ func initializeLivePcap(devName, filter string) *livePcapHandle {
 	}
 	// Set Filter
 	log.Infof("Using Device: %s", devName)
-	bpf := TcpdumpToPcapgoBpf(filter)
+	bpf := tcpdumpToPcapgoBpf(filter)
 	if bpf != nil {
 		log.Infof("Filter: %s", filter)
 		err = handle.SetBPF(bpf)

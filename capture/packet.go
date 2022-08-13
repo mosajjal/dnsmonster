@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (config CaptureConfig) processTransport(foundLayerTypes *[]gopacket.LayerType, udp *layers.UDP, tcp *layers.TCP, flow gopacket.Flow, timestamp time.Time, IPVersion uint8, SrcIP, DstIP net.IP) {
+func (config captureConfig) processTransport(foundLayerTypes *[]gopacket.LayerType, udp *layers.UDP, tcp *layers.TCP, flow gopacket.Flow, timestamp time.Time, IPVersion uint8, SrcIP, DstIP net.IP) {
 	for _, layerType := range *foundLayerTypes {
 		switch layerType {
 		case layers.LayerTypeUDP:
@@ -47,8 +47,8 @@ func (config CaptureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 	}
 }
 
-func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
-	var detectIP DetectIP
+func (config captureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
+	var detectIP detectIP
 	var ethLayer layers.Ethernet
 	var vlan layers.Dot1Q
 	var vxlan layers.VXLAN
@@ -70,7 +70,7 @@ func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
 	// Use the IP Family detector when no ethernet frame is present.
 	if config.NoEthernetframe {
 		decodeLayers[0] = &detectIP
-		startLayer = LayerTypeDetectIP
+		startLayer = layerTypeDetectIP
 	}
 
 	parser := gopacket.NewDecodingLayerParser(startLayer, decodeLayers...)
@@ -118,7 +118,7 @@ func (config CaptureConfig) inputHandlerWorker(p chan *rawPacketBytes) {
 	}
 }
 
-func (config CaptureConfig) StartPacketDecoder() {
+func (config captureConfig) StartPacketDecoder() {
 	rand.Seed(20)
 	var ip4 layers.IPv4
 

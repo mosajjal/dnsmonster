@@ -135,7 +135,7 @@ func (esConfig elasticConfig) Output() {
 		}
 
 		if !createIndex.Acknowledged {
-			log.Panicln("Could not create the Elastic index.. Exiting")
+			log.Fatalln("Could not create the Elastic index.. Exiting")
 		}
 	}
 

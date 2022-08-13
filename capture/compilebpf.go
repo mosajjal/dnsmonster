@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/bpf"
 )
 
-func TcpdumpToPcapgoBpf(filter string) []bpf.RawInstruction {
+func tcpdumpToPcapgoBpf(filter string) []bpf.RawInstruction {
 	returnByteCodes := []bpf.RawInstruction{}
 	bytecodes, err := pcap.CompileBPFFilter(layers.LinkTypeEthernet, 1024, filter)
 	for _, ins := range bytecodes {

@@ -40,24 +40,23 @@ const (
 // the packet, a new IPv6 layer will be returned, and will be set to
 // the entire defragmented packet,
 //
-// It use a map of all the running flows
+// # It use a map of all the running flows
 //
 // Usage example:
 //
-// func HandlePacket(in *layers.IPv6, inFragment *layers.IPv6Fragment) err {
-//     defragger := ip6defrag.NewIPv6Defragmenter()
-//     in, err := defragger.DefragIPv6(in, inFragment)
-//     if err != nil {
-//         return err
-//     } else if in == nil {
-//         return nil  // packet fragment, we don't have whole packet yet.
-//     }
-//     // At this point, we know that 'in' is defragmented.
-//     //It may be the same 'in' passed to
-//	   // HandlePacket, or it may not, but we don't really care :)
-//	   ... do stuff to 'in' ...
-//}
-//
+//	func HandlePacket(in *layers.IPv6, inFragment *layers.IPv6Fragment) err {
+//	    defragger := ip6defrag.NewIPv6Defragmenter()
+//	    in, err := defragger.DefragIPv6(in, inFragment)
+//	    if err != nil {
+//	        return err
+//	    } else if in == nil {
+//	        return nil  // packet fragment, we don't have whole packet yet.
+//	    }
+//	    // At this point, we know that 'in' is defragmented.
+//	    //It may be the same 'in' passed to
+//		   // HandlePacket, or it may not, but we don't really care :)
+//		   ... do stuff to 'in' ...
+//	}
 func (d *IPv6Defragmenter) DefragIPv6(in *layers.IPv6, inFragment *layers.IPv6Fragment) (*layers.IPv6, error) {
 	return d.DefragIPv6WithTimestamp(in, inFragment, time.Now())
 }
@@ -67,7 +66,6 @@ func (d *IPv6Defragmenter) DefragIPv6(in *layers.IPv6, inFragment *layers.IPv6Fr
 // old fragments instead of time.Now()
 //
 // This is useful when operating on pcap files instead of live captured data
-//
 func (d *IPv6Defragmenter) DefragIPv6WithTimestamp(in *layers.IPv6, inFragment *layers.IPv6Fragment, t time.Time) (*layers.IPv6, error) {
 	// perform security checks
 	st, err := d.securityChecks(inFragment)

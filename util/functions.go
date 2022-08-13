@@ -12,76 +12,78 @@ import (
 )
 
 const (
-	OUTPUT_NONE  = 0
-	OUTPUT_ALL   = 1
-	OUTPUT_SKIP  = 2
-	OUTPUT_ALLOW = 3
-	OUTPUT_BOTH  = 4
+	outputNone  = 0
+	outputAll   = 1
+	outputSkil  = 2
+	outputAllow = 3
+	outputBoth  = 4
 
-	MATCH_PREFIX = 1
-	MATCH_SUFFIX = 2
-	MATCH_FQDN   = 3
+	matchPrefix = 1
+	matchSuffix = 2
+	matchFQDN   = 3
 )
 
+// CheckIfWeSkip checks a fqdn against an output type and make a decision if
+// the fqdn is meant to be sent to output or not.
 func CheckIfWeSkip(outputType uint, fqdn string) bool {
 	fqdnLower := strings.ToLower(fqdn) //todo:check performance for this function
 	switch outputType {
-	case OUTPUT_NONE:
+	case outputNone:
 		return true // always skip
-	case OUTPUT_ALL:
+	case outputAll:
 		return false // never skip
-	case OUTPUT_SKIP:
+	case outputSkil:
 		// check for fqdn match
-		if GeneralFlags.skipTypeHt[fqdnLower] == MATCH_FQDN {
+		if GeneralFlags.skipTypeHt[fqdnLower] == matchFQDN {
 			return true
 		}
 		// check for prefix match
 		if longestPrefix := GeneralFlags.skipPrefixTst.GetLongestPrefix(fqdnLower); longestPrefix != nil {
 			// check if the longest prefix is present in the type hashtable as a prefix
-			if GeneralFlags.skipTypeHt[longestPrefix.(string)] == MATCH_PREFIX {
+			if GeneralFlags.skipTypeHt[longestPrefix.(string)] == matchPrefix {
 				return true
 			}
 		}
 		// check for suffix match. Note that suffix is just prefix reversed
-		if longestSuffix := GeneralFlags.skipSuffixTst.GetLongestPrefix(Reverse(fqdnLower)); longestSuffix != nil {
+		if longestSuffix := GeneralFlags.skipSuffixTst.GetLongestPrefix(reverse(fqdnLower)); longestSuffix != nil {
 			// check if the longest suffix is present in the type hashtable as a suffix
-			if GeneralFlags.skipTypeHt[longestSuffix.(string)] == MATCH_SUFFIX {
+			if GeneralFlags.skipTypeHt[longestSuffix.(string)] == matchSuffix {
 				return true
 			}
 		}
 
 		return false
-	case OUTPUT_ALLOW:
+	case outputAllow:
 		// check for fqdn match
-		if GeneralFlags.allowTypeHt[fqdnLower] == MATCH_FQDN {
+		if GeneralFlags.allowTypeHt[fqdnLower] == matchFQDN {
 			return false
 		}
 		// check for prefix match
 		if longestPrefix := GeneralFlags.allowPrefixTst.GetLongestPrefix(fqdnLower); longestPrefix != nil {
 			// check if the longest prefix is present in the type hashtable as a prefix
-			if GeneralFlags.allowTypeHt[longestPrefix.(string)] == MATCH_PREFIX {
+			if GeneralFlags.allowTypeHt[longestPrefix.(string)] == matchPrefix {
 				return false
 			}
 		}
 		// check for suffix match. Note that suffix is just prefix reversed
-		if longestSuffix := GeneralFlags.allowSuffixTst.GetLongestPrefix(Reverse(fqdnLower)); longestSuffix != nil {
+		if longestSuffix := GeneralFlags.allowSuffixTst.GetLongestPrefix(reverse(fqdnLower)); longestSuffix != nil {
 			// check if the longest suffix is present in the type hashtable as a suffix
-			if GeneralFlags.allowTypeHt[longestSuffix.(string)] == MATCH_SUFFIX {
+			if GeneralFlags.allowTypeHt[longestSuffix.(string)] == matchSuffix {
 				return false
 			}
 		}
 		return true
 	// 4 means apply two logics, so we apply the two logics and && them together
-	case OUTPUT_BOTH:
-		if !CheckIfWeSkip(OUTPUT_SKIP, fqdn) {
-			return CheckIfWeSkip(OUTPUT_ALLOW, fqdn)
+	case outputBoth:
+		if !CheckIfWeSkip(outputSkil, fqdn) {
+			return CheckIfWeSkip(outputAllow, fqdn)
 		}
 		return true
 	}
 	return true
 }
 
-func Reverse(s string) string {
+func reverse(s string) string {
 	r := []rune(s)
 	for i, j := 0, len(r)-1; i < len(r)/2; i, j = i+1, j-1 {
 		r[i], r[j] = r[j], r[i]
@@ -89,7 +91,7 @@ func Reverse(s string) string {
 	return string(r)
 }
 
-// Loads a domains Csv file/URL. returns 3 parameters:
+// LoadDomainsCsv loads a domains Csv file/URL. returns 3 parameters:
 // 1. a TST for all the prefixes (type 1)
 // 2. a TST for all the suffixes (type 2)
 // 3. a hashtable for all the full match fqdn (type 3)
@@ -137,35 +139,36 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 		// add the fqdn to the hashtable with its type
 		switch entryType := fqdn[1]; entryType {
 		case "prefix":
-			entryTypeHt[fqdn[0]] = MATCH_PREFIX
+			entryTypeHt[fqdn[0]] = matchPrefix
 			prefixTst.Insert(fqdn[0], fqdn[0])
 		case "suffix":
-			entryTypeHt[fqdn[0]] = MATCH_SUFFIX
+			entryTypeHt[fqdn[0]] = matchSuffix
 			// suffix match is much faster if we reverse the strings and match for prefix
-			suffixTst.Insert(Reverse(fqdn[0]), fqdn[0])
+			suffixTst.Insert(reverse(fqdn[0]), fqdn[0])
 		case "fqdn":
-			entryTypeHt[fqdn[0]] = MATCH_FQDN
+			entryTypeHt[fqdn[0]] = matchFQDN
 		default:
 			log.Warnf("%s is not a valid line, assuming fqdn", lowerCaseLine)
-			entryTypeHt[fqdn[0]] = MATCH_FQDN
+			entryTypeHt[fqdn[0]] = matchFQDN
 		}
 	}
 	log.Infof("%s loaded with %d prefix, %d suffix and %d fqdn", Filename, prefixTst.Len(), suffixTst.Len(), len(entryTypeHt)-prefixTst.Len()-suffixTst.Len())
 	return prefixTst, suffixTst, entryTypeHt
 }
 
+// OutputFormatToMarshaller gets the outputFormat string and a template used in gotemplate
 func OutputFormatToMarshaller(outputFormat string, t string) (OutputMarshaller, string, error) {
 	switch outputFormat {
 	case "json":
-		return JsonOutput{}, "", nil
+		return jsonOutput{}, "", nil
 	case "csv":
-		csvOut := CsvOutput{}
+		csvOut := csvOutput{}
 		header, _ := csvOut.Init()
 		return csvOut, header, nil
 	case "csv_no_header":
-		return CsvOutput{}, "", nil
+		return csvOutput{}, "", nil
 	case "gotemplate":
-		goOut := GoTemplateOutput{RawTemplate: t}
+		goOut := goTemplateOutput{RawTemplate: t}
 		_, err := goOut.Init()
 		return &goOut, "", err
 	}

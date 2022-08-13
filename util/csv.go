@@ -6,9 +6,9 @@ import (
 	"reflect"
 )
 
-type CsvOutput struct{}
+type csvOutput struct{}
 
-type CsvRow struct {
+type csvRow struct {
 	Year         int
 	Month        int
 	Day          int
@@ -17,7 +17,7 @@ type CsvRow struct {
 	Second       int
 	Ns           int
 	Server       string
-	IpVersion    uint8
+	IPVersion    uint8
 	SrcIP        uint64
 	DstIP        uint64
 	Protocol     int
@@ -30,11 +30,11 @@ type CsvRow struct {
 	Size         uint16
 	Edns0Present int
 	DoBit        int
-	Id           uint16
+	ID           uint16
 }
 
 // currently there's not a better way to do this unless you sacrifice performance by 10x
-func formatCsvRow(csvrow CsvRow) string {
+func formatCsvRow(csvrow csvRow) string {
 	return fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v",
 		csvrow.Year,
 		csvrow.Month,
@@ -44,7 +44,7 @@ func formatCsvRow(csvrow CsvRow) string {
 		csvrow.Second,
 		csvrow.Ns,
 		csvrow.Server,
-		csvrow.IpVersion,
+		csvrow.IPVersion,
 		csvrow.SrcIP,
 		csvrow.DstIP,
 		csvrow.Protocol,
@@ -57,11 +57,11 @@ func formatCsvRow(csvrow CsvRow) string {
 		csvrow.Size,
 		csvrow.Edns0Present,
 		csvrow.DoBit,
-		csvrow.Id,
+		csvrow.ID,
 	)
 }
 
-func (c CsvOutput) Marshal(d DNSResult) string {
+func (c csvOutput) Marshal(d DNSResult) string {
 	// the integer version of the IP is much more useful in Machine learning than the string
 	var SrcIP, DstIP uint64
 	if d.IPVersion == 4 {
@@ -94,7 +94,7 @@ func (c CsvOutput) Marshal(d DNSResult) string {
 			dobit = 1
 		}
 	}
-	s := CsvRow{
+	s := csvRow{
 		Year:         d.Timestamp.Year(),
 		Month:        int(d.Timestamp.Month()),
 		Day:          d.Timestamp.Day(),
@@ -103,7 +103,7 @@ func (c CsvOutput) Marshal(d DNSResult) string {
 		Second:       d.Timestamp.Second(),
 		Ns:           d.Timestamp.Nanosecond(),
 		Server:       GeneralFlags.ServerName,
-		IpVersion:    d.IPVersion,
+		IPVersion:    d.IPVersion,
 		SrcIP:        SrcIP,
 		DstIP:        DstIP,
 		Protocol:     protocolNumber,
@@ -116,14 +116,14 @@ func (c CsvOutput) Marshal(d DNSResult) string {
 		Size:         d.PacketLength,
 		Edns0Present: edns,
 		DoBit:        dobit,
-		Id:           d.DNS.Id,
+		ID:           d.DNS.Id,
 	}
 	return formatCsvRow(s)
 }
 
 // return headers for above csv
-func (c CsvOutput) Init() (string, error) {
-	v := reflect.ValueOf(CsvRow{})
+func (c csvOutput) Init() (string, error) {
+	v := reflect.ValueOf(csvRow{})
 	typeOfV := v.Type()
 	csvHeader := ""
 	for i := 0; i < v.NumField(); i++ {

@@ -66,11 +66,6 @@ func main() {
 		defer profile.Start(profile.MemProfile).Stop()
 	}
 
-	err := util.GlobalMetricConfig.SetupMetrics()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// Setup SIGINT handling
 	handleInterrupt()
 

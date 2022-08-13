@@ -58,7 +58,7 @@ require (
 )
 
 require (
-	github.com/bytedance/sonic v1.3.5-0.20220809045411-b36771ba37cc
+	github.com/bytedance/sonic v1.3.5
 	github.com/chenzhuoyu/base64x v0.0.0-20220526154910-8bf9453eb81a // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
@@ -74,8 +74,8 @@ require (
 	github.com/segmentio/kafka-go v0.4.34
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/net v0.0.0-20220809184613-07c6da5e1ced
-	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
+	golang.org/x/net v0.0.0-20220812174116-3211cb980234
+	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	google.golang.org/protobuf v1.28.1
 )
 

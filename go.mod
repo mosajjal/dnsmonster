@@ -62,7 +62,7 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20220526154910-8bf9453eb81a // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
-	github.com/jessevdk/go-flags v1.5.0
+	github.com/jessevdk/go-flags v1.5.1-0.20210607101731-3927b71304df
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/miekg/dns v1.1.50

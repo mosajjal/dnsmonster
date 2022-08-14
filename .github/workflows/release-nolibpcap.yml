@@ -16,7 +16,7 @@ jobs:
       run: |
         docker build -t myrepo:temp -f Dockerfile-crossplatform .
         id=$(docker create myrepo:temp)
-        docker cp $id:/*.bin /tmp/
+        docker cp $id:/ /tmp/
 
     - name: Upload Linux binary to release
       uses: svenstaro/upload-release-action@v2

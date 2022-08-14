@@ -1,15 +1,15 @@
-//go:build openbsd || freebsd
+//go:build openbsd || freebsd || dragonfly || netbsd
 
 package util
 
 import (
-	"github.com/bytedance/sonic"
+	"encoding/json"
 )
 
 type jsonOutput struct{}
 
 func (j jsonOutput) Marshal(d DNSResult) string {
-	res, _ := sonic.Marshal(d)
+	res, _ := json.Marshal(d)
 	return string(res)
 }
 

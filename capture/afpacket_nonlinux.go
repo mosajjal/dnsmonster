@@ -1,5 +1,5 @@
-//go:build !linux
-// +build !linux
+//go:build !linux || android
+// +build !linux android
 
 package capture
 
@@ -45,6 +45,6 @@ func (afhandle *afpacketHandle) Stat() (uint, uint) {
 	return 0, 0
 }
 
-func (config CaptureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
+func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	return nil
 }

@@ -176,14 +176,14 @@ running `./autobuild.sh` creates multiple containers:
 
 DNSMonster can be configured using 3 different methods. Command line options, Environment variables and configuration file. Order of precedence:
 
-- Command line options (Case-sensitive, camelCase)
+- Command line options (Case-insensitive)
 - Environment variables (Always upper-case)
-- Configuration file (Case-sensitive, PascalCase)
+- Configuration file (Case-sensitive, lowercase)
 - Default values (No configuration)
 
 ## Command line options
 
-Note that command line arguments are case-sensitive and camelCase at the moment. This is the [known limitation](https://github.com/jessevdk/go-flags/issues/333) of the underlying flag parser library `dnsmonster` uses. 
+Note that command line arguments are case-insensitive as of v0.9.5
 
 [//]: <> (start of command line options)
 ```sh

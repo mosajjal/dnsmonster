@@ -57,7 +57,9 @@ func main() {
 
 	// convert all argv to lowercase
 	for i := range os.Args {
-		os.Args[i] = strings.ToLower(os.Args[i])
+		if strings.HasPrefix(os.Args[i], "--") {
+			os.Args[i] = strings.ToLower(os.Args[i])
+		}
 	}
 
 	// process and handle flags

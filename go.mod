@@ -24,7 +24,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/deepmap/oapi-codegen v1.11.0 // indirect
 	github.com/farsightsec/golang-framestream v0.3.0 // indirect
-	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.6.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -41,7 +40,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
-	github.com/momaek/formattag v0.0.8 // indirect
 	github.com/paulmach/orb v0.7.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect

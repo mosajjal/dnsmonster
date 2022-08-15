@@ -16,13 +16,13 @@ jobs:
       run: |
         docker build -t myrepo:latest -f Dockerfile-crossplatform .
         id=$(docker create myrepo:latest)
-        docker cp $id:/ /tmp/
+        docker cp $id:/ /tmp/bin
 
     - name: Upload Linux binary to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/*.bin
+        file: /tmp/bin/*.bin
         file_glob: true
         tag: ${{ github.ref }}
         overwrite: true

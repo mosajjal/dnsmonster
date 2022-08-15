@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -53,6 +54,12 @@ func handleInterrupt() {
 }
 
 func main() {
+
+	// convert all argv to lowercase
+	for i := range os.Args {
+		os.Args[i] = strings.ToLower(os.Args[i])
+	}
+
 	// process and handle flags
 	util.ProcessFlags()
 

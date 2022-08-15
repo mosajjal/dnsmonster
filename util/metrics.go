@@ -18,14 +18,13 @@ import (
 )
 
 // the capture and output metrics and stats are handled here.
-
 type metricConfig struct {
-	MetricEndpointType       string        `long:"metricEndpointType"       env:"DNSMONSTER_METRICENDPOINTTYPE"       default:"stderr" description:"Metric Endpoint Service"    choice:"statsd" choice:"prometheus" choice:"stderr"`
-	MetricStatsdAgent        string        `long:"metricStatsdAgent"        env:"DNSMONSTER_METRICSTATSDAGENT"        default:""       description:"Statsd endpoint. Example: 127.0.0.1:8125 "`
-	MetricPrometheusEndpoint string        `long:"metricPrometheusEndpoint" env:"DNSMONSTER_METRICPROMETHEUSENDPOINT" default:""       description:"Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric"`
-	MetricStderrFormat       string        `long:"metricStderrFormat"       env:"DNSMONSTER_METRICSTDERRFORMAT"       default:"json"   description:"Format for stderr output."  choice:"json" choice:"kv"`
-	MetricFlushInterval      time.Duration `long:"metricFlushInterval"      env:"DNSMONSTER_METRICFLUSHINTERVAL"      default:"10s"    description:"Interval between sending results to Metric Endpoint"`
-	// MetricProxy             string        `long:"metricProxy"              env:"DNSMONSTER_METRICPROXY"             default:""       description:"URI formatted proxy server to use for metric endpoint. Example: http://username:password@hostname:port"`
+	MetricEndpointType       string        `long:"metricendpointtype"       ini-name:"metricendpointtype"       env:"DNSMONSTER_METRICENDPOINTTYPE"       default:"stderr" description:"Metric Endpoint Service"                                           choice:"statsd" choice:"prometheus" choice:"stderr"`
+	MetricStatsdAgent        string        `long:"metricstatsdagent"        ini-name:"metricstatsdagent"        env:"DNSMONSTER_METRICSTATSDAGENT"        default:""       description:"Statsd endpoint. Example: 127.0.0.1:8125 "`
+	MetricPrometheusEndpoint string        `long:"metricprometheusendpoint" ini-name:"metricprometheusendpoint" env:"DNSMONSTER_METRICPROMETHEUSENDPOINT" default:""       description:"Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric"`
+	MetricStderrFormat       string        `long:"metricstderrformat"       ini-name:"metricstderrformat"       env:"DNSMONSTER_METRICSTDERRFORMAT"       default:"json"   description:"Format for stderr output."                                         choice:"json"   choice:"kv"`
+	MetricFlushInterval      time.Duration `long:"metricflushinterval"      ini-name:"metricflushinterval"      env:"DNSMONSTER_METRICFLUSHINTERVAL"      default:"10s"    description:"Interval between sending results to Metric Endpoint"`
+	// MetricProxy             string        `long:"metricproxy" ini-name:"metricproxy"              env:"DNSMONSTER_METRICPROXY"             default:""       description:"URI formatted proxy server to use for metric endpoint. Example: http://username:password@hostname:port"`
 }
 
 func (c metricConfig) SetupMetrics() error {

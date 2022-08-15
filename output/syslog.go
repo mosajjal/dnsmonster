@@ -13,8 +13,8 @@ import (
 )
 
 type syslogConfig struct {
-	SyslogOutputType     uint   `long:"syslogOutputType"            env:"DNSMONSTER_SYSLOGOUTPUTTYPE"            default:"0"                                                       description:"What should be written to Syslog server. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	SyslogOutputEndpoint string `long:"syslogOutputEndpoint"        env:"DNSMONSTER_SYSLOGOUTPUTENDPOINT"        default:"udp://127.0.0.1:514"                                     description:"Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none"`
+	SyslogOutputType     uint   `long:"syslogoutputtype"            ini-name:"syslogoutputtype"            env:"DNSMONSTER_SYSLOGOUTPUTTYPE"            default:"0"                                                       description:"What should be written to Syslog server. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
+	SyslogOutputEndpoint string `long:"syslogoutputendpoint"        ini-name:"syslogoutputendpoint"        env:"DNSMONSTER_SYSLOGOUTPUTENDPOINT"        default:"udp://127.0.0.1:514"                                     description:"Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none"`
 	outputChannel        chan util.DNSResult
 	closeChannel         chan bool
 	outputMarshaller     util.OutputMarshaller

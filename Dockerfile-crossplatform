@@ -68,3 +68,4 @@ RUN export GOOS=dragonfly && export  CGO_ENABLED=0 && \
 
 FROM scratch
 COPY --from=0 /tmp/bins/*.bin  /
+ENTRYPOINT ["/dnsmonster"] 

@@ -9,7 +9,7 @@ ENV REPO="github.com/mosajjal/dnsmonster"
 RUN git clone https://${REPO}.git /opt/dnsmonster --depth 1 \
     && cd /opt/dnsmonster \
     && git fetch --tags \ 
-    && export LATEST_TAG=`git describe --tags --always` \
+    && export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` \
     && go build --ldflags "-L /usr/lib/libcap.a -linkmode external -X ${REPO}/util.releaseVersion=${LATEST_TAG} -extldflags \"-static\"" -o /tmp/dnsmonster-linux-amd64.bin
 
 ENV CGO_ENABLED=1
@@ -21,7 +21,8 @@ WORKDIR /opt/dnsmonster
 
 # build Deb file
 RUN cd /opt/dnsmonster \
-    && export LATEST_TAG=`git describe --tags` \
+    && export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` \
+    && echo ${LATEST_TAG} \
     && export DIR="/tmp/dnsmonster_${LATEST_TAG:1}-1_amd64" \
     && mkdir -p $DIR/sbin $DIR/etc/dnsmonster $DIR/usr/share/man/man7 $DIR/DEBIAN $DIR/etc/bash_completion.d $DIR/usr/share/fish/vendor_completions.d \
     && cp /tmp/dnsmonster-linux-amd64.bin $DIR/sbin/dnsmonster \
@@ -34,7 +35,7 @@ RUN cd /opt/dnsmonster \
     && mv /tmp/dnsmonster_*_amd64.deb /tmp/dnsmonster-latest.deb
 
 # build rpm file and move it to /tmp/dnsmonster-latest.rpm
-RUN export LATEST_TAG=`git describe --abbrev=0 --tags` && echo -e '\
+RUN export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` && echo -e '\
 Name:       dnsmonster \n\
 Version:    '${LATEST_TAG:1}' \n\
 Release:    1 \n\
@@ -50,7 +51,7 @@ This is my first RPM package, which does nothing. \n\
 %define _rpmdir /tmp \n\
 \n\
 %build \n\
-export LATEST_TAG=`git describe --tags` \n\
+export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` \n\
 mkdir -p %{buildroot}/sbin %{buildroot}/etc/dnsmonster %{buildroot}/usr/share/man/man7 %{buildroot}/DEBIAN %{buildroot}/etc/bash_completion.d %{buildroot}/usr/share/fish/vendor_completions.d \n\
 cp /tmp/dnsmonster-linux-amd64.bin %{buildroot}/sbin/dnsmonster \n\
 %{buildroot}/sbin/dnsmonster --manPage > %{buildroot}/usr/share/man/man7/dnsmonster.7 \n\
@@ -74,7 +75,7 @@ cp /tmp/dnsmonster-linux-amd64.bin %{buildroot}/sbin/dnsmonster  \n\
 RUN  cat /tmp/dnsmonster-specfile && rpmbuild -ba --build-in-place  /tmp/dnsmonster-specfile && mv /tmp/*/dnsmonster-*.x86_64.rpm /tmp/dnsmonster-latest.rpm
 
 # build Arch Package
-# RUN export LATEST_TAG=`git describe --abbrev=0 --tags` && echo -e '\
+# RUN export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` && echo -e '\
 # # Maintainer "Ali Mosajjal <hi@n0p.me>" \n\
 # pkgname=NAME \n\
 # pkgver=VERSION \n\

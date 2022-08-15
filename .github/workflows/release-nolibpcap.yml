@@ -14,8 +14,8 @@ jobs:
 
     - name: Get dependencies
       run: |
-        docker build -t myrepo:temp -f Dockerfile-crossplatform .
-        id=$(docker create myrepo:temp)
+        docker build -t myrepo:latest -f Dockerfile-crossplatform .
+        id=$(docker create myrepo:latest)
         docker cp $id:/ /tmp/
 
     - name: Upload Linux binary to release

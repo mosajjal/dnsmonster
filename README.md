@@ -189,92 +189,92 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 ```sh
 # [capture]
 # Device used to capture
---devName=
+--devname=
 
 # Pcap filename to run
---pcapFile=
+--pcapfile=
 
 # dnstap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
---dnstapSocket=
+--dnstapsocket=
 
 # Port selected to filter packets
 --port=53
 
 # Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
---sampleRatio=1:1
+--sampleratio=1:1
 
 # Cleans up packet hash table used for deduplication
---dedupCleanupInterval=1m0s
+--dedupcleanupinterval=1m0s
 
 # Set the dnstap socket permission, only applicable when unix:// is used
---dnstapPermission=755
+--dnstappermission=755
 
 # Number of routines used to handle received packets
---packetHandlerCount=2
+--packethandlercount=2
 
 # Size of the tcp assembler
---tCPAssemblyChannelSize=10000
+--tcpassemblychannelsize=10000
 
 # Size of the tcp result channel
---tCPResultChannelSize=10000
+--tcpresultchannelsize=10000
 
 # Number of routines used to handle tcp packets
---tCPHandlerCount=1
+--tcphandlercount=1
 
 # Size of the channel to send packets to be defragged
---defraggerChannelSize=10000
+--defraggerchannelsize=10000
 
 # Size of the channel where the defragged packets are returned
---defraggerChannelReturnSize=10000
+--defraggerchannelreturnsize=10000
 
 # Size of the packet handler channel
---packetChannelSize=1000
+--packetchannelsize=1000
 
 # Afpacket Buffersize in MB
---afpacketBuffersizeMb=64
+--afpacketbuffersizemb=64
 
 # BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
 --filter=((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))
 
 # Use AFPacket for live captures. Supported on Linux 3.0+ only
---useAfpacket
+--useafpacket
 
 # The PCAP capture does not contain ethernet frames
---noEthernetframe
+--noetherframe
 
 # Deduplicate incoming packets, Only supported with --devName and --pcapFile. Experimental 
 --dedup
 
 # Do not put the interface in promiscuous mode
---noPromiscuous
+--nopromiscuous
 
 # [clickhouse_output]
 # Address of the clickhouse database to save the results. multiple values can be provided.
---clickhouseAddress=localhost:9000
+--clickhouseaddress=localhost:9000
 
 # Username to connect to the clickhouse database
---clickhouseUsername=
+--clickhouseusername=
 
 # Password to connect to the clickhouse database
---clickhousePassword=
+--clickhousepassword=
 
 # Database to connect to the clickhouse database
---clickhouseDatabase=default
+--clickhousedatabase=default
 
 # Interval between sending results to ClickHouse. If non-0, Batch size is ignored and batch delay is used
---clickhouseDelay=0s
+--clickhousedelay=0s
 
 # Clickhouse connection LZ4 compression level, 0 means no compression
---clickhouseCompress=0
+--clickhousecompress=0
 
 # Debug Clickhouse connection
---clickhouseDebug
+--clickhousedebug
 
 # Use TLS for Clickhouse connection
---clickhouseSecure
+--clickhousesecure
 
 # Save full packet query and response in JSON format.
---clickhouseSaveFullQuery
+--clickhousesavefullquery
 
 # What should be written to clickhouse. options:
 #	0: Disable Output
@@ -282,16 +282,16 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---clickhouseOutputType=0
+--clickhouseoutputtype=0
 
 # Minimum capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations
---clickhouseBatchSize=100000
+--clickhousebatchsize=100000
 
 # Number of Clickhouse output Workers
---clickhouseWorkers=1
+--clickhouseworkers=1
 
 # Channel Size for each Clickhouse Worker
---clickhouseWorkerChannelSize=100000
+--clickhouseworkerchannelsize=100000
 
 # [elastic_output]
 # What should be written to elastic. options:
@@ -300,19 +300,19 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---elasticOutputType=0
+--elasticoutputtype=0
 
 # elastic endpoint address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none
---elasticOutputEndpoint=
+--elasticoutputendpoint=
 
 # elastic index
---elasticOutputIndex=default
+--elasticoutputindex=default
 
 # Send data to Elastic in batch sizes
---elasticBatchSize=1000
+--elasticbatchsize=1000
 
 # Interval between sending results to Elastic if Batch size is not filled
---elasticBatchDelay=1s
+--elasticbatchdelay=1s
 
 # [file_output]
 # What should be written to file. options:
@@ -321,16 +321,16 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---fileOutputType=0
+--fileoutputtype=0
 
 # Path to output file. Used if fileOutputType is not none
---fileOutputPath=
+--fileoutputpath=
 
 # Output format for file. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
---fileOutputFormat=json
+--fileoutputformat=json
 
 # Go Template to format the output as needed
---fileOutputGoTemplate={{.}}
+--fileoutputgotemplate={{.}}
 
 # [influx_output]
 # What should be written to influx. options:
@@ -339,25 +339,25 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---influxOutputType=0
+--influxoutputtype=0
 
 # influx Server address, example: http://localhost:8086. Used if influxOutputType is not none
---influxOutputServer=
+--influxoutputserver=
 
 # Influx Server Auth Token
---influxOutputToken=dnsmonster
+--influxoutputtoken=dnsmonster
 
 # Influx Server Bucket
---influxOutputBucket=dnsmonster
+--influxoutputbucket=dnsmonster
 
 # Influx Server Org
---influxOutputOrg=dnsmonster
+--influxoutputorg=dnsmonster
 
 # Minimum capacity of the cache array used to send data to Influx
---influxOutputWorkers=8
+--influxoutputworkers=8
 
 # Minimum capacity of the cache array used to send data to Influx
---influxBatchSize=1000
+--influxbatchsize=1000
 
 # [kafka_output]
 # What should be written to kafka. options:
@@ -366,37 +366,37 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---kafkaOutputType=0
+--kafkaoutputtype=0
 
 # kafka broker address(es), example: 127.0.0.1:9092. Used if kafkaOutputType is not none
---kafkaOutputBroker=
+--kafkaoutputbroker=
 
 # Kafka topic for logging
---kafkaOutputTopic=dnsmonster
+--kafkaoutputtopic=dnsmonster
 
 # Minimum capacity of the cache array used to send data to Kafka
---kafkaBatchSize=1000
+--kafkabatchsize=1000
 
 # Kafka connection timeout in seconds
---kafkaTimeout=3
+--kafkatimeout=3
 
 # Interval between sending results to Kafka if Batch size is not filled
---kafkaBatchDelay=1s
+--kafkabatchdelay=1s
 
 # Compress Kafka connection
---kafkaCompress
+--kafkacompress
 
 # Use TLS for kafka connection
---kafkaSecure
+--kafkasecure
 
 # Path of CA certificate that signs Kafka broker certificate
---kafkaCACertificatePath=
+--kafkacacertificatepath=
 
 # Path of TLS certificate to present to broker
---kafkaTLSCertificatePath=
+--kafkatlscertificatepath=
 
 # Path of TLS certificate key
---kafkaTLSKeyPath=
+--kafkatlskeypath=
 
 # [psql_output]
 # What should be written to Microsoft Psql. options:
@@ -405,25 +405,25 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---psqlOutputType=0
+--psqloutputtype=0
 
 # Psql endpoint used. must be in uri format. example: postgres://username:password@hostname:port/database?sslmode=disable
---psqlEndpoint=
+--psqlendpoint=
 
 # Number of PSQL workers
---psqlWorkers=1
+--psqlworkers=1
 
 # Psql Batch Size
---psqlBatchSize=1
+--psqlbatchsize=1
 
 # Interval between sending results to Psql if Batch size is not filled. Any value larger than zero takes precedence over Batch Size
---psqlBatchDelay=0s
+--psqlbatchdelay=0s
 
 # Timeout for any INSERT operation before we consider them failed
---psqlBatchTimeout=5s
+--psqlbatchtimeout=5s
 
 # Save full packet query and response in JSON format.
---psqlSaveFullQuery
+--psqlsavefullquery
 
 # [sentinel_output]
 # What should be written to Microsoft Sentinel. options:
@@ -432,25 +432,25 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---sentinelOutputType=0
+--sentineloutputtype=0
 
 # Sentinel Shared Key, either the primary or secondary, can be found in Agents Management page under Log Analytics workspace
---sentinelOutputSharedKey=
+--sentineloutputsharedkey=
 
 # Sentinel Customer Id. can be found in Agents Management page under Log Analytics workspace
---sentinelOutputCustomerID=
+--sentineloutputcustomerid=
 
 # Sentinel Output LogType
---sentinelOutputLogType=dnsmonster
+--sentineloutputlogtype=dnsmonster
 
 # Sentinel Output Proxy in URI format
---sentinelOutputProxy=
+--sentineloutputproxy=
 
 # Sentinel Batch Size
---sentinelBatchSize=100
+--sentinelbatchsize=100
 
 # Interval between sending results to Sentinel if Batch size is not filled. Any value larger than zero takes precedence over Batch Size
---sentinelBatchDelay=0s
+--sentinelbatchdelay=0s
 
 # [splunk_output]
 # What should be written to HEC. options:
@@ -459,31 +459,31 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---splunkOutputType=0
+--splunkoutputtype=0
 
 # splunk endpoint address, example: http://127.0.0.1:8088. Used if splunkOutputType is not none, can be specified multiple times for load balanace and HA
---splunkOutputEndpoint=
+--splunkoutputendpoint=
 
 # Splunk HEC Token
---splunkOutputToken=00000000-0000-0000-0000-000000000000
+--splunkoutputtoken=00000000-0000-0000-0000-000000000000
 
 # Splunk Output Index
---splunkOutputIndex=temp
+--splunkoutputindex=temp
 
 # Splunk Output Proxy in URI format
---splunkOutputProxy=
+--splunkoutputproxy=
 
 # Splunk Output Source
---splunkOutputSource=dnsmonster
+--splunkoutputsource=dnsmonster
 
 # Splunk Output Sourcetype
---splunkOutputSourceType=json
+--splunkoutputsourcetype=json
 
 # Send data to HEC in batch sizes
---splunkBatchSize=1000
+--splunkbatchsize=1000
 
 # Interval between sending results to HEC if Batch size is not filled
---splunkBatchDelay=1s
+--splunkbatchdelay=1s
 
 # [stdout_output]
 # What should be written to stdout. options:
@@ -492,16 +492,16 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---stdoutOutputType=0
+--stdoutoutputtype=0
 
 # Output format for stdout. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
---stdoutOutputFormat=json
+--stdoutoutputformat=json
 
 # Go Template to format the output as needed
---stdoutOutputGoTemplate={{.}}
+--stdoutoutputgotemplate={{.}}
 
 # Number of workers
---stdoutOutputWorkerCount=8
+--stdoutoutputworkercount=8
 
 # [syslog_output]
 # What should be written to Syslog server. options:
@@ -510,35 +510,35 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 #	2: Enable Output and apply skipdomains logic
 #	3: Enable Output and apply allowdomains logic
 #	4: Enable Output and apply both skip and allow domains logic
---syslogOutputType=0
+--syslogoutputtype=0
 
 # Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514. Used if syslogOutputType is not none
---syslogOutputEndpoint=udp://127.0.0.1:514
+--syslogoutputendpoint=udp://127.0.0.1:514
 
 # [general]
 # Garbage Collection interval for tcp assembly and ip defragmentation
---gcTime=10s
+--gctime=10s
 
 # Duration to calculate interface stats
---captureStatsDelay=1s
+--capturestatsdelay=1s
 
 # Mask IPv4s by bits. 32 means all the bits of IP is saved in DB
---maskSize4=32
+--masksize4=32
 
 # Mask IPv6s by bits. 32 means all the bits of IP is saved in DB
---maskSize6=128
+--masksize6=128
 
 # Name of the server used to index the metrics.
---serverName=default
+--servername=default
 
 # Set debug Log format
---logFormat=text
+--logformat=text
 
 # Set debug Log level, 0:PANIC, 1:ERROR, 2:WARN, 3:INFO, 4:DEBUG
---logLevel=3
+--loglevel=3
 
 # Size of the result processor channel size
---resultChannelSize=100000
+--resultchannelsize=100000
 
 # write cpu profile to file
 --cpuprofile=
@@ -550,38 +550,38 @@ Note that command line arguments are case-sensitive and camelCase at the moment.
 --gomaxprocs=-1
 
 # Limit of packets logged to clickhouse every iteration. Default 0 (disabled)
---packetLimit=0
+--packetlimit=0
 
 # Skip outputing domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path
---skipDomainsFile=
+--skipdomainsfile=
 
-# Hot-Reload skipDomainsFile interval
---skipDomainsRefreshInterval=1m0s
+# Hot-Reload skipdomainsfile interval
+--skipdomainsrefreshinterval=1m0s
 
 # Allow Domains logic input file. Can accept a URL (http:// or https://) or path
---allowDomainsFile=
+--allowdomainsfile=
 
-# Hot-Reload allowDomainsFile file interval
---allowDomainsRefreshInterval=1m0s
+# Hot-Reload allowdomainsfile file interval
+--allowdomainsrefreshinterval=1m0s
 
 # Skip TLS verification when making HTTPS connections
---skipTLSVerification
+--skiptlsverification
 
 # [metric]
 # Metric Endpoint Service
---metricEndpointType=
+--metricendpointtype=
 
 # Statsd endpoint. Example: 127.0.0.1:8125 
---metricStatsdAgent=
+--metricstatsdagent=
 
 # Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric
---metricPrometheusEndpoint=
+--metricprometheusendpoint=
 
 # Format for  output.
---metricStderrFormat=json
+--metricformat=json
 
 # Interval between sending results to Metric Endpoint
---metricFlushInterval=10s
+--metricflushinterval=10s
 ```
 [//]: <> (end of command line options)
 

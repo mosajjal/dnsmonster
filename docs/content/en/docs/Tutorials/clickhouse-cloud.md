@@ -29,19 +29,19 @@ clickhouse-client --host INSTANCEID.REGION.PROVIDER.clickhouse.cloud --secure --
 replace the all caps variables with your server instance and this should create your primary tables. Everything should be in place for us to use `dnsmonster`. Now we can point the `dnsmonster` service to the ClickHouse instance and it should work without any issues.
 
 ```sh
-dnsmonster --devName=lo \                                                                                                                                                         0.351s 19:41
-          --packetHandlerCount=8 \
-          --clickhouseAddress=INSTANCEID.REGION.PROVIDER.clickhouse.cloud:9440 \
-          --clickhouseOutputType=1 \
-          --clickhouseBatchSize=7000 \
-          --clickhouseWorkers=16 \
+dnsmonster --devName lo \
+          --packetHandlerCount 8 \
+          --clickhouseAddress INSTANCEID.REGION.PROVIDER.clickhouse.cloud:9440 \
+          --clickhouseOutputType 1 \
+          --clickhouseBatchSize 7000 \
+          --clickhouseWorkers 16 \
           --clickhouseSecure \
-          --clickhouseUsername=default \
-          --clickhousePassword="RANDOM_PASSWORD" \
+          --clickhouseUsername default \
+          --clickhousePassword "RANDOM_PASSWORD" \
           --clickhouseCompress \
-          --serverName=my_dnsmonster \
-          --maskSize4=16 \
-          --maskSize6=64
+          --serverName my_dnsmonster \
+          --maskSize4 16 \
+          --maskSize6 64
 ```
 
 Compressing the ClickHouse `INSERT` connection (`--clickhouseCompress`) will make it efficient and fast. I've gotten better result by turning it on. Keep in mind that the tweaking of the packetHandlerCount as well as number of ClickHouse workers, batch size etc. will have a major impact on the overall performance. In my test, I've been able to exceed ~250,000 packets per seconds easily on my fibre connection. Keep in mind that you can substitute command line arguments with environment variables or a config file. Refer to the Configuration section of the documents for more info. 

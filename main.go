@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -55,11 +56,13 @@ func handleInterrupt() {
 
 func main() {
 
-	// convert all argv to lowercase
 	for i := range os.Args {
-		if strings.HasPrefix(os.Args[i], "--") {
-			os.Args[i] = strings.ToLower(os.Args[i])
-		}
+
+		var re = regexp.MustCompile(`(?m)--(\w+)`)
+		os.Args[i] = (re.ReplaceAllStringFunc(os.Args[i], func(m string) string {
+			return strings.ToLower(m)
+		}))
+
 	}
 
 	// process and handle flags

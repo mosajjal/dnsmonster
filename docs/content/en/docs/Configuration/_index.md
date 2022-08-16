@@ -12,16 +12,14 @@ Note that in case of specifying multiple output streams, the output data is copi
 
 dnsmonster can be configured in 3 different ways. Command line options, Environment variables and a configuration file. You can also use any combination of them at the same time. The precedence order is as follows:
 
-- Command line options (Case-sensitive, camelCase)
+- Command line options (Case-insensitive)
 - Environment variables (Always upper-case)
-- Configuration file (Case-sensitive, PascalCase)
+- Configuration file (Case-sensitive, lowercase)
 - Default values (No configuration)
 
 For example, if you have a configuration file that has specified a `devName`, but you also provide it as a command-line argument, dnsmonster will prioritizes CLI over config file and will ignore that parameter from the `ini` file. 
 
 ## Command line options
-
-Note that command line arguments are case-sensitive and camelCase at the moment. This is the [known limitation](https://github.com/jessevdk/go-flags/issues/333) of the underlying flag parser library `dnsmonster` uses. 
 
 To see the current list of command-line options, run `dnsmonster --help` or checkout the repository's README.md.
 

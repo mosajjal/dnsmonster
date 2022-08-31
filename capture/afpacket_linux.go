@@ -10,9 +10,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/afpacket"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/afpacket"
+	"github.com/gopacket/gopacket/layers"
 )
 
 type afpacketHandle struct {

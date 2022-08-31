@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
 	mkdns "github.com/miekg/dns"
 	"github.com/mosajjal/dnsmonster/util"
 	log "github.com/sirupsen/logrus"

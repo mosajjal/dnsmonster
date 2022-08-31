@@ -6,8 +6,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/google/gopacket/ip4defrag"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket/ip4defrag"
+	"github.com/gopacket/gopacket/layers"
 )
 
 // Quick and Easy to use debug code to trace

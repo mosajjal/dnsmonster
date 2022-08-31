@@ -15,9 +15,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/tcpassembly/tcpreader"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
+	"github.com/gopacket/gopacket/tcpassembly/tcpreader"
 	"github.com/mosajjal/dnsmonster/util"
 )
 

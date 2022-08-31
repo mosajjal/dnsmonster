@@ -4,8 +4,8 @@
 package capture
 
 import (
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/bsdbpf"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/bsdbpf"
 	log "github.com/sirupsen/logrus"
 )
 

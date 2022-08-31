@@ -6,9 +6,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/tcpassembly"
-	"github.com/google/gopacket/tcpassembly/tcpreader"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/tcpassembly"
+	"github.com/gopacket/gopacket/tcpassembly/tcpreader"
 	log "github.com/sirupsen/logrus"
 )
 

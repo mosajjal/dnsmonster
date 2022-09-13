@@ -9,7 +9,7 @@ require (
 	github.com/gopacket/gopacket v0.0.0-20220830031330-9f2bbbf7565d
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/influxdata/influxdb-client-go/v2 v2.10.0
-	github.com/jackc/pgx/v4 v4.17.1
+	github.com/jackc/pgx/v4 v4.17.2
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/syntaqx/go-metrics-datadog v0.1.1
@@ -41,15 +41,15 @@ require (
 	github.com/klauspost/cpuid/v2 v2.1.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/paulmach/orb v0.7.1 // indirect
-	github.com/pierrec/lz4/v4 v4.1.15 // indirect
+	github.com/pierrec/lz4/v4 v4.1.16 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	go.opentelemetry.io/otel v1.9.0 // indirect
-	go.opentelemetry.io/otel/trace v1.9.0 // indirect
+	go.opentelemetry.io/otel v1.10.0 // indirect
+	go.opentelemetry.io/otel/trace v1.10.0 // indirect
 	golang.org/x/arch v0.0.0-20220823144127-ada1728cebaa // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/text v0.3.7 // indirect
@@ -71,10 +71,10 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0
 	github.com/rogpeppe/fastuuid v1.2.0
-	github.com/segmentio/kafka-go v0.4.34
+	github.com/segmentio/kafka-go v0.4.35
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
-	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b
-	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
+	golang.org/x/net v0.0.0-20220909164309-bea034e7d591
+	golang.org/x/sys v0.0.0-20220909162455-aba9fc2a8ff2 // indirect
 	google.golang.org/protobuf v1.28.1
 )

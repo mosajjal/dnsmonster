@@ -47,7 +47,7 @@ func (config captureConfig) StartNonDNSTap() {
 				packetsCaptured.Update(totalCnt)
 			} else {
 				packetsCaptured.Update(int64(packets))
-				packetsCaptured.Update(int64(drop))
+				packetsDropped.Update(int64(drop))
 			}
 			packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
 		}

@@ -119,10 +119,10 @@ func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpa
 	return handle
 }
 
-func (h *afpacketHandle) Stat() (uint, uint) {
+func (h *afpacketHandle) Stat() (uint, uint, error) {
 	mystats, statsv3, err := h.TPacket.SocketStats()
 	if err != nil {
-		return uint(mystats.Packets() + statsv3.Packets()), uint(mystats.Drops() + statsv3.Drops())
+		return uint(mystats.Packets() + statsv3.Packets()), uint(mystats.Drops() + statsv3.Drops()), nil
 	}
-	return 0, 0
+	return 0, 0, nil
 }

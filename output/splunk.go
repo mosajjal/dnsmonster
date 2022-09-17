@@ -1,6 +1,7 @@
 package output
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -48,7 +49,7 @@ func init() {
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (spConfig splunkConfig) Initialize() error {
+func (spConfig splunkConfig) Initialize(ctx context.Context) error {
 	var err error
 	spConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -58,7 +59,7 @@ func (spConfig splunkConfig) Initialize() error {
 
 	if spConfig.SplunkOutputType > 0 && spConfig.SplunkOutputType < 5 {
 		log.Info("Creating Splunk Output Channel")
-		go spConfig.Output()
+		go spConfig.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -151,7 +152,7 @@ func selectHealthyConnection() string {
 	return ""
 }
 
-func (spConfig splunkConfig) Output() {
+func (spConfig splunkConfig) Output(ctx context.Context) {
 	splunkFailed := metrics.GetOrRegisterCounter("splunkFailed", metrics.DefaultRegistry)
 
 	log.Infof("Connecting to Splunk endpoints")

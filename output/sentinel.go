@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -41,7 +42,7 @@ func init() {
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (seConfig sentinelConfig) Initialize() error {
+func (seConfig sentinelConfig) Initialize(ctx context.Context) error {
 	var err error
 	seConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -51,7 +52,7 @@ func (seConfig sentinelConfig) Initialize() error {
 
 	if seConfig.SentinelOutputType > 0 && seConfig.SentinelOutputType < 5 {
 		log.Info("Creating Sentinel Output Channel")
-		go seConfig.Output()
+		go seConfig.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -159,7 +160,7 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 	}
 }
 
-func (seConfig sentinelConfig) Output() {
+func (seConfig sentinelConfig) Output(ctx context.Context) {
 	log.Infof("starting SentinelOutput")
 	sentinelSkipped := metrics.GetOrRegisterCounter("sentinelSkipped", metrics.DefaultRegistry)
 

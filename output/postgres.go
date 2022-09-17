@@ -36,7 +36,7 @@ func init() {
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (psqConf psqlConfig) Initialize() error {
+func (psqConf psqlConfig) Initialize(ctx context.Context) error {
 	var err error
 	psqConf.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -46,7 +46,7 @@ func (psqConf psqlConfig) Initialize() error {
 
 	if psqConf.PsqlOutputType > 0 && psqConf.PsqlOutputType < 5 {
 		log.Info("Creating Psql Output Channel")
-		go psqConf.Output()
+		go psqConf.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -89,7 +89,7 @@ func (psqConf psqlConfig) connectPsql() *pgxpool.Pool {
 	return c
 }
 
-func (psqConf psqlConfig) Output() {
+func (psqConf psqlConfig) Output(ctx context.Context) {
 	for i := 0; i < int(psqConf.PsqlWorkers); i++ {
 		go psqConf.OutputWorker()
 	}

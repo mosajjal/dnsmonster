@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 	statsd "github.com/syntaqx/go-metrics-datadog"
+	"golang.org/x/sync/errgroup"
 )
 
 // the capture and output metrics and stats are handled here.
@@ -27,7 +29,9 @@ type metricConfig struct {
 	// MetricProxy             string        `long:"metricproxy" ini-name:"metricproxy"              env:"DNSMONSTER_METRICPROXY"             default:""       description:"URI formatted proxy server to use for metric endpoint. Example: http://username:password@hostname:port"`
 }
 
-func (c metricConfig) SetupMetrics() error {
+func (c metricConfig) SetupMetrics(ctx context.Context) error {
+	//todo: none of the below goroutines have a consumer for ctx.Done()
+	g, gCtx := errgroup.WithContext(ctx)
 	switch c.MetricEndpointType {
 	case "statsd":
 		if c.MetricStatsdAgent == "" {
@@ -41,7 +45,7 @@ func (c metricConfig) SetupMetrics() error {
 		if err != nil {
 			return err
 		}
-		go reporter.Flush()
+		g.Go(func() error { reporter.Flush(); return nil })
 
 	case "prometheus":
 		log.Infof("Prometheus Metrics enabled")
@@ -49,37 +53,43 @@ func (c metricConfig) SetupMetrics() error {
 			return fmt.Errorf("promethus Registry is required")
 		}
 		prometheusClient := prometheusmetrics.NewPrometheusProvider(metrics.DefaultRegistry, "dnsmonster", GeneralFlags.ServerName, prometheus.DefaultRegisterer, 1*time.Second)
-		go prometheusClient.UpdatePrometheusMetrics()
+		g.Go(func() error { prometheusClient.UpdatePrometheusMetrics(); return nil })
 
 		u, err := url.Parse(c.MetricPrometheusEndpoint)
 		if err != nil || u.Path == "" {
 			return fmt.Errorf("invalid URL for Prometheus")
 		}
-		go func() {
+		g.Go(func() error {
 			http.Handle(u.Path, promhttp.Handler())
-			http.ListenAndServe(u.Host, nil)
-		}()
+			return http.ListenAndServe(u.Host, nil)
+		})
 
 	case "stderr":
 		// go metrics.Log(metrics.DefaultRegistry, metricConfig.MetricFlushInterval, log.StandardLogger())
-		go func() {
-			for range time.Tick(c.MetricFlushInterval) {
-				out := ""
-				switch c.MetricStderrFormat {
-				case "json":
-					if jMetrics, err := json.Marshal(metrics.DefaultRegistry.GetAll()); err != nil {
-						log.Warnf("failed to convert metrics to JSON.")
-					} else {
-						out = string(jMetrics)
+		g.Go(func() error {
+			for {
+				select {
+				case <-time.Tick(c.MetricFlushInterval):
+					out := ""
+					switch c.MetricStderrFormat {
+					case "json":
+						if jMetrics, err := json.Marshal(metrics.DefaultRegistry.GetAll()); err != nil {
+							log.Warnf("failed to convert metrics to JSON.")
+						} else {
+							out = string(jMetrics)
+						}
+					case "kv":
+						for k1, v := range metrics.DefaultRegistry.GetAll() {
+							out += fmt.Sprintf("%s=%v ", k1, v[reflect.ValueOf(v).MapKeys()[0].String()])
+						}
 					}
-				case "kv":
-					for k1, v := range metrics.DefaultRegistry.GetAll() {
-						out += fmt.Sprintf("%s=%v ", k1, v[reflect.ValueOf(v).MapKeys()[0].String()])
-					}
+					os.Stderr.WriteString(fmt.Sprintf("%s metrics: %s\n", time.Now().Format(time.RFC3339), out))
+				case <-gCtx.Done():
+					log.Debug("metric goroutine exiting") //todo:remove
+					return nil
 				}
-				os.Stderr.WriteString(fmt.Sprintf("%s metrics: %s\n", time.Now().Format(time.RFC3339), out))
 			}
-		}()
+		})
 
 	default:
 		return fmt.Errorf("endpoint Type %s is not supported", c.MetricEndpointType)

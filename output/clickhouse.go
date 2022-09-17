@@ -11,6 +11,7 @@ import (
 	"github.com/mosajjal/dnsmonster/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 type clickhouseConfig struct {
@@ -43,7 +44,7 @@ func init() {
 }
 
 // Initialize function should not block. otherwise the dispatcher will get stuck
-func (chConfig clickhouseConfig) Initialize() error {
+func (chConfig clickhouseConfig) Initialize(ctx context.Context) error {
 	var err error
 	chConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -53,7 +54,7 @@ func (chConfig clickhouseConfig) Initialize() error {
 
 	if chConfig.ClickhouseOutputType > 0 && chConfig.ClickhouseOutputType < 5 {
 		log.Info("Creating Clickhouse Output Channel")
-		go chConfig.Output()
+		go chConfig.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -75,7 +76,7 @@ func (chConfig clickhouseConfig) OutputChannel() chan util.DNSResult {
 	return chConfig.outputChannel
 }
 
-func (chConfig clickhouseConfig) connectClickhouseRetry() (driver.Conn, driver.Batch) {
+func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (driver.Conn, driver.Batch) {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if chConfig.ClickhouseOutputType == 0 {
@@ -83,7 +84,7 @@ func (chConfig clickhouseConfig) connectClickhouseRetry() (driver.Conn, driver.B
 	}
 	defer tick.Stop()
 	for {
-		c, b, err := chConfig.connectClickhouse()
+		c, b, err := chConfig.connectClickhouse(ctx)
 		if err == nil {
 			return c, b
 		}
@@ -97,7 +98,7 @@ func (chConfig clickhouseConfig) connectClickhouseRetry() (driver.Conn, driver.B
 	}
 }
 
-func (chConfig clickhouseConfig) connectClickhouse() (driver.Conn, driver.Batch, error) {
+func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (driver.Conn, driver.Batch, error) {
 	compressOption := clickhouse.Compression{Method: clickhouse.CompressionNone, Level: 0}
 	if chConfig.ClickhouseCompress > 0 {
 		compressOption = clickhouse.Compression{Method: clickhouse.CompressionLZ4, Level: int(chConfig.ClickhouseCompress)}
@@ -141,15 +142,15 @@ the table structure of Clickhouse is hardcoded into the code so before outputtin
 needs to make sure that there is proper Database connection and table are present. Refer to the project's
 clickhouse folder for the file tables.sql
 */
-func (chConfig clickhouseConfig) Output() {
+func (chConfig clickhouseConfig) Output(ctx context.Context) {
+	g, gCtx := errgroup.WithContext(ctx)
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
-		go chConfig.clickhouseOutputWorker()
+		g.Go(func() error { return chConfig.clickhouseOutputWorker(gCtx) })
 	}
 }
 
-func (chConfig clickhouseConfig) clickhouseOutputWorker() {
-	conn, batch := chConfig.connectClickhouseRetry()
-	ctx = context.Background()
+func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) error {
+	conn, batch := chConfig.connectClickhouseRetry(ctx)
 	clickhouseSentToOutput := metrics.GetOrRegisterCounter("clickhouseSentToOutput", metrics.DefaultRegistry)
 	clickhouseSkipped := metrics.GetOrRegisterCounter("clickhouseSkipped", metrics.DefaultRegistry)
 	clickhouseFailed := metrics.GetOrRegisterCounter("clickhouseFailed", metrics.DefaultRegistry)
@@ -239,6 +240,15 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker() {
 			}
 			c = 0
 			batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+		case <-ctx.Done():
+			err := batch.Flush()
+			if err != nil {
+				log.Warnf("Errro while executing batch: %v", err)
+				clickhouseFailed.Inc(int64(c))
+			}
+			conn.Close()
+			log.Debug("exitting out of clickhouse output") //todo:remove
+			return nil
 		}
 	}
 }

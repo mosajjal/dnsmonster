@@ -1,6 +1,7 @@
 package output
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -29,7 +30,7 @@ func init() {
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (stdConfig stdoutConfig) Initialize() error {
+func (stdConfig stdoutConfig) Initialize(ctx context.Context) error {
 	var err error
 	var header string
 	stdConfig.outputMarshaller, header, err = util.OutputFormatToMarshaller(stdConfig.StdoutOutputFormat, stdConfig.StdoutOutputGoTemplate)
@@ -43,7 +44,7 @@ func (stdConfig stdoutConfig) Initialize() error {
 
 	if stdConfig.StdoutOutputType > 0 && stdConfig.StdoutOutputType < 5 {
 		log.Info("Creating Stdout Output Channel")
-		go stdConfig.Output()
+		go stdConfig.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -76,7 +77,7 @@ func (stdConfig stdoutConfig) stdoutOutputWorker() {
 	}
 }
 
-func (stdConfig stdoutConfig) Output() {
+func (stdConfig stdoutConfig) Output(ctx context.Context) {
 	for i := 0; i < int(stdConfig.StdoutOutputWorkerCount); i++ { // todo: make this configurable
 		go stdConfig.stdoutOutputWorker()
 	}

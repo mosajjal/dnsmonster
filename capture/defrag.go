@@ -1,6 +1,7 @@
 package capture
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -272,7 +273,7 @@ func NewIPv6Defragmenter() *IPv6Defragmenter {
 	}
 }
 
-func ipv4Defragger(ipInput <-chan ipv4ToDefrag, ipOut chan ipv4Defragged, gcTime time.Duration) {
+func ipv4Defragger(ctx context.Context, ipInput <-chan ipv4ToDefrag, ipOut chan ipv4Defragged, gcTime time.Duration) error {
 	ipv4Defragger := ip4defrag.NewIPv4Defragmenter()
 	ticker := time.NewTicker(1 * gcTime)
 	for {
@@ -290,11 +291,14 @@ func ipv4Defragger(ipInput <-chan ipv4ToDefrag, ipOut chan ipv4Defragged, gcTime
 			if discarded > 0 {
 				log.Infof("ipv4Defragger: discarded %d packets", discarded)
 			}
+		case <-ctx.Done():
+			log.Debug("exitting out of ipv4 goroutine") //todo:remove
+			return nil
 		}
 	}
 }
 
-func ipv6Defragger(ipInput <-chan ipv6FragmentInfo, ipOut chan ipv6Defragged, gcTime time.Duration) {
+func ipv6Defragger(ctx context.Context, ipInput <-chan ipv6FragmentInfo, ipOut chan ipv6Defragged, gcTime time.Duration) error {
 	ipv4Defragger := NewIPv6Defragmenter()
 	ticker := time.NewTicker(1 * gcTime)
 	for {
@@ -310,6 +314,9 @@ func ipv6Defragger(ipInput <-chan ipv6FragmentInfo, ipOut chan ipv6Defragged, gc
 		case <-ticker.C:
 			ipv4Defragger.DiscardOlderThan(time.Now().Add(gcTime * -1))
 
+		case <-ctx.Done():
+			log.Debug("exitting out of ipv4 goroutine") //todo:remove
+			return nil
 		}
 	}
 }

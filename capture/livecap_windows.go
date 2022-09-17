@@ -38,7 +38,7 @@ func (h *livePcapHandle) Close() {
 func (h *livePcapHandle) Stat() (uint, uint, error) {
 	stats, err := h.handle.Stats()
 	if err != nil {
-		return uint(stats.PacketsReceived), uint(stats.PacketsDropped), nil
+		return 0, 0, err
 	}
-	return 0, 0, err
+	return uint(stats.PacketsReceived), uint(stats.PacketsDropped), nil
 }

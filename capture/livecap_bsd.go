@@ -68,7 +68,7 @@ func (h *BsdHandle) Close() {
 func (h *BsdHandle) Stat() (uint, uint, error) {
 	stats, err := h.handle.Stats()
 	if err != nil {
-		return uint(stats.Packets), uint(stats.Drops), nil
+		return 0, 0, err
 	}
-	return 0, 0, err
+	return uint(stats.Packets), uint(stats.Drops), nil
 }

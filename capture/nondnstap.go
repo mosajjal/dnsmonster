@@ -38,7 +38,6 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
 
 	ratioCnt := 0
-	totalCnt := int64(0)
 
 	// updating the metrics in a separate goroutine
 
@@ -47,15 +46,17 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 		for {
 			select {
 			case <-captureStatsTicker.C:
+        packets, drop, err := myHandler.Stat()
+        if err != nil {
+          log.Warnf("Error reading stats: %s", err)
+          continue
+        }
 
-				packets, drop := myHandler.Stat()
-				if packets == 0 { // to make up for pcap not being able to get stats
-					packetsCaptured.Update(totalCnt)
-				} else {
-					packetsCaptured.Update(int64(packets))
-					packetsCaptured.Update(int64(drop))
-				}
-				packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
+        packetsCaptured.Update(int64(packets))
+        packetsDropped.Update(int64(drop))
+
+        if packetsCaptured.Value() > 0 {
+          packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
 			case <-gCtx.Done():
 				log.Debug("exitting out of metric update goroutine") //todo:remove
 				return nil
@@ -76,7 +77,6 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 			return nil
 		}
 
-		totalCnt++ // * there is a race condition between this and the metrics being captured at line 48 (packetsCaptured.Update(totalCnt))
 		// ratio checks
 		skipForRatio := false
 		if config.ratioA != config.ratioB { // this confirms the ratio is in use

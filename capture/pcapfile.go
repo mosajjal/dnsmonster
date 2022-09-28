@@ -9,8 +9,9 @@ import (
 )
 
 type pcapFileHandle struct {
-	reader *pcapgo.Reader
-	file   *os.File
+	reader   *pcapgo.Reader
+	file     *os.File
+	pktsRead uint
 }
 
 func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
@@ -32,23 +33,32 @@ func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &pcapFileHandle{handle, f}
+	return &pcapFileHandle{handle, f, 0}
 }
 
 func (h *pcapFileHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
-	return h.reader.ReadPacketData()
+	data, ci, err = h.reader.ReadPacketData()
+	if err != nil {
+		h.pktsRead++
+	}
+	return
 }
 
 func (h *pcapFileHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
-	return h.reader.ZeroCopyReadPacketData()
+	data, ci, err = h.reader.ZeroCopyReadPacketData()
+	if err != nil {
+		h.pktsRead++
+	}
+	return
 }
 
 func (h *pcapFileHandle) Close() {
 	h.file.Close()
 }
 
-func (h *pcapFileHandle) Stat() (uint, uint) {
-	// in printstats, we check if this is 0, and we add the total counter to this to make sure we have a better number
-	// in essence, there should be 0 packet loss for a pcap file since the rate of the packet is controlled by i/o not network
-	return 0, 0
+func (h *pcapFileHandle) Stat() (uint, uint, error) {
+	// `pcapgo.Reader` doesn't have a Stats() method, so we track packets
+	// captured by ourselves. There should be no loss for a PCAP file since
+	// it's controlled by I/O and not network
+	return h.pktsRead, 0, nil
 }

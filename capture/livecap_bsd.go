@@ -65,13 +65,10 @@ func (h *BsdHandle) Close() {
 	h.sniffer.Close()
 }
 
-func (h *BsdHandle) Stat() (uint, uint) {
-	// in printstats, we check if this is 0, and we add the total counter to this to make sure we have a better number
-	// in essence, there should be 0 packet loss for a pcap file since the rate of the packet is controlled by i/o not network
-	// stats, err := h.handle.Stats()
-	// if err != nil {
-	// 	return uint(stats.Packets), uint(stats.Drops)
-	// }
-	//todo: find a way to do this
-	return 0, 0
+func (h *BsdHandle) Stat() (uint, uint, error) {
+	stats, err := h.handle.Stats()
+	if err != nil {
+		return 0, 0, err
+	}
+	return uint(stats.Packets), uint(stats.Drops), nil
 }

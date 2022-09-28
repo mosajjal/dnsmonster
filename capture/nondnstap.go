@@ -36,20 +36,23 @@ func (config captureConfig) StartNonDNSTap() {
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
 
 	ratioCnt := 0
-	totalCnt := int64(0)
 
 	// updating the metrics in a separate goroutine
 	go func() {
 		for range captureStatsTicker.C {
 
-			packets, drop := myHandler.Stat()
-			if packets == 0 { // to make up for pcap not being able to get stats
-				packetsCaptured.Update(totalCnt)
-			} else {
-				packetsCaptured.Update(int64(packets))
-				packetsDropped.Update(int64(drop))
+			packets, drop, err := myHandler.Stat()
+			if err != nil {
+				log.Warnf("Error reading stats: %s", err)
+				continue
 			}
-			packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
+
+			packetsCaptured.Update(int64(packets))
+			packetsDropped.Update(int64(drop))
+
+			if packetsCaptured.Value() > 0 {
+				packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
+			}
 		}
 	}()
 
@@ -64,7 +67,6 @@ func (config captureConfig) StartNonDNSTap() {
 			return
 		}
 
-		totalCnt++ // * there is a race condition between this and the metrics being captured at line 48 (packetsCaptured.Update(totalCnt))
 		// ratio checks
 		skipForRatio := false
 		if config.ratioA != config.ratioB { // this confirms the ratio is in use

@@ -244,7 +244,7 @@ type genericPacketHandler interface {
 	ReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	ZeroCopyReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	Close()
-	Stat() (uint, uint)
+	Stat() (uint, uint, error)
 }
 
 type rawPacketBytes struct {

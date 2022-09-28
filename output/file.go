@@ -1,6 +1,7 @@
 package output
 
 import (
+	"context"
 	"errors"
 	"os"
 
@@ -32,7 +33,7 @@ func init() {
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (config fileConfig) Initialize() error {
+func (config fileConfig) Initialize(ctx context.Context) error {
 	var err error
 	var header string
 	config.outputMarshaller, header, err = util.OutputFormatToMarshaller(config.FileOutputFormat, config.FileOutputGoTemplate)
@@ -50,7 +51,7 @@ func (config fileConfig) Initialize() error {
 		}
 		defer config.Close()
 
-		go config.Output()
+		go config.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -71,7 +72,7 @@ func (config fileConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 
-func (config fileConfig) Output() {
+func (config fileConfig) Output(ctx context.Context) {
 	fileSentToOutput := metrics.GetOrRegisterCounter("fileSentToOutput", metrics.DefaultRegistry)
 	fileSkipped := metrics.GetOrRegisterCounter("fileSkipped", metrics.DefaultRegistry)
 

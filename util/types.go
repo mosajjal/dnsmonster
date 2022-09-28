@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	"net"
 	"time"
 
@@ -26,10 +27,10 @@ type DNSResult struct {
 // GenericOutput is an interface to speficy the behaviour of output modules
 // and make it extendable
 type GenericOutput interface {
-	Initialize() error             // try to initialize the output by checking flags and connections
-	Output()                       // the output is a goroutine that fetches data from the registered channel and pushes it to output, possibly in multiple workers
-	OutputChannel() chan DNSResult // returns the output channel associated with the output
-	Close()                        // close down the connections and exit cleanly
+	Initialize(context.Context) error // try to initialize the output by checking flags and connections
+	Output(context.Context)           // the output is a goroutine that fetches data from the registered channel and pushes it to output, possibly in multiple workers
+	OutputChannel() chan DNSResult    // returns the output channel associated with the output
+	Close()                           // close down the connections and exit cleanly
 }
 
 // OutputMarshaller is an interface to make it easier to build

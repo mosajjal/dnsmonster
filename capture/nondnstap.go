@@ -1,14 +1,16 @@
 package capture
 
 import (
+	"context"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/util"
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
-func (config captureConfig) StartNonDNSTap() {
+func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
 	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
 	packetsDuplicate := metrics.GetOrRegisterCounter("packetsDuplicate", metrics.DefaultRegistry)
@@ -38,33 +40,41 @@ func (config captureConfig) StartNonDNSTap() {
 	ratioCnt := 0
 
 	// updating the metrics in a separate goroutine
-	go func() {
-		for range captureStatsTicker.C {
 
-			packets, drop, err := myHandler.Stat()
-			if err != nil {
-				log.Warnf("Error reading stats: %s", err)
-				continue
-			}
+	g, gCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		for {
+			select {
+			case <-captureStatsTicker.C:
+        packets, drop, err := myHandler.Stat()
+        if err != nil {
+          log.Warnf("Error reading stats: %s", err)
+          continue
+        }
 
-			packetsCaptured.Update(int64(packets))
-			packetsDropped.Update(int64(drop))
+        packetsCaptured.Update(int64(packets))
+        packetsDropped.Update(int64(drop))
 
-			if packetsCaptured.Value() > 0 {
-				packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
+        if packetsCaptured.Value() > 0 {
+          packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
+			case <-gCtx.Done():
+				log.Debug("exitting out of metric update goroutine") //todo:remove
+				return nil
 			}
 		}
-	}()
+	})
 
 	// blocking loop to capture packets and send them to processing channel
+	// todo: should this be blocking or have a gCtx.Done() listener somewhere
 	for {
 		data, ci, err := myHandler.ReadPacketData() // todo: ZeroCopyReadPacketData is slower than ReadPacketData. need to investigate why
 		if data == nil || err != nil {
 			log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 2 seconds waiting for processing to finish")
 			time.Sleep(time.Second * 2)
-			util.GeneralFlags.GetWg().Done()
-			config.cleanExit()
-			return
+			//todo: commence clean exit from errorgroup
+			util.GlobalCancel()
+			config.cleanExit(ctx)
+			return nil
 		}
 
 		// ratio checks

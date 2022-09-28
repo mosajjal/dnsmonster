@@ -44,7 +44,7 @@ func init() {
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (kafConfig kafkaConfig) Initialize() error {
+func (kafConfig kafkaConfig) Initialize(ctx context.Context) error {
 	var err error
 	kafConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -54,7 +54,7 @@ func (kafConfig kafkaConfig) Initialize() error {
 
 	if kafConfig.KafkaOutputType > 0 && kafConfig.KafkaOutputType < 5 {
 		log.Info("Creating Kafka Output Channel")
-		go kafConfig.Output()
+		go kafConfig.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -126,7 +126,7 @@ func (kafConfig kafkaConfig) getWriter() *kafka.Writer {
 
 var kafkaUUIDGen = fastuuid.MustNewGenerator()
 
-func (kafConfig kafkaConfig) Output() {
+func (kafConfig kafkaConfig) Output(ctx context.Context) {
 	kWriter := kafConfig.getWriter()
 
 	for {

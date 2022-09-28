@@ -36,7 +36,7 @@ func init() {
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (esConfig elasticConfig) Initialize() error {
+func (esConfig elasticConfig) Initialize(ctx context.Context) error {
 	var err error
 	esConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -46,7 +46,7 @@ func (esConfig elasticConfig) Initialize() error {
 
 	if esConfig.ElasticOutputType > 0 && esConfig.ElasticOutputType < 5 {
 		log.Info("Creating Elastic Output Channel")
-		go esConfig.Output()
+		go esConfig.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -64,9 +64,9 @@ func (esConfig elasticConfig) OutputChannel() chan util.DNSResult {
 }
 
 // var elasticUuidGen = fastuuid.MustNewGenerator()
-var ctx = context.Background()
+// var ctx = context.Background()
 
-func (esConfig elasticConfig) connectelasticRetry() *elastic.Client {
+func (esConfig elasticConfig) connectelasticRetry(ctx context.Context) *elastic.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if esConfig.ElasticOutputType == 0 {
@@ -74,7 +74,7 @@ func (esConfig elasticConfig) connectelasticRetry() *elastic.Client {
 	}
 	defer tick.Stop()
 	for {
-		conn, err := esConfig.connectelastic()
+		conn, err := esConfig.connectelastic(ctx)
 		if err == nil {
 			return conn
 		}
@@ -86,7 +86,7 @@ func (esConfig elasticConfig) connectelasticRetry() *elastic.Client {
 	}
 }
 
-func (esConfig elasticConfig) connectelastic() (*elastic.Client, error) {
+func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Client, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification},
 	}
@@ -115,8 +115,8 @@ func (esConfig elasticConfig) connectelastic() (*elastic.Client, error) {
 	return client, err
 }
 
-func (esConfig elasticConfig) Output() {
-	client := esConfig.connectelasticRetry()
+func (esConfig elasticConfig) Output(ctx context.Context) {
+	client := esConfig.connectelasticRetry(ctx)
 	batch := make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
 
 	ticker := time.NewTicker(esConfig.ElasticBatchDelay)
@@ -146,9 +146,9 @@ func (esConfig elasticConfig) Output() {
 				batch = append(batch, data)
 			}
 		case <-ticker.C:
-			if err := esConfig.elasticSendData(client, batch); err != nil {
+			if err := esConfig.elasticSendData(ctx, client, batch); err != nil {
 				log.Info(err)
-				client = esConfig.connectelasticRetry()
+				client = esConfig.connectelasticRetry(ctx)
 			} else {
 				batch = make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
 			}
@@ -157,7 +157,7 @@ func (esConfig elasticConfig) Output() {
 	}
 }
 
-func (esConfig elasticConfig) elasticSendData(client *elastic.Client, batch []util.DNSResult) error {
+func (esConfig elasticConfig) elasticSendData(ctx context.Context, client *elastic.Client, batch []util.DNSResult) error {
 	elasticSentToOutput := metrics.GetOrRegisterCounter("elasticSentToOutput", metrics.DefaultRegistry)
 	elasticSkipped := metrics.GetOrRegisterCounter("elasticSkipped", metrics.DefaultRegistry)
 

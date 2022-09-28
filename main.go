@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/profile"
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 func handleInterrupt() {
@@ -38,9 +39,6 @@ func handleInterrupt() {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				go func() {
-					for i := 0; i < runtime.NumGoroutine(); i++ {
-						*util.GeneralFlags.GetExit() <- true
-					}
 					for range ctx.Done() {
 						fmt.Println("Canceled by timeout")
 						return
@@ -65,8 +63,11 @@ func main() {
 
 	}
 
+	var ctx context.Context
+	ctx, util.GlobalCancel = context.WithCancel(context.Background())
+	g, _ := errgroup.WithContext(ctx)
 	// process and handle flags
-	util.ProcessFlags()
+	util.ProcessFlags(ctx)
 
 	// debug and profile options
 	runtime.GOMAXPROCS(util.GeneralFlags.Gomaxprocs)
@@ -82,15 +83,15 @@ func main() {
 	handleInterrupt()
 
 	// set up capture
-	capture.GlobalCaptureConfig.CheckFlagsAndStart()
+	g.Go(func() error { capture.GlobalCaptureConfig.CheckFlagsAndStart(ctx); return nil })
 
 	// Set up output dispatch
-	setupOutputs(capture.GlobalCaptureConfig.GetResultChannel())
+	g.Go(func() error { return setupOutputs(ctx, capture.GlobalCaptureConfig.GetResultChannel()) })
 
 	// block until capture and output finish their loop, in order to exit cleanly
-	util.GeneralFlags.GetWg().Wait()
-	<-time.After(2 * time.Second)
+	g.Wait()
+	// <-time.After(2 * time.Second)
 	// print metrics for one last time before exiting the program
-	metricsJson, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
-	os.Stderr.WriteString(fmt.Sprintf("metrics: %s", metricsJson))
+	metricsJSON, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
+	os.Stderr.WriteString(fmt.Sprintf("metrics: %s\n", metricsJSON))
 }

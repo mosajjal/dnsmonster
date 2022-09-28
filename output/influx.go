@@ -1,6 +1,7 @@
 package output
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -32,10 +33,10 @@ func init() {
 }
 
 // Initialize function should not block. otherwise the dispatcher will get stuck
-func (c influxConfig) Initialize() error {
+func (c influxConfig) Initialize(ctx context.Context) error {
 	if c.InfluxOutputType > 0 && c.InfluxOutputType < 5 {
 		log.Info("Creating Influx Output Channel")
-		go c.Output()
+		go c.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -77,7 +78,7 @@ func (c influxConfig) connectInflux() influxdb2.Client {
 	return client
 }
 
-func (c influxConfig) Output() {
+func (c influxConfig) Output(ctx context.Context) {
 	for i := 0; i < int(c.InfluxOutputWorkers); i++ {
 		go c.InfluxWorker()
 	}

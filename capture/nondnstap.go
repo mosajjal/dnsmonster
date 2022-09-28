@@ -46,17 +46,18 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 		for {
 			select {
 			case <-captureStatsTicker.C:
-        packets, drop, err := myHandler.Stat()
-        if err != nil {
-          log.Warnf("Error reading stats: %s", err)
-          continue
-        }
+				packets, drop, err := myHandler.Stat()
+				if err != nil {
+					log.Warnf("Error reading stats: %s", err)
+					continue
+				}
 
-        packetsCaptured.Update(int64(packets))
-        packetsDropped.Update(int64(drop))
+				packetsCaptured.Update(int64(packets))
+				packetsDropped.Update(int64(drop))
 
-        if packetsCaptured.Value() > 0 {
-          packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
+				if packetsCaptured.Value() > 0 {
+					packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
+				}
 			case <-gCtx.Done():
 				log.Debug("exitting out of metric update goroutine") //todo:remove
 				return nil

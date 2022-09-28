@@ -1,6 +1,7 @@
 package capture
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"net"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"github.com/mosajjal/dnsmonster/util"
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 
 	dnstap "github.com/dnstap/golang-dnstap"
 	"google.golang.org/protobuf/proto"
@@ -102,7 +104,7 @@ func dnsTapMsgToDNSResult(msg []byte) (*util.DNSResult, error) {
 	return &myDNSResult, nil
 }
 
-func (config captureConfig) StartDNSTap() {
+func (config captureConfig) StartDNSTap(ctx context.Context) error {
 	log.Info("Starting DNStap capture")
 
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
@@ -112,7 +114,9 @@ func (config captureConfig) StartDNSTap() {
 
 	input := parseDnstapSocket(config.DnstapSocket, config.DnstapPermission)
 	buf := make(chan []byte, 1024)
-	go input.ReadInto(buf)
+	g, _ := errgroup.WithContext(ctx)
+	//todo: can't pass on the context to this function.
+	g.Go(func() error { input.ReadInto(buf); return nil })
 
 	ratioCnt := 0
 	totalCnt := int64(0)
@@ -132,9 +136,9 @@ func (config captureConfig) StartDNSTap() {
 			if msg == nil {
 				log.Info("dnstap socket is returning nil. exiting..")
 				time.Sleep(time.Second * 2)
-				util.GeneralFlags.GetWg().Done()
-				config.cleanExit()
-				return
+				//todo: commence clean exit
+				config.cleanExit(ctx)
+				return nil
 			}
 			if ratioCnt%config.ratioB < config.ratioA {
 				if ratioCnt > config.ratioB*config.ratioA {

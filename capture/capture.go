@@ -6,18 +6,19 @@ package capture
 
 import (
 	"container/list"
+	"context"
 	"net"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/tcpassembly/tcpreader"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
+	"github.com/gopacket/gopacket/tcpassembly/tcpreader"
 	"github.com/mosajjal/dnsmonster/util"
 )
 
@@ -77,14 +78,12 @@ func (config captureConfig) GetResultChannel() *chan util.DNSResult {
 	return &config.resultChannel
 }
 
-func (config captureConfig) cleanExit() {
+func (config captureConfig) cleanExit(ctx context.Context) {
+	ctx.Done()
 	log.Infof("Stopping capture...")
-	for i := 0; i < runtime.NumGoroutine(); i++ {
-		*util.GeneralFlags.GetExit() <- true
-	}
 }
 
-func (config captureConfig) CheckFlagsAndStart() {
+func (config captureConfig) CheckFlagsAndStart(ctx context.Context) {
 	if config.Port > 65535 {
 		log.Fatal("--port must be between 1 and 65535")
 	}
@@ -121,37 +120,49 @@ func (config captureConfig) CheckFlagsAndStart() {
 
 	// set up dedup hash table
 	config.dedupHashTable = make(map[uint64]bool)
+	g, gCtx := errgroup.WithContext(ctx)
 	if config.Dedup {
 		log.Infof("Packet deduplication is enabled")
-		go func() {
+
+		g.Go(func() error {
 			for {
-				<-time.After(config.DedupCleanupInterval)
-				log.Infof("cleaning up dedup hash table")
-				config.dedupHashTable = make(map[uint64]bool)
+				select {
+				case <-time.NewTicker(config.DedupCleanupInterval).C:
+					log.Infof("cleaning up dedup hash table")
+					config.dedupHashTable = make(map[uint64]bool)
+				case <-gCtx.Done():
+					log.Debug("exitting out of dedup goroutine") //todo:remove
+					return nil
+				}
 			}
-		}()
+		})
 	}
 
 	// start the defrag goroutines
 	for i := uint(0); i < config.TCPHandlerCount; i++ {
-		go tcpAssembler(config.tcpAssembly, config.tcpReturnChannel, util.GeneralFlags.GcTime)
+		g.Go(func() error {
+			return tcpAssembler(gCtx, config.tcpAssembly, config.tcpReturnChannel, util.GeneralFlags.GcTime)
+		})
 	}
-	go ipv4Defragger(config.ip4Defrgger, config.ip4DefrggerReturn, util.GeneralFlags.GcTime)
-	go ipv6Defragger(config.ip6Defrgger, config.ip6DefrggerReturn, util.GeneralFlags.GcTime)
+	g.Go(func() error {
+		return ipv4Defragger(gCtx, config.ip4Defrgger, config.ip4DefrggerReturn, util.GeneralFlags.GcTime)
+	})
+	g.Go(func() error {
+		return ipv6Defragger(gCtx, config.ip6Defrgger, config.ip6DefrggerReturn, util.GeneralFlags.GcTime)
+	})
 
 	// start the packet decoder goroutines
-	util.GeneralFlags.GetWg().Add(1)
-	go config.StartPacketDecoder()
+	g.Go(func() error { return config.StartPacketDecoder(gCtx) })
 
 	// Start listening if we're not using DNSTap
 	if config.DnstapSocket == "" {
-		util.GeneralFlags.GetWg().Add(1)
-		go config.StartNonDNSTap()
+		g.Go(func() error { return config.StartNonDNSTap(gCtx) })
 	} else {
 		// dnstap is totally different, hence only the result channel is being pushed to it
-		util.GeneralFlags.GetWg().Add(1)
-		go config.StartDNSTap()
+		g.Go(func() error { return config.StartDNSTap(gCtx) })
 	}
+	<-gCtx.Done()
+
 }
 
 type ipv4ToDefrag struct {

@@ -3,8 +3,8 @@ package capture
 import (
 	"fmt"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/gopacket/gopacket"
+	"github.com/gopacket/gopacket/layers"
 )
 
 // These functions implement the interface gopacket.DecodingLayer to detect

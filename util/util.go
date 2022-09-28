@@ -3,9 +3,9 @@
 package util
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/golang-collections/collections/tst"
@@ -22,6 +22,7 @@ var (
 	// GeneralFlags is an ad-hoc solution to make all the flags available
 	// to capture, metrics, util and output plugins.
 	GeneralFlags generalConfig
+	GlobalCancel context.CancelFunc
 )
 
 type generalConfig struct {
@@ -46,8 +47,6 @@ type generalConfig struct {
 	AllowDomainsFileType        string         `long:"allowdomainsfiletype"        ini-name:"allowdomainsfiletype"        env:"DNSMONSTER_ALLOWDOMAINSFILETYPE"        default:""                                                        hidden:"true"`
 	SkipTLSVerification         bool           `long:"skiptlsverification"         ini-name:"skiptlsverification"         env:"DNSMONSTER_SKIPTLSVERIFICATION"         description:"Skip TLS verification when making HTTPS connections"`
 	Version                     bool           `long:"version"                     ini-name:"version"                     env:"DNSMONSTER_VERSION"                     description:"show version and quit."                              no-ini:"true"`
-	wg                          *sync.WaitGroup
-	exiting                     chan bool // used to signal exit to all goroutines
 	// used to implement allowdomains logic
 	allowPrefixTst *tst.TernarySearchTree
 	allowSuffixTst *tst.TernarySearchTree
@@ -56,14 +55,6 @@ type generalConfig struct {
 	skipPrefixTst *tst.TernarySearchTree
 	skipSuffixTst *tst.TernarySearchTree
 	skipTypeHt    map[string]uint8
-}
-
-func (g generalConfig) GetWg() *sync.WaitGroup {
-	return g.wg
-}
-
-func (g generalConfig) GetExit() *chan bool {
-	return &g.exiting
 }
 
 func (g generalConfig) LoadAllowDomain() {
@@ -86,10 +77,8 @@ var helpOptions struct {
 // ProcessFlags kickstarts `dnsmonster`. it adds the basic module's flags
 // checks their validity, sets up logging, metrics and loads input files
 // associated with skipDomain and allowDomain
-func ProcessFlags() {
+func ProcessFlags(ctx context.Context) {
 	// todo: flags are camel-case but ini is not. this needs to be consistent
-	GeneralFlags.wg = &sync.WaitGroup{}
-	GeneralFlags.exiting = make(chan bool, 1)
 
 	iniParser := flags.NewIniParser(GlobalParser)
 	GlobalParser.AddGroup("general", "General Options", &GeneralFlags)
@@ -130,7 +119,7 @@ func ProcessFlags() {
 		os.Exit(0)
 	}
 
-	err = globalMetricConfig.SetupMetrics()
+	err = globalMetricConfig.SetupMetrics(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

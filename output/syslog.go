@@ -1,6 +1,7 @@
 package output
 
 import (
+	"context"
 	"errors"
 	"net/url"
 	"time"
@@ -30,7 +31,7 @@ func init() {
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (sysConfig syslogConfig) Initialize() error {
+func (sysConfig syslogConfig) Initialize(ctx context.Context) error {
 	var err error
 	sysConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -39,7 +40,7 @@ func (sysConfig syslogConfig) Initialize() error {
 	}
 	if sysConfig.SyslogOutputType > 0 && sysConfig.SyslogOutputType < 5 {
 		log.Info("Creating Syslog Output Channel")
-		go sysConfig.Output()
+		go sysConfig.Output(ctx)
 	} else {
 		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
 		return errors.New("no output")
@@ -87,7 +88,7 @@ func (sysConfig syslogConfig) connectSyslog() (syslog.Syslogger, error) {
 	return sysLog, err
 }
 
-func (sysConfig syslogConfig) Output() {
+func (sysConfig syslogConfig) Output(ctx context.Context) {
 	writer := sysConfig.connectSyslogRetry()
 	syslogSentToOutput := metrics.GetOrRegisterCounter("syslogSentToOutput", metrics.DefaultRegistry)
 	syslogSkipped := metrics.GetOrRegisterCounter("syslogSkipped", metrics.DefaultRegistry)

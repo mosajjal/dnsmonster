@@ -26,10 +26,9 @@ RUN export GOOS=linux && export CGO_ENABLED=1 && \
 # Windows
 RUN export GOOS=windows && export CGO_ENABLED=1 && \
     export GOARCH=amd64 && CC="zig cc -target x86_64-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
-    export GOARCH=386 && CC="zig cc -target i386-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin .
-# pending a patch on gopacket
-# RUN export GOARCH=arm && CC="zig cc -target arm-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin . 
-# RUN export GOARCH=arm64 && CC="zig cc -target aarch64-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin .
+    export GOARCH=386 && CC="zig cc -target i386-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
+    export GOARCH=arm && CC="zig cc -target arm-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
+    export GOARCH=arm64 && CC="zig cc -target aarch64-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin .
 
 # Darwin
 RUN export GOOS=darwin && export CGO_ENABLED=0 && \

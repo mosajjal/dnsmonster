@@ -26,29 +26,20 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func handleInterrupt() {
+func handleInterrupt(ctx context.Context) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	if runtime.GOOS == "linux" {
 		signal.Notify(c, syscall.SIGPIPE)
 	}
 	go func() {
-		for range c {
-			for {
-				log.Infof("SIGINT Received. Stopping capture...")
-				ctx, cancel := context.WithCancel(context.Background())
-				defer cancel()
-				go func() {
-					for range ctx.Done() {
-						fmt.Println("Canceled by timeout")
-						return
-					}
-				}()
-				<-time.After(2 * time.Second)
-				log.Fatal("emergency exit")
-				return
-			}
-		}
+		<-c
+		log.Infof("SIGINT Received. Stopping capture...")
+		go util.GlobalCancel()
+		go ctx.Done()
+		<-time.After(2 * time.Second)
+		log.Fatal("emergency exit")
+		os.Exit(1)
 	}()
 }
 
@@ -80,7 +71,7 @@ func main() {
 	}
 
 	// Setup SIGINT handling
-	handleInterrupt()
+	handleInterrupt(ctx)
 
 	// set up capture
 	g.Go(func() error { capture.GlobalCaptureConfig.CheckFlagsAndStart(ctx); return nil })

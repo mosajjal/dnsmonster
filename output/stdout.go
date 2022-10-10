@@ -61,25 +61,31 @@ func (stdConfig stdoutConfig) OutputChannel() chan util.DNSResult {
 	return stdConfig.outputChannel
 }
 
-func (stdConfig stdoutConfig) stdoutOutputWorker() {
+func (stdConfig stdoutConfig) stdoutOutputWorker(ctx context.Context) {
 	stdoutSentToOutput := metrics.GetOrRegisterCounter("stdoutSentToOutput", metrics.DefaultRegistry)
 	stdoutSkipped := metrics.GetOrRegisterCounter("stdoutSkipped", metrics.DefaultRegistry)
-	for data := range stdConfig.outputChannel {
-		for _, dnsQuery := range data.DNS.Question {
+	for {
+		select {
+		case data := <-stdConfig.outputChannel:
+			for _, dnsQuery := range data.DNS.Question {
 
-			if util.CheckIfWeSkip(stdConfig.StdoutOutputType, dnsQuery.Name) {
-				stdoutSkipped.Inc(1)
-				continue
+				if util.CheckIfWeSkip(stdConfig.StdoutOutputType, dnsQuery.Name) {
+					stdoutSkipped.Inc(1)
+					continue
+				}
+				stdoutSentToOutput.Inc(1)
+				fmt.Print(stdConfig.outputMarshaller.Marshal(data) + "\n")
 			}
-			stdoutSentToOutput.Inc(1)
-			fmt.Print(stdConfig.outputMarshaller.Marshal(data) + "\n")
+		case <-ctx.Done():
+			log.Debug("exitting out of stdout output worker") //todo:remove
 		}
 	}
+
 }
 
 func (stdConfig stdoutConfig) Output(ctx context.Context) {
 	for i := 0; i < int(stdConfig.StdoutOutputWorkerCount); i++ { // todo: make this configurable
-		go stdConfig.stdoutOutputWorker()
+		go stdConfig.stdoutOutputWorker(ctx)
 	}
 }
 

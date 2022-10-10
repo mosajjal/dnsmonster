@@ -49,7 +49,6 @@ func (config fileConfig) Initialize(ctx context.Context) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer config.Close()
 
 		go config.Output(ctx)
 	} else {
@@ -77,19 +76,26 @@ func (config fileConfig) Output(ctx context.Context) {
 	fileSkipped := metrics.GetOrRegisterCounter("fileSkipped", metrics.DefaultRegistry)
 
 	// todo: output channel will duplicate output when we have malformed DNS packets with multiple questions
-	for data := range config.outputChannel {
-		for _, dnsQuery := range data.DNS.Question {
+	for {
+		select {
+		case data := <-config.outputChannel:
+			for _, dnsQuery := range data.DNS.Question {
 
-			if util.CheckIfWeSkip(config.FileOutputType, dnsQuery.Name) {
-				fileSkipped.Inc(1)
-				continue
-			}
-			fileSentToOutput.Inc(1)
-			_, err := config.fileObject.WriteString(config.outputMarshaller.Marshal(data) + "\n")
-			if err != nil {
-				log.Fatal(err)
+				if util.CheckIfWeSkip(config.FileOutputType, dnsQuery.Name) {
+					fileSkipped.Inc(1)
+					continue
+				}
+				fileSentToOutput.Inc(1)
+				_, err := config.fileObject.WriteString(config.outputMarshaller.Marshal(data) + "\n")
+				if err != nil {
+					log.Fatal(err)
+				}
+
 			}
 
+		case <-ctx.Done():
+			config.fileObject.Close()
+			log.Debug("exitting out of file output") //todo:remove
 		}
 	}
 }

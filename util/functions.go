@@ -14,7 +14,7 @@ import (
 const (
 	outputNone  = 0
 	outputAll   = 1
-	outputSkil  = 2
+	outputSkip  = 2
 	outputAllow = 3
 	outputBoth  = 4
 
@@ -32,7 +32,7 @@ func CheckIfWeSkip(outputType uint, fqdn string) bool {
 		return true // always skip
 	case outputAll:
 		return false // never skip
-	case outputSkil:
+	case outputSkip:
 		// check for fqdn match
 		if GeneralFlags.skipTypeHt[fqdnLower] == matchFQDN {
 			return true
@@ -75,7 +75,7 @@ func CheckIfWeSkip(outputType uint, fqdn string) bool {
 		return true
 	// 4 means apply two logics, so we apply the two logics and && them together
 	case outputBoth:
-		if !CheckIfWeSkip(outputSkil, fqdn) {
+		if !CheckIfWeSkip(outputSkip, fqdn) {
 			return CheckIfWeSkip(outputAllow, fqdn)
 		}
 		return true

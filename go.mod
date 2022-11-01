@@ -8,7 +8,7 @@ require (
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/gopacket/gopacket v0.0.0-20221006103438-9e6d99b9b443
 	github.com/hashicorp/go-syslog v1.0.0
-	github.com/influxdata/influxdb-client-go/v2 v2.11.0
+	github.com/influxdata/influxdb-client-go/v2 v2.12.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
@@ -17,13 +17,14 @@ require (
 )
 
 require (
-	github.com/ClickHouse/ch-go v0.48.0 // indirect
+	github.com/ClickHouse/ch-go v0.49.0 // indirect
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/deepmap/oapi-codegen v1.11.0 // indirect
+	github.com/deepmap/oapi-codegen v1.12.2 // indirect
 	github.com/farsightsec/golang-framestream v0.3.0 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
@@ -65,7 +66,7 @@ require (
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/jessevdk/go-flags v1.5.1-0.20210607101731-3927b71304df
-	github.com/klauspost/compress v1.15.11 // indirect
+	github.com/klauspost/compress v1.15.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/miekg/dns v1.1.50
 	github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.7
@@ -73,7 +74,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.7.0
 	github.com/rogpeppe/fastuuid v1.2.0
-	github.com/segmentio/kafka-go v0.4.35
+	github.com/segmentio/kafka-go v0.4.36
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/net v0.1.0

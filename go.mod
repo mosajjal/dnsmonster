@@ -6,11 +6,11 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.3.0
 	github.com/deathowl/go-metrics-prometheus v0.0.0-20221009205350-f2a1482ba35b
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
-	github.com/gopacket/gopacket v0.0.0-20221006103438-9e6d99b9b443
+	github.com/gopacket/gopacket v0.1.1-0.20221105012133-f7b7aadd88df
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/influxdata/influxdb-client-go/v2 v2.12.0
 	github.com/jackc/pgx/v4 v4.17.2
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/syntaqx/go-metrics-datadog v0.1.1
 	golang.org/x/sync v0.1.0
@@ -30,7 +30,7 @@ require (
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.6.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/pprof v0.0.0-20221010195024-131d412537ea // indirect
+	github.com/google/pprof v0.0.0-20221103000818-d260c55eee4c // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect

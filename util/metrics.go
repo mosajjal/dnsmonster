@@ -69,7 +69,7 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 		g.Go(func() error {
 			for {
 				select {
-				case <-time.Tick(c.MetricFlushInterval):
+				case <-time.NewTicker(c.MetricFlushInterval).C:
 					out := ""
 					switch c.MetricStderrFormat {
 					case "json":

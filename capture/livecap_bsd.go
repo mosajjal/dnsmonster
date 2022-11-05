@@ -66,7 +66,7 @@ func (h *BsdHandle) Close() {
 }
 
 func (h *BsdHandle) Stat() (uint, uint, error) {
-	stats, err := h.handle.Stats()
+	stats, err := h.sniffer.Stats()
 	if err != nil {
 		return 0, 0, err
 	}

@@ -84,7 +84,8 @@ func (config captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawP
 			if timestamp.IsZero() {
 				timestamp = time.Now()
 			}
-			parser.DecodeLayers(packet.bytes, &foundLayerTypes)
+			if err := parser.DecodeLayers(packet.bytes, &foundLayerTypes); err != nil {
+			}
 			// first parse the ip layer, so we can find fragmented packets
 			for _, layerType := range foundLayerTypes {
 				switch layerType {
@@ -98,7 +99,6 @@ func (config captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawP
 						}
 					} else {
 						// log.Infof("packet %v coming to %p\n", timestamp, &encoder)
-
 						config.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), timestamp, 4, ip4.SrcIP, ip4.DstIP)
 					}
 				case layers.LayerTypeIPv6:

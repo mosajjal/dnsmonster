@@ -56,6 +56,9 @@ type captureConfig struct {
 	dedupHashTable             map[uint64]bool
 }
 
+// GlobalCaptureConfig is accessible globally
+var GlobalCaptureConfig *captureConfig
+
 // this function will run at import time, before parsing the flags
 func init() {
 	config := captureConfig{}
@@ -63,19 +66,11 @@ func init() {
 		log.Fatalf("error adding capture Module")
 	}
 	GlobalCaptureConfig = &config
-	config.resultChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-	config.tcpAssembly = make(chan tcpPacket, config.TCPAssemblyChannelSize)
-	config.tcpReturnChannel = make(chan tcpData, config.TCPResultChannelSize)
-	config.processingChannel = make(chan *rawPacketBytes, config.PacketChannelSize)
-	config.ip4Defrgger = make(chan ipv4ToDefrag, config.DefraggerChannelSize)
-	config.ip6Defrgger = make(chan ipv6FragmentInfo, config.DefraggerChannelSize)
-	config.ip4DefrggerReturn = make(chan ipv4Defragged, config.DefraggerChannelReturnSize)
-	config.ip6DefrggerReturn = make(chan ipv6Defragged, config.DefraggerChannelReturnSize)
 
 }
 
-func (config captureConfig) GetResultChannel() *chan util.DNSResult {
-	return &config.resultChannel
+func (config captureConfig) GetResultChannel() chan util.DNSResult {
+	return config.resultChannel
 }
 
 func (config captureConfig) cleanExit(ctx context.Context) {
@@ -83,7 +78,7 @@ func (config captureConfig) cleanExit(ctx context.Context) {
 	log.Infof("Stopping capture...")
 }
 
-func (config captureConfig) CheckFlagsAndStart(ctx context.Context) {
+func (config *captureConfig) CheckFlagsAndStart(ctx context.Context) {
 	if config.Port > 65535 {
 		log.Fatal("--port must be between 1 and 65535")
 	}
@@ -137,6 +132,17 @@ func (config captureConfig) CheckFlagsAndStart(ctx context.Context) {
 			}
 		})
 	}
+
+	// NOTE: there is a race condition when resultchannel created here, and when outputs.go expects it to be available
+	config.resultChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
+	config.tcpAssembly = make(chan tcpPacket, config.TCPAssemblyChannelSize)
+	config.tcpReturnChannel = make(chan tcpData, config.TCPResultChannelSize)
+	config.processingChannel = make(chan *rawPacketBytes, config.PacketChannelSize)
+	config.ip4Defrgger = make(chan ipv4ToDefrag, config.DefraggerChannelSize)
+	config.ip6Defrgger = make(chan ipv6FragmentInfo, config.DefraggerChannelSize)
+	config.ip4DefrggerReturn = make(chan ipv4Defragged, config.DefraggerChannelReturnSize)
+	config.ip6DefrggerReturn = make(chan ipv6Defragged, config.DefraggerChannelReturnSize)
+	log.Debugln("Created defrag and assembly channels")
 
 	// start the defrag goroutines
 	for i := uint(0); i < config.TCPHandlerCount; i++ {
@@ -273,9 +279,6 @@ func FNV1A(input []byte) uint64 {
 	}
 	return hash
 }
-
-// GlobalCaptureConfig is accessible globally
-var GlobalCaptureConfig *captureConfig
 
 // The next line will allow an instance to be spawned at import time
 // var _ = captureConfig{}.initializeFlags()

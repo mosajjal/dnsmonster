@@ -75,9 +75,19 @@ func main() {
 
 	// set up capture
 	g.Go(func() error { capture.GlobalCaptureConfig.CheckFlagsAndStart(ctx); return nil })
-
 	// Set up output dispatch
-	g.Go(func() error { return setupOutputs(ctx, capture.GlobalCaptureConfig.GetResultChannel()) })
+	var c chan util.DNSResult
+	for {
+		c = capture.GlobalCaptureConfig.GetResultChannel()
+		if c == nil {
+			time.Sleep(10 * time.Millisecond)
+			continue
+		} else {
+			break
+		}
+	}
+
+	g.Go(func() error { return setupOutputs(ctx, &c) })
 
 	// block until capture and output finish their loop, in order to exit cleanly
 	g.Wait()

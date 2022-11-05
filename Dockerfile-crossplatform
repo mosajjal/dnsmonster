@@ -15,6 +15,7 @@ WORKDIR /${PROJECT}
 env GOBUILD="go build -ldflags=-s -tags ${GOTAG} -o ${OUTDIR}/${PROJECT}_${GOTAG}"
 
 # Linux
+RUN echo "Building Linux binaries"
 RUN export GOOS=linux && export CGO_ENABLED=1 && \
     export GOARCH=amd64 && CC="zig cc -target x86_64-${GOOS}-musl" ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
     export GOARCH=386 && CC="zig cc -target i386-${GOOS}-musl" ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
@@ -24,6 +25,7 @@ RUN export GOOS=linux && export CGO_ENABLED=1 && \
 # MIPS and PPC are pending patches from Zig #10979, #11829
 
 # Windows
+RUN echo "Building Windows binaries"
 RUN export GOOS=windows && export CGO_ENABLED=1 && \
     export GOARCH=amd64 && CC="zig cc -target x86_64-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
     export GOARCH=386 && CC="zig cc -target i386-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
@@ -31,11 +33,13 @@ RUN export GOOS=windows && export CGO_ENABLED=1 && \
     export GOARCH=arm64 && CC="zig cc -target aarch64-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin .
 
 # Darwin
+RUN echo "Building Darwin binaries"
 RUN export GOOS=darwin && export CGO_ENABLED=0 && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin .
 
 # FreeBSD
+RUN echo "Building FreeBSD binaries"
 RUN export GOOS=freebsd && export CGO_ENABLED=0 && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
@@ -43,6 +47,7 @@ RUN export GOOS=freebsd && export CGO_ENABLED=0 && \
     export GOARCH=386 && ${GOBUILD}_${GOOS}_${GOARCH}.bin .
 
 # NetBSD
+RUN echo "Building NetBSD binaries"
 RUN export GOOS=netbsd && export CGO_ENABLED=0 && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
@@ -50,6 +55,7 @@ RUN export GOOS=netbsd && export CGO_ENABLED=0 && \
     export GOARCH=386 && ${GOBUILD}_${GOOS}_${GOARCH}.bin .
 
 # OpenBSD
+RUN echo "Building OpenBSD binaries"
 RUN export GOOS=openbsd && export CGO_ENABLED=0 && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin . && \
@@ -58,10 +64,12 @@ RUN export GOOS=openbsd && export CGO_ENABLED=0 && \
     export GOARCH=mips64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin .
 
 # Android
+RUN echo "Building Android binaries"
 RUN export GOOS=android && export CGO_ENABLED=0 && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin .
 
 # DragonflyBSD
+RUN echo "Building Dragonfly binaries"
 RUN export GOOS=dragonfly && export  CGO_ENABLED=0 && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin .
 

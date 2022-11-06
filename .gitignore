@@ -21,3 +21,5 @@ docker-compose.yml
 # .env file for docker-compose
 .env
 .vscode/*
+
+.TODO.md

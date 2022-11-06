@@ -211,6 +211,7 @@ type dnsStreamFactory struct {
 	tcpReturnChannel chan tcpData
 	IPVersion        uint8
 	currentTimestamp time.Time
+	ctx              context.Context
 }
 
 type dnsStream struct {

@@ -38,7 +38,7 @@ func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
 
 func (h *pcapFileHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	data, ci, err = h.reader.ReadPacketData()
-	if err != nil {
+	if err == nil {
 		h.pktsRead++
 	}
 	return
@@ -46,7 +46,7 @@ func (h *pcapFileHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo,
 
 func (h *pcapFileHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	data, ci, err = h.reader.ZeroCopyReadPacketData()
-	if err != nil {
+	if err == nil {
 		h.pktsRead++
 	}
 	return

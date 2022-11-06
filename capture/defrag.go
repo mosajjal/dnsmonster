@@ -299,12 +299,12 @@ func ipv4Defragger(ctx context.Context, ipInput <-chan ipv4ToDefrag, ipOut chan 
 }
 
 func ipv6Defragger(ctx context.Context, ipInput <-chan ipv6FragmentInfo, ipOut chan ipv6Defragged, gcTime time.Duration) error {
-	ipv4Defragger := NewIPv6Defragmenter()
+	ipv6Defragger := NewIPv6Defragmenter()
 	ticker := time.NewTicker(1 * gcTime)
 	for {
 		select {
 		case packet := <-ipInput:
-			result, err := ipv4Defragger.DefragIPv6(&packet.ip, &packet.ipFragment)
+			result, err := ipv6Defragger.DefragIPv6(&packet.ip, &packet.ipFragment)
 			if err == nil && result != nil {
 				ipOut <- ipv6Defragged{
 					*result,
@@ -312,10 +312,10 @@ func ipv6Defragger(ctx context.Context, ipInput <-chan ipv6FragmentInfo, ipOut c
 				}
 			}
 		case <-ticker.C:
-			ipv4Defragger.DiscardOlderThan(time.Now().Add(gcTime * -1))
+			ipv6Defragger.DiscardOlderThan(time.Now().Add(gcTime * -1))
 
 		case <-ctx.Done():
-			log.Debug("exitting out of ipv4 goroutine") //todo:remove
+			log.Debug("exitting out of ipv6 goroutine") //todo:remove
 			return nil
 		}
 	}

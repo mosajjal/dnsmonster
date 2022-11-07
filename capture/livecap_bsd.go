@@ -10,7 +10,9 @@ import (
 )
 
 type BsdHandle struct {
-	sniffer bsdbpf.BPFSniffer
+	sniffer    bsdbpf.BPFSniffer
+	readCnt    uint
+	droppedCnt uint
 }
 
 func initializeLivePcap(devName, filter string) *BsdHandle {
@@ -43,7 +45,7 @@ func initializeLivePcap(devName, filter string) *BsdHandle {
 	// 	}
 	// }
 	// h := livePcapHandle{handle}
-	return &BsdHandle{*handle}
+	return &BsdHandle{*handle, 0, 0}
 }
 
 func (h *BsdHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
@@ -53,6 +55,12 @@ func (h *BsdHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err 
 	// with the default bsd capture setup. have to do this instead
 	if data == nil {
 		data = []byte{1}
+		h.droppedCnt++
+	}
+	if err != nil {
+		h.droppedCnt++
+	} else {
+		h.readCnt++
 	}
 	return data, ci, nil
 }
@@ -66,9 +74,5 @@ func (h *BsdHandle) Close() {
 }
 
 func (h *BsdHandle) Stat() (uint, uint, error) {
-	stats, err := h.sniffer.Stats()
-	if err != nil {
-		return 0, 0, err
-	}
-	return uint(stats.Packets), uint(stats.Drops), nil
+	return h.readCnt, h.droppedCnt, nil
 }

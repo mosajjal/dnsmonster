@@ -30,7 +30,7 @@ type metricConfig struct {
 }
 
 func (c metricConfig) SetupMetrics(ctx context.Context) error {
-	//todo: none of the below goroutines have a consumer for ctx.Done()
+	//TODO: none of the below goroutines have a consumer for ctx.Done()
 	g, gCtx := errgroup.WithContext(ctx)
 	switch c.MetricEndpointType {
 	case "statsd":
@@ -85,7 +85,7 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 					}
 					os.Stderr.WriteString(fmt.Sprintf("%s metrics: %s\n", time.Now().Format(time.RFC3339), out))
 				case <-gCtx.Done():
-					log.Debug("metric goroutine exiting") //todo:remove
+					log.Debug("metric goroutine exiting") //TODO:remove
 					return nil
 				}
 			}

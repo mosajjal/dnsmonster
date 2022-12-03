@@ -130,7 +130,7 @@ As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/
   - run `dnsmonster.exe` in `cmd.exe` like this:
 
 ```sh
-dnsmonster.exe --input=live::\Device\NPF_{16000000-0000-0000-0000-145C4638064C}
+dnsmonster.exe --input="live::\Device\NPF_{16000000-0000-0000-0000-145C4638064C}"
 ```
 
 Note that you must change `\Tcpip` from `getmac.exe` to `\NPF` and then pass it to `dnsmonster.exe`.

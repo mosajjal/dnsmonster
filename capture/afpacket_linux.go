@@ -4,6 +4,7 @@
 package capture
 
 import (
+	"net/url"
 	"os"
 	"syscall"
 	"time"
@@ -16,6 +17,7 @@ import (
 )
 
 type afpacketHandle struct {
+	name    string
 	TPacket *afpacket.TPacket
 }
 
@@ -49,6 +51,9 @@ func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
 func (h *afpacketHandle) Close() {
 	h.TPacket.Close()
 }
+func (h *afpacketHandle) Name() string {
+	return url.QueryEscape(h.name)
+}
 
 func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	frameSize uint, blockSize uint, numBlocks uint, err error,
@@ -71,11 +76,11 @@ func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	return frameSize, blockSize, numBlocks, nil
 }
 
-func (config captureConfig) setPromiscuous() error {
+func (config captureConfig) setPromiscuous(dev string) error {
 	var err error
 	if !config.NoPromiscuous {
 		// TODO: replace with x/net/bpf or pcap
-		err = syscall.SetLsfPromisc(config.DevName, !config.NoPromiscuous)
+		err = syscall.SetLsfPromisc(dev, !config.NoPromiscuous)
 		log.Infof("Promiscuous mode: %v", !config.NoPromiscuous)
 	}
 	return err
@@ -111,7 +116,7 @@ func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpa
 	// set up promisc mode. first we need to get the fd for the interface we just opened. using a hacky mode
 	// v := reflect.ValueOf(handle.TPacket)
 	// fd := v.FieldByName("fd").Int()
-	err = config.setPromiscuous()
+	err = config.setPromiscuous(devName)
 	if err != nil {
 		log.Fatal("Error setting the interface to promiscuous.. exiting")
 	}

@@ -9,6 +9,7 @@ import (
 )
 
 type livePcapHandle struct {
+	name   string
 	handle *pcap.Handle
 }
 
@@ -19,7 +20,7 @@ func initializeLivePcap(devName, filter string) *livePcapHandle {
 	} else if err := handle.SetBPFFilter(filter); err != nil { // optional
 		panic(err)
 	}
-	h := livePcapHandle{handle}
+	h := livePcapHandle{name: name, handle: handle}
 	return &h
 }
 
@@ -34,7 +35,9 @@ func (h *livePcapHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.Capt
 func (h *livePcapHandle) Close() {
 	h.handle.Close()
 }
-
+func (h *livePcapHandle) Name() string {
+	return url.QueryEscape(h.name)
+}
 func (h *livePcapHandle) Stat() (uint, uint, error) {
 	stats, err := h.handle.Stats()
 	if err != nil {

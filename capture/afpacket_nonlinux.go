@@ -40,7 +40,8 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 
 func (h *afpacketHandle) Close() {
 }
-
+func (h *afpacketHandle) Name() string {
+}
 func (afhandle *afpacketHandle) Stat() (uint, uint, error) {
 	return 0, 0, fmt.Errorf("Afpacket statistics are only available on Linux")
 }

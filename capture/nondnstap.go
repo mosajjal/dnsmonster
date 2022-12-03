@@ -10,48 +10,52 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
-	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
-	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
-	packetsDuplicate := metrics.GetOrRegisterCounter("packetsDuplicate", metrics.DefaultRegistry)
-	packetsOverRatio := metrics.GetOrRegisterCounter("packetsOverRatio", metrics.DefaultRegistry)
-	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
+func (config captureConfig) NewLiveHander(ctx context.Context, dev string) (h genericPacketHandler) {
 
-	var myHandler genericPacketHandler
-
-	if config.DevName != "" && !config.UseAfpacket {
-		myHandler = initializeLivePcap(config.DevName, config.Filter)
+	if dev != "" && !config.UseAfpacket {
+		h = config.initializeLivePcap(dev, config.Filter)
 		log.Info("Waiting for packets")
+		return
 
-	} else if config.DevName != "" && config.UseAfpacket {
-		myHandler = config.initializeLiveAFpacket(config.DevName, config.Filter)
+	} else if dev != "" && config.UseAfpacket {
+		h = config.initializeLiveAFpacket(dev, config.Filter)
 		log.Info("Waiting for packets using AFpacket")
-
-	} else {
-		myHandler = initializeOfflinePcap(config.PcapFile, config.Filter)
-		log.Info("Reading off Pcap file")
+		return
 	}
+	// TODO: fail here
+	return
+}
 
-	defer myHandler.Close() // closes the packet handler and/or capture files. there might be a duplicate of this in pcapfile
+func (config captureConfig) NewPcapfileHandler(ctx context.Context, path string) (h genericPacketHandler) {
+
+	h = config.initializeOfflinePcap(path, config.Filter)
+	log.Info("Reading off Pcap file")
+	return
+}
+
+func (config captureConfig) StartNonDNSTap(ctx context.Context, h genericPacketHandler) error {
+	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured_"+h.Name(), metrics.DefaultRegistry)
+	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped_"+h.Name(), metrics.DefaultRegistry)
+	packetsDuplicate := metrics.GetOrRegisterCounter("packetsDuplicate_"+h.Name(), metrics.DefaultRegistry)
+	packetsOverRatio := metrics.GetOrRegisterCounter("packetsOverRatio_"+h.Name(), metrics.DefaultRegistry)
+	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent_"+h.Name(), metrics.DefaultRegistry)
+
+	defer h.Close() // closes the packet handler and/or capture files. there might be a duplicate of this in pcapfile
 
 	// Set up various tickers for different tasks
 	captureStatsTicker := time.NewTicker(util.GeneralFlags.CaptureStatsDelay)
 
-	ratioCnt := 0
-
 	// updating the metrics in a separate goroutine
-
 	g, gCtx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		for {
 			select {
 			case <-captureStatsTicker.C:
-				packets, drop, err := myHandler.Stat()
+				packets, drop, err := h.Stat()
 				if err != nil {
 					log.Warnf("Error reading stats: %s", err)
 					continue
 				}
-
 				packetsCaptured.Update(int64(packets))
 				packetsDropped.Update(int64(drop))
 
@@ -65,10 +69,11 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 		}
 	})
 
+	ratioCnt := 0
 	// blocking loop to capture packets and send them to processing channel
 	// todo: should this be blocking or have a gCtx.Done() listener somewhere
 	for {
-		data, ci, err := myHandler.ReadPacketData() // todo: ZeroCopyReadPacketData is slower than ReadPacketData. need to investigate why
+		data, ci, err := h.ReadPacketData() // todo: ZeroCopyReadPacketData is slower than ReadPacketData. need to investigate why
 		if data == nil || err != nil {
 			log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 2 seconds waiting for processing to finish")
 			time.Sleep(time.Second * 2)

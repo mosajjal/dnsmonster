@@ -1,6 +1,7 @@
 package capture
 
 import (
+	"net/url"
 	"os"
 
 	"github.com/gopacket/gopacket"
@@ -14,7 +15,7 @@ type pcapFileHandle struct {
 	pktsRead uint
 }
 
-func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
+func (config captureConfig) initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
 	var f *os.File
 	if fileName == "-" {
 		f = os.Stdin
@@ -54,6 +55,9 @@ func (h *pcapFileHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.Capt
 
 func (h *pcapFileHandle) Close() {
 	h.file.Close()
+}
+func (h *pcapFileHandle) Name() string {
+	return url.QueryEscape(h.file.Name())
 }
 
 func (h *pcapFileHandle) Stat() (uint, uint, error) {

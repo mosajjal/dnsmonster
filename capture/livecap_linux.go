@@ -4,23 +4,28 @@
 package capture
 
 import (
+	"net/url"
+
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/pcapgo"
 	log "github.com/sirupsen/logrus"
 )
 
 type livePcapHandle struct {
-	handle *pcapgo.EthernetHandle
+	name       string
+	readCnt    uint
+	droppedCnt uint
+	handle     *pcapgo.EthernetHandle
 }
 
-func initializeLivePcap(devName, filter string) *livePcapHandle {
+func (config captureConfig) initializeLivePcap(devName, filter string) *livePcapHandle {
 	// Open device
 	handle, err := pcapgo.NewEthernetHandle(devName)
 	// handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = handle.SetPromiscuous(!GlobalCaptureConfig.NoPromiscuous)
+	err = handle.SetPromiscuous(!config.NoPromiscuous)
 	if err != nil {
 		log.Fatal("Error setting interface to promiscuous.. Exiting")
 	}
@@ -34,7 +39,7 @@ func initializeLivePcap(devName, filter string) *livePcapHandle {
 			log.Fatal(err)
 		}
 	}
-	h := livePcapHandle{handle}
+	h := livePcapHandle{name: devName, handle: handle}
 	return &h
 }
 
@@ -49,11 +54,16 @@ func (h *livePcapHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.Capt
 func (h *livePcapHandle) Close() {
 	h.handle.Close()
 }
+func (h *livePcapHandle) Name() string {
+	return url.QueryEscape(h.name)
+}
 
 func (h *livePcapHandle) Stat() (uint, uint, error) {
 	stats, err := h.handle.Stats()
 	if err != nil {
 		return 0, 0, err
 	}
-	return uint(stats.Packets), uint(stats.Drops), nil
+	h.readCnt += uint(stats.Packets)
+	h.droppedCnt += uint(stats.Drops)
+	return h.readCnt, h.droppedCnt, nil
 }

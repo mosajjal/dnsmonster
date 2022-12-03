@@ -23,26 +23,23 @@ import (
 )
 
 type captureConfig struct {
-	DevName                    string        `long:"devname"                    ini-name:"devname"                    env:"DNSMONSTER_DEVNAME"                    default:""                                                                                                  description:"Device used to capture"`
-	PcapFile                   string        `long:"pcapfile"                   ini-name:"pcapfile"                   env:"DNSMONSTER_PCAPFILE"                   default:""                                                                                                  description:"Pcap filename to run"`
-	DnstapSocket               string        `long:"dnstapsocket"               ini-name:"dnstapsocket"               env:"DNSMONSTER_DNSTAPSOCKET"               default:""                                                                                                  description:"dnstap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080"`
-	Port                       uint          `long:"port"                       ini-name:"port"                       env:"DNSMONSTER_PORT"                       default:"53"                                                                                                description:"Port selected to filter packets"`
-	SampleRatio                string        `long:"sampleratio"                ini-name:"sampleratio"                env:"DNSMONSTER_SAMPLERATIO"                default:"1:1"                                                                                               description:"Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets"`
-	DedupCleanupInterval       time.Duration `long:"dedupcleanupinterval"       ini-name:"dedupcleanupinterval"       env:"DNSMONSTER_DEDUPCLEANUPINTERVAL"       default:"60s"                                                                                               description:"Cleans up packet hash table used for deduplication"`
-	DnstapPermission           string        `long:"dnstappermission"           ini-name:"dnstappermission"           env:"DNSMONSTER_DNSTAPPERMISSION"           default:"755"                                                                                               description:"Set the dnstap socket permission, only applicable when unix:// is used"`
-	PacketHandlerCount         uint          `long:"packethandlercount"         ini-name:"packethandlercount"         env:"DNSMONSTER_PACKETHANDLERCOUNT"         default:"2"                                                                                                 description:"Number of routines used to handle received packets"`
-	TCPAssemblyChannelSize     uint          `long:"tcpassemblychannelsize"     ini-name:"tcpassemblychannelsize"     env:"DNSMONSTER_TCPASSEMBLYCHANNELSIZE"     default:"10000"                                                                                             description:"Size of the tcp assembler"`
-	TCPResultChannelSize       uint          `long:"tcpresultchannelsize"       ini-name:"tcpresultchannelsize"       env:"DNSMONSTER_TCPRESULTCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the tcp result channel"`
-	TCPHandlerCount            uint          `long:"tcphandlercount"            ini-name:"tcphandlercount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                                                                                                 description:"Number of routines used to handle tcp packets"`
-	DefraggerChannelSize       uint          `long:"defraggerchannelsize"       ini-name:"defraggerchannelsize"       env:"DNSMONSTER_DEFRAGGERCHANNELSIZE"       default:"10000"                                                                                             description:"Size of the channel to send packets to be defragged"`
-	DefraggerChannelReturnSize uint          `long:"defraggerchannelreturnsize" ini-name:"defraggerchannelreturnsize" env:"DNSMONSTER_DEFRAGGERCHANNELRETURNSIZE" default:"10000"                                                                                             description:"Size of the channel where the defragged packets are returned"`
-	PacketChannelSize          uint          `long:"packetchannelsize"          ini-name:"packetchannelsize"          env:"DNSMONSTER_PACKETCHANNELSIZE"          default:"1000"                                                                                              description:"Size of the packet handler channel"`
-	AfpacketBuffersizeMb       uint          `long:"afpacketbuffersizemb"       ini-name:"afpacketbuffersizemb"       env:"DNSMONSTER_AFPACKETBUFFERSIZEMB"       default:"64"                                                                                                description:"Afpacket Buffersize in MB"`
-	Filter                     string        `long:"filter"                     ini-name:"filter"                     env:"DNSMONSTER_FILTER"                     default:"((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))" description:"BPF filter applied to the packet stream. If port is selected, the packets will not be defragged."`
-	UseAfpacket                bool          `long:"useafpacket"                ini-name:"useafpacket"                env:"DNSMONSTER_USEAFPACKET"                description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
-	NoEthernetframe            bool          `long:"noetherframe"               ini-name:"noetherframe"               env:"DNSMONSTER_NOETHERFRAME"               description:"The PCAP capture does not contain ethernet frames"`
-	Dedup                      bool          `long:"dedup"                      ini-name:"dedup"                      env:"DNSMONSTER_DEDUP"                      description:"Deduplicate incoming packets, Only supported with --devName and --pcapFile. Experimental "`
-	NoPromiscuous              bool          `long:"nopromiscuous"              ini-name:"nopromiscuous"              env:"DNSMONSTER_NOPROMISCUOUS"              description:"Do not put the interface in promiscuous mode"`
+	Input                      []string      `long:"input"                      ini-name:"input"                      env:"DNSMONSTER_INPUT"                      default:""                         description:"capture input(s). example: live::eth0, pcap::/path/to/my/pcap dnstap::unix:///tmp/dnstap.sock, dnstap::tcp://127.0.0.1:8080"`
+	SampleRatio                string        `long:"sampleratio"                ini-name:"sampleratio"                env:"DNSMONSTER_SAMPLERATIO"                default:"1:1"                      description:"Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets"`
+	DedupCleanupInterval       time.Duration `long:"dedupcleanupinterval"       ini-name:"dedupcleanupinterval"       env:"DNSMONSTER_DEDUPCLEANUPINTERVAL"       default:"60s"                      description:"Cleans up packet hash table used for deduplication"`
+	DnstapPermission           string        `long:"dnstappermission"           ini-name:"dnstappermission"           env:"DNSMONSTER_DNSTAPPERMISSION"           default:"755"                      description:"Set the dnstap socket permission, only applicable when unix:// is used"`
+	PacketHandlerCount         uint          `long:"packethandlercount"         ini-name:"packethandlercount"         env:"DNSMONSTER_PACKETHANDLERCOUNT"         default:"2"                        description:"Number of routines used to handle received packets"`
+	TCPAssemblyChannelSize     uint          `long:"tcpassemblychannelsize"     ini-name:"tcpassemblychannelsize"     env:"DNSMONSTER_TCPASSEMBLYCHANNELSIZE"     default:"10000"                    description:"Size of the tcp assembler"`
+	TCPResultChannelSize       uint          `long:"tcpresultchannelsize"       ini-name:"tcpresultchannelsize"       env:"DNSMONSTER_TCPRESULTCHANNELSIZE"       default:"10000"                    description:"Size of the tcp result channel"`
+	TCPHandlerCount            uint          `long:"tcphandlercount"            ini-name:"tcphandlercount"            env:"DNSMONSTER_TCPHANDLERCOUNT"            default:"1"                        description:"Number of routines used to handle tcp packets"`
+	DefraggerChannelSize       uint          `long:"defraggerchannelsize"       ini-name:"defraggerchannelsize"       env:"DNSMONSTER_DEFRAGGERCHANNELSIZE"       default:"10000"                    description:"Size of the channel to send packets to be defragged"`
+	DefraggerChannelReturnSize uint          `long:"defraggerchannelreturnsize" ini-name:"defraggerchannelreturnsize" env:"DNSMONSTER_DEFRAGGERCHANNELRETURNSIZE" default:"10000"                    description:"Size of the channel where the defragged packets are returned"`
+	PacketChannelSize          uint          `long:"packetchannelsize"          ini-name:"packetchannelsize"          env:"DNSMONSTER_PACKETCHANNELSIZE"          default:"1000"                     description:"Size of the packet handler channel"`
+	AfpacketBuffersizeMb       uint          `long:"afpacketbuffersizemb"       ini-name:"afpacketbuffersizemb"       env:"DNSMONSTER_AFPACKETBUFFERSIZEMB"       default:"64"                       description:"Afpacket Buffersize in MB"`
+	Filter                     string        `long:"filter"                     ini-name:"filter"                     env:"DNSMONSTER_FILTER"                     default:"(ip or ip6) and port 53"  description:"BPF filter applied to the packet stream. If you're using a non-libpcap version, you'll need to provide a base64 version of tcdpump -d output. refer to the docs for more info."`
+	UseAfpacket                bool          `long:"useafpacket"                ini-name:"useafpacket"                env:"DNSMONSTER_USEAFPACKET"                                                   description:"Use AFPacket for live captures. Supported on Linux 3.0+ only"`
+	NoEthernetframe            bool          `long:"noetherframe"               ini-name:"noetherframe"               env:"DNSMONSTER_NOETHERFRAME"                                                  description:"The PCAP capture does not contain ethernet frames"`
+	Dedup                      bool          `long:"dedup"                      ini-name:"dedup"                      env:"DNSMONSTER_DEDUP"                                                         description:"Deduplicate incoming live or pcap packets. Experimental "`
+	NoPromiscuous              bool          `long:"nopromiscuous"              ini-name:"nopromiscuous"              env:"DNSMONSTER_NOPROMISCUOUS"                                                 description:"Do not put the interface in promiscuous mode"`
 	processingChannel          chan *rawPacketBytes
 	ip4Defrgger                chan ipv4ToDefrag
 	ip6Defrgger                chan ipv6FragmentInfo
@@ -57,16 +54,13 @@ type captureConfig struct {
 }
 
 // GlobalCaptureConfig is accessible globally
-var GlobalCaptureConfig *captureConfig
+var GlobalCaptureConfig = new(captureConfig)
 
 // this function will run at import time, before parsing the flags
 func init() {
-	config := captureConfig{}
-	if _, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", &config); err != nil {
+	if _, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", GlobalCaptureConfig); err != nil {
 		log.Fatalf("error adding capture Module")
 	}
-	GlobalCaptureConfig = &config
-
 }
 
 func (config captureConfig) GetResultChannel() chan util.DNSResult {
@@ -79,28 +73,10 @@ func (config captureConfig) cleanExit(ctx context.Context) {
 }
 
 func (config *captureConfig) CheckFlagsAndStart(ctx context.Context) {
-	if config.Port > 65535 {
-		log.Fatal("--port must be between 1 and 65535")
-	}
-	if config.DevName == "" && config.PcapFile == "" && config.DnstapSocket == "" {
-		log.Fatal("one of --devName, --pcapFile or --dnstapSocket is required")
+	if len(config.Input) == 0 {
+		log.Fatal("input can not be empty.")
 	}
 
-	if config.DevName != "" {
-		if config.PcapFile != "" || config.DnstapSocket != "" {
-			log.Fatal("You must set only --devName, --pcapFile or --dnstapSocket")
-		}
-	} else {
-		if config.PcapFile != "" && config.DnstapSocket != "" {
-			log.Fatal("You must set only --devName, --pcapFile or --dnstapSocket")
-		}
-	}
-
-	if config.DnstapSocket != "" {
-		if !strings.HasPrefix(config.DnstapSocket, "unix://") && !strings.HasPrefix(config.DnstapSocket, "tcp://") {
-			log.Fatal("You must provide a unix:// or tcp:// socket for dnstap")
-		}
-	}
 	ratioNumbers := strings.Split(config.SampleRatio, ":")
 	if len(ratioNumbers) != 2 {
 		log.Fatal("wrong --sampleRatio syntax")
@@ -160,13 +136,25 @@ func (config *captureConfig) CheckFlagsAndStart(ctx context.Context) {
 	// start the packet decoder goroutines
 	g.Go(func() error { return config.StartPacketDecoder(gCtx) })
 
-	// Start listening if we're not using DNSTap
-	if config.DnstapSocket == "" {
-		g.Go(func() error { return config.StartNonDNSTap(gCtx) })
-	} else {
-		// dnstap is totally different, hence only the result channel is being pushed to it
-		g.Go(func() error { return config.StartDNSTap(gCtx) })
+	// parse inputs and start a goroutine per input type
+	for _, in := range config.Input {
+		tmp := strings.Split(in, "::")
+		if len(tmp) != 2 {
+			log.Fatalf("failed to parse input: %s", in)
+		}
+		inType, inPath := tmp[0], tmp[1]
+		if inType == "pcap" {
+			h := config.NewPcapfileHandler(gCtx, inPath)
+			g.Go(func() error { return config.StartNonDNSTap(gCtx, h) })
+		} else if inType == "live" {
+			h := config.NewLiveHander(gCtx, inPath)
+			g.Go(func() error { return config.StartNonDNSTap(gCtx, h) })
+		} else {
+			// dnstap is totally different, hence only the result channel is being pushed to it
+			g.Go(func() error { return config.StartDNSTap(gCtx, inPath) })
+		}
 	}
+
 	<-gCtx.Done()
 
 }
@@ -259,6 +247,7 @@ type detectIP struct {
 // right now, most functionality of afpacket, pcap file and libpcap
 // are captured in this interface
 type genericPacketHandler interface {
+	Name() string
 	ReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	ZeroCopyReadPacketData() ([]byte, gopacket.CaptureInfo, error)
 	Close()

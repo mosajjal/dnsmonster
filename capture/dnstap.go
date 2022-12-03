@@ -69,31 +69,31 @@ func parseDnstapSocket(socketString, socketChmod string) *dnstap.FrameStreamSock
 }
 
 func dnsTapMsgToDNSResult(msg []byte) (*util.DNSResult, error) {
-	dnstapObject := &dnstap.Dnstap{}
+	dnstapMsg := &dnstap.Dnstap{}
 
-	if err := proto.Unmarshal(msg, dnstapObject); err != nil {
+	if err := proto.Unmarshal(msg, dnstapMsg); err != nil {
 		return nil, err
 	}
 
 	var myDNSResult util.DNSResult
-	myDNSResult.Identity = string(dnstapObject.GetIdentity())
-	myDNSResult.Version = string(dnstapObject.GetVersion())
-	myDNSResult.IPVersion = uint8(*dnstapObject.GetMessage().SocketFamily)*2 + 2
-	myDNSResult.SrcIP = dnstapObject.Message.GetQueryAddress()
-	myDNSResult.SrcPort = uint16(dnstapObject.Message.GetQueryPort())
-	myDNSResult.DstIP = dnstapObject.Message.GetResponseAddress()
-	myDNSResult.DstPort = uint16(dnstapObject.Message.GetResponsePort())
-	myDNSResult.Protocol = strings.ToLower(dnstapObject.Message.GetSocketProtocol().String())
+	myDNSResult.Identity = string(dnstapMsg.GetIdentity())
+	myDNSResult.Version = string(dnstapMsg.GetVersion())
+	myDNSResult.IPVersion = uint8(*dnstapMsg.GetMessage().SocketFamily)*2 + 2
+	myDNSResult.SrcIP = dnstapMsg.Message.GetQueryAddress()
+	myDNSResult.SrcPort = uint16(dnstapMsg.Message.GetQueryPort())
+	myDNSResult.DstIP = dnstapMsg.Message.GetResponseAddress()
+	myDNSResult.DstPort = uint16(dnstapMsg.Message.GetResponsePort())
+	myDNSResult.Protocol = strings.ToLower(dnstapMsg.Message.GetSocketProtocol().String())
 
-	message := dnstapObject.Message.GetQueryMessage()
+	message := dnstapMsg.Message.GetQueryMessage()
 	if message != nil {
 		// query
-		myDNSResult.Timestamp = time.Unix(int64(dnstapObject.Message.GetQueryTimeSec()), int64(dnstapObject.Message.GetQueryTimeNsec()))
+		myDNSResult.Timestamp = time.Unix(int64(dnstapMsg.Message.GetQueryTimeSec()), int64(dnstapMsg.Message.GetQueryTimeNsec()))
 	} else {
 		// response
-		myDNSResult.Timestamp = time.Unix(int64(dnstapObject.Message.GetResponseTimeSec()), int64(dnstapObject.Message.GetResponseTimeNsec()))
+		myDNSResult.Timestamp = time.Unix(int64(dnstapMsg.Message.GetResponseTimeSec()), int64(dnstapMsg.Message.GetResponseTimeNsec()))
 
-		message = dnstapObject.Message.GetResponseMessage()
+		message = dnstapMsg.Message.GetResponseMessage()
 	}
 
 	myDNSResult.PacketLength = uint16(len(message))
@@ -104,15 +104,15 @@ func dnsTapMsgToDNSResult(msg []byte) (*util.DNSResult, error) {
 	return &myDNSResult, nil
 }
 
-func (config captureConfig) StartDNSTap(ctx context.Context) error {
+func (config captureConfig) StartDNSTap(ctx context.Context, path string) error {
 	log.Info("Starting DNStap capture")
 
-	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
-	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
-	packetsInvalid := metrics.GetOrRegisterGauge("packetsInvalid", metrics.DefaultRegistry)
-	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent", metrics.DefaultRegistry)
+	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured_"+path, metrics.DefaultRegistry)
+	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped_"+path, metrics.DefaultRegistry)
+	packetsInvalid := metrics.GetOrRegisterGauge("packetsInvalid_"+path, metrics.DefaultRegistry)
+	packetLossPercent := metrics.GetOrRegisterGaugeFloat64("packetLossPercent_"+path, metrics.DefaultRegistry)
 
-	input := parseDnstapSocket(config.DnstapSocket, config.DnstapPermission)
+	input := parseDnstapSocket(path, config.DnstapPermission)
 	buf := make(chan []byte, 1024)
 	g, _ := errgroup.WithContext(ctx)
 	//todo: can't pass on the context to this function.

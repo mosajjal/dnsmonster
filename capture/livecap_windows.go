@@ -13,7 +13,7 @@ type livePcapHandle struct {
 	handle *pcap.Handle
 }
 
-func initializeLivePcap(devName, filter string) *livePcapHandle {
+func (config *captureConfig) initializeLivePcap(devName, filter string) *livePcapHandle {
 	handle, err := pcap.OpenLive(devName, 1600, true, pcap.BlockForever)
 	if err != nil {
 		panic(err)

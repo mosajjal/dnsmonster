@@ -4,6 +4,8 @@
 package capture
 
 import (
+	"net/url"
+
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/bsdbpf"
 	log "github.com/sirupsen/logrus"
@@ -46,7 +48,7 @@ func (config captureConfig) initializeLivePcap(devName, filter string) *BsdHandl
 	// 	}
 	// }
 	// h := livePcapHandle{handle}
-	return &BsdHandle{devname, *handle, 0, 0}
+	return &BsdHandle{devName, *handle, 0, 0}
 }
 
 func (h *BsdHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
@@ -73,7 +75,7 @@ func (h *BsdHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureIn
 func (h *BsdHandle) Close() {
 	h.sniffer.Close()
 }
-func (h *livePcapHandle) Name() string {
+func (h *BsdHandle) Name() string {
 	return url.QueryEscape(h.name)
 }
 

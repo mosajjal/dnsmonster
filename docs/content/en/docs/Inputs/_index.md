@@ -14,13 +14,7 @@ To get the raw data into `dnsmonster` pipeline, you must specify an input stream
 
 The configuration for inputs and packet processing is contained within the `capture` section of the configuration:
 
-- `--devName`: Enables live capture mode on the device. Only one interface per `dnsmonster` instance is supported. 
-
-- `--pcapFile`: Enables offline pcap mode. You can specify "-" as pcap file to read from stdin
-
-- `--dnstapSocket`: Enables dnstap mode. Accepts a socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080.
-
-- `--port`: Port selected to filter packets (default: 53). Works independently from BPF filter
+- `--input`: Adds an input capture. multiple live interfaces, dnstap sockets and pcap files and any combination of them is supported. you can re-use `--input` to achieve that. 
 
 - `--sampleRatio`: Specifies packet sampling ratio at capture time. default is 1:1 meaning all packets passing the bpf will get processed.
 

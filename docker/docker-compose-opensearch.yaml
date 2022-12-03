@@ -58,7 +58,7 @@ services:
       - PGID=1000
     command:
       - "--serverName=HOSTNAME"
-      - "--devName=lo"
+      - "--input=live::lo"
       - "--elasticOutputType=1"
       - "--elasticOutputEndpoint=https://admin:admin@127.0.0.1:9200"
       - "--skipTLSVerification"

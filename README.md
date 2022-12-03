@@ -79,7 +79,7 @@ Best way to get started with `dnsmonster` is to download the binary from the rel
 Since `dnsmonster` uses raw packet capture funcationality, Docker/Podman daemon must grant the capability to the container
 
 ```
-sudo docker run --rm -it --net=host --cap-add NET_RAW --cap-add NET_ADMIN --name dnsmonster ghcr.io/mosajjal/dnsmonster:latest --devName lo --stdoutOutputType=1
+sudo docker run --rm -it --net=host --cap-add NET_RAW --cap-add NET_ADMIN --name dnsmonster ghcr.io/mosajjal/dnsmonster:latest --input live::lo --stdoutOutputType=1
 ```
 
 
@@ -124,13 +124,13 @@ For more information on how the statically linked binary is created, take a look
 
 Bulding on Windows is much the same as Linux. Just make sure that you have `npcap`. Clone the repository (`--history 1` works), and run `go get` and `go build .`
 
-As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. It's been tested in a Windows 10 environment and it executed without an issue. To find interface names to give `--devName` parameter and start sniffing, you'll need to do the following:
+As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. It's been tested in a Windows 10 environment and it executed without an issue. To find interface names to give `--input` parameter and start sniffing, you'll need to do the following:
 
   - open cmd.exe as Administrator and run the following: `getmac.exe`, you'll see a table with your interfaces' MAC address and a Transport Name column with something like this: `\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}`
   - run `dnsmonster.exe` in `cmd.exe` like this:
 
 ```sh
-dnsmonster.exe --devName \Device\NPF_{16000000-0000-0000-0000-145C4638064C}
+dnsmonster.exe --input=live::\Device\NPF_{16000000-0000-0000-0000-145C4638064C}
 ```
 
 Note that you must change `\Tcpip` from `getmac.exe` to `\NPF` and then pass it to `dnsmonster.exe`.
@@ -591,8 +591,7 @@ all the flags can also be set via env variables. Keep in mind that the name of e
 Example:
 
 ```shell
-$ export DNSMONSTER_PORT=53
-$ export DNSMONSTER_DEVNAME=lo
+$ export DNSMONSTER_INPUT=live::lo
 $ sudo -E dnsmonster
 ```
 

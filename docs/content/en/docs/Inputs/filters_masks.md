@@ -27,11 +27,6 @@ There's also the option `--dedupCleanupInterval` to specify cleanup time for the
 
 Applied after Sample Ratio for each packet.
 
-## Port
-{{< alert >}}Applied at early process level{{< /alert >}} 
-
-There's an additional filter specifying the port (`--port`) of each packet. since the vast majority of the DNS packets are served out of port 53, this parameter shouldn't have any effect by default. note that this filter will not be applied to fragmented packets.
-
 ## IP Masks
 {{< alert >}}Applied at process level{{< /alert >}} 
 

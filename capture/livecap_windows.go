@@ -6,6 +6,7 @@ package capture
 import (
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/pcap"
+	"net/url"
 )
 
 type livePcapHandle struct {
@@ -20,7 +21,7 @@ func (config *captureConfig) initializeLivePcap(devName, filter string) *livePca
 	} else if err := handle.SetBPFFilter(filter); err != nil { // optional
 		panic(err)
 	}
-	h := livePcapHandle{name: name, handle: handle}
+	h := livePcapHandle{name: devName, handle: handle}
 	return &h
 }
 

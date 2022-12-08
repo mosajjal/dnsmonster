@@ -145,7 +145,7 @@ func (kafConfig kafkaConfig) Output(ctx context.Context) {
 
 func (kafConfig kafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util.DNSResult) error {
 	kafkaSentToOutput := metrics.GetOrRegisterCounter("kafkaSentToOutput", metrics.DefaultRegistry)
-	kafkaSkipped := metrics.GetOrRegisterCounter("stdoutSkipped", metrics.DefaultRegistry)
+	kafkaSkipped := metrics.GetOrRegisterCounter("kafkaSkipped", metrics.DefaultRegistry)
 
 	for _, dnsQuery := range dnsresult.DNS.Question {
 		if util.CheckIfWeSkip(kafConfig.KafkaOutputType, dnsQuery.Name) {

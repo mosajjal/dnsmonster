@@ -18,33 +18,31 @@ func (config captureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 	for _, layerType := range *foundLayerTypes {
 		switch layerType {
 		case layers.LayerTypeUDP:
-			if uint16(udp.DstPort) == uint16(config.Port) || uint16(udp.SrcPort) == uint16(config.Port) {
-				msg := mkdns.Msg{}
-				err := msg.Unpack(udp.Payload)
-				// Process if no error or truncated, as it will have most of the information it have available
-				if err == nil {
-					MaskSize := util.GeneralFlags.MaskSize4
-					BitSize := 8 * net.IPv4len
-					if IPVersion == 6 {
-						MaskSize = util.GeneralFlags.MaskSize6
-						BitSize = 8 * net.IPv6len
-					}
-					config.resultChannel <- util.DNSResult{
-						Timestamp: timestamp,
-						DNS:       msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
-						DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
-					}
+			msg := mkdns.Msg{}
+			err := msg.Unpack(udp.Payload)
+			// Process if no error or truncated, as it will have most of the information it have available
+			if err == nil {
+				MaskSize := util.GeneralFlags.MaskSize4
+				BitSize := 8 * net.IPv4len
+				if IPVersion == 6 {
+					MaskSize = util.GeneralFlags.MaskSize6
+					BitSize = 8 * net.IPv6len
+				}
+				config.resultChannel <- util.DNSResult{
+					Timestamp: timestamp,
+					DNS:       msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+					DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
 				}
 			}
+
 		case layers.LayerTypeTCP:
-			if uint16(tcp.SrcPort) == uint16(config.Port) || uint16(tcp.DstPort) == uint16(config.Port) {
-				config.tcpAssembly <- tcpPacket{
-					IPVersion,
-					*tcp,
-					timestamp,
-					flow,
-				}
+			config.tcpAssembly <- tcpPacket{
+				IPVersion,
+				*tcp,
+				timestamp,
+				flow,
 			}
+
 		}
 	}
 }

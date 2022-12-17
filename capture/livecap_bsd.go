@@ -4,25 +4,28 @@
 package capture
 
 import (
+	"net/url"
+
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/bsdbpf"
 	log "github.com/sirupsen/logrus"
 )
 
 type BsdHandle struct {
+	name       string
 	sniffer    bsdbpf.BPFSniffer
 	readCnt    uint
 	droppedCnt uint
 }
 
-func initializeLivePcap(devName, filter string) *BsdHandle {
+func (config captureConfig) initializeLivePcap(devName, filter string) *BsdHandle {
 	// Open device
 
 	var options = bsdbpf.Options{
 		BPFDeviceName:    "",
 		ReadBufLen:       32767,
 		Timeout:          nil,
-		Promisc:          !GlobalCaptureConfig.NoPromiscuous,
+		Promisc:          !config.NoPromiscuous,
 		Immediate:        true,
 		PreserveLinkAddr: true,
 	}
@@ -45,7 +48,7 @@ func initializeLivePcap(devName, filter string) *BsdHandle {
 	// 	}
 	// }
 	// h := livePcapHandle{handle}
-	return &BsdHandle{*handle, 0, 0}
+	return &BsdHandle{devName, *handle, 0, 0}
 }
 
 func (h *BsdHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
@@ -71,6 +74,9 @@ func (h *BsdHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureIn
 
 func (h *BsdHandle) Close() {
 	h.sniffer.Close()
+}
+func (h *BsdHandle) Name() string {
+	return url.QueryEscape(h.name)
 }
 
 func (h *BsdHandle) Stat() (uint, uint, error) {

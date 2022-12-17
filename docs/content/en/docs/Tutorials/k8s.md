@@ -40,7 +40,7 @@ spec:
       - name: dnsm-dnstap
         image: ghcr.io/mosajjal/dnsmonster:v0.9.3
         args: 
-          - "--dnstapSocket=tcp://0.0.0.0:7878"
+          - "--input=dnstap::tcp://0.0.0.0:7878"
           - "--stdoutOutputType=1"
         imagePullPolicy: IfNotPresent
         ports:

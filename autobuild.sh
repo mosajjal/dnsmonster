@@ -66,7 +66,7 @@ dnsmonsteragent=$(cat <<EOF
       - PGID=1000
     command:
       - "--serverName=HOSTNAME"
-      - "--devName=DEVNAME"
+      - "--input=live::DEVNAME"
       - "--clickhouseAddress=127.0.0.1:9000"
       - "--clickhouseOutputType=1"
       - "--clickhouseBatchSize=BATCHSIZE"

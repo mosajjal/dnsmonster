@@ -12,7 +12,7 @@ RUN mkdir /${PROJECT} && mkdir ${OUTDIR}
 COPY . /${PROJECT}
 WORKDIR /${PROJECT}
 
-env GOBUILD="go build -ldflags=-s -tags ${GOTAG} -o ${OUTDIR}/${PROJECT}_${GOTAG}"
+env GOBUILD="go build -ldflags=-s -tags ${GOTAG} -o ${OUTDIR}/${PROJECT}_${GOTAG}" ./...
 
 # Linux
 RUN echo "Building Linux binaries"

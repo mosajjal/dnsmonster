@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS DNS_LOG (
-  PacketTime DateTime,
+  PacketTime DateTime64,
   IndexTime DateTime64,
   Server LowCardinality(String),
   IPVersion UInt8,

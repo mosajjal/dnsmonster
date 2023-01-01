@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mosajjal/dnsmonster/util"
+	"github.com/mosajjal/dnsmonster/internal/util"
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"

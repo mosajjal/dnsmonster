@@ -8,7 +8,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/mosajjal/dnsmonster/util"
+	"github.com/mosajjal/dnsmonster/internal/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"

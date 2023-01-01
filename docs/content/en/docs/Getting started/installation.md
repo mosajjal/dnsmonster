@@ -37,7 +37,7 @@ Check out the configuration section to understand the provided command line argu
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster .
+go build -o dnsmonster ./...
 ```
 
 - without `libpcap`:
@@ -47,7 +47,7 @@ go build -o dnsmonster .
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster -tags nolibpcap .
+go build -o dnsmonster -tags nolibpcap ./...
 ```
 
 The above build also works on ARMv7 (RPi4) and AArch64.
@@ -60,7 +60,7 @@ If you have a copy of `libpcap.a`, you can build the statically link it to `dnsm
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster
 cd /tmp/dnsmonster/
 go get
-go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
+go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster ./...
 ```
 
 For more information on how the statically linked binary is created, take a look at Dockerfiles in the root of the repository responsible for generating the published binaries.

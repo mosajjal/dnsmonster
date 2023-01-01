@@ -27,10 +27,10 @@ jobs:
         go get -v 
 
     - name: Build
-      run: go build -v .
+      run: go build -v ./...
 
     - name: Test
-      run: go test -v .
+      run: go test -v ./...
 
     - name: generate sample config file 
       run: ./dnsmonster --writeConfig=config-sample.ini

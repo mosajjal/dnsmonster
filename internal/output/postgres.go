@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	metrics "github.com/rcrowley/go-metrics"
 
-	"github.com/mosajjal/dnsmonster/util"
+	"github.com/mosajjal/dnsmonster/internal/util"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -24,7 +24,7 @@ jobs:
     - name: Get dependencies
       run: |
         sudo apt install -y libpcap0.8-dev  
-        go get -v 
+        go get -v ./...
 
     - name: Build
       run: go build -v ./...

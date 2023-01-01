@@ -1,5 +1,5 @@
-//go:build linux && !android
-// +build linux,!android
+//go:build linux && !android && !nocgo
+// +build linux,!android,!nocgo
 
 package capture
 

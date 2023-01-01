@@ -15,7 +15,7 @@ RUN git clone https://${REPO}.git /opt/dnsmonster --depth 1 \
 ENV CGO_ENABLED=1
 ENV GOOS=windows
 ENV GOARCH=amd64
-RUN sh -c 'cd /opt/dnsmonster && go build -o /tmp/dnsmonster-windows-amd64.exe' ./...
+RUN sh -c 'cd /opt/dnsmonster && go build -o /tmp/dnsmonster-windows-amd64.exe' ./cmd/dmsmonster
 
 WORKDIR /opt/dnsmonster
 

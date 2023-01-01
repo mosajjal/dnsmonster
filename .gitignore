@@ -23,3 +23,5 @@ docker-compose.yml
 .vscode/*
 
 .TODO.md
+
+dist/

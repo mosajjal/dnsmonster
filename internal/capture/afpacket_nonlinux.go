@@ -1,5 +1,5 @@
-//go:build !linux || android
-// +build !linux android
+//go:build !linux || android || nocgo
+// +build !linux android nocgo
 
 package capture
 
@@ -19,19 +19,19 @@ type afpacketHandle struct{}
 func newAfpacketHandle(device string, snaplen int, blockSize int, numBlocks int,
 	timeout time.Duration, enableAutoPromiscMode bool,
 ) (*afpacketHandle, error) {
-	return nil, fmt.Errorf("Afpacket MMAP sniffing is only available on Linux")
+	return nil, fmt.Errorf("Dnsmonster has been compiled without afpacket support for this platform")
 }
 
 func (h *afpacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
-	return data, ci, fmt.Errorf("Afpacket MMAP sniffing is only available on Linux")
+	return data, ci, fmt.Errorf("Dnsmonster has been compiled without afpacket support for this platform")
 }
 
 func (h *afpacketHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
-	return data, ci, fmt.Errorf("Afpacket MMAP sniffing is only available on Linux")
+	return data, ci, fmt.Errorf("Dnsmonster has been compiled without afpacket support for this platform")
 }
 
 func (h *afpacketHandle) SetBPFFilter(expr string) (_ error) {
-	return fmt.Errorf("Afpacket MMAP sniffing is only available on Linux")
+	return fmt.Errorf("Dnsmonster has been compiled without afpacket support for this platform")
 }
 
 func (h *afpacketHandle) LinkType() layers.LinkType {
@@ -42,7 +42,7 @@ func (h *afpacketHandle) Close() {
 }
 
 func (afhandle *afpacketHandle) Stat() (uint, uint, error) {
-	return 0, 0, fmt.Errorf("Afpacket statistics are only available on Linux")
+	return 0, 0, fmt.Errorf("Dnsmonster has been compiled without afpacket support for this platform")
 }
 
 func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {

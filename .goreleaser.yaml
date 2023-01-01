@@ -1,0 +1,77 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+      - freebsd
+    tags:
+      - nocgo
+    main: ./cmd/dnsmonster
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+# .goreleaser.yaml
+nfpms:
+  # note that this is an array of nfpm configs
+  -
+    package_name: dnsmonster
+    homepage: https://dnsmonster.dev
+    maintainer: Ali Mosajjal <hi@n0p.me>
+
+
+    description: |-
+      dnsmonster (built without CGO, no AFpacket support in this edition)
+
+    license: GPL-2.0
+
+    # Formats to be generated.
+    formats:
+      - apk
+      - deb
+      - rpm
+      - termux.deb # Since GoReleaser v1.11.
+      - archlinux  # Since GoReleaser v1.13.
+
+    # Version Release.
+    release: 1
+
+    # Section.
+    section: default
+
+    # Priority.
+    priority: extra
+
+    # Makes a meta package - an empty package that contains only supporting
+    # files and dependencies.
+    # When set to `true`, the `builds` option is ignored.
+    # Defaults to false.
+    meta: true
+
+
+    contents:
+      # Basic file that applies to all packagers
+      - src: "./dist/{{ .PackageName }}_{{ .Os }}_{{ .Arch }}*/dnsmonster"
+        dst: /usr/bin/dnsmonster

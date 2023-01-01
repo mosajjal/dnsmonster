@@ -86,13 +86,13 @@ sudo docker run --rm -it --net=host --cap-add NET_RAW --cap-add NET_ADMIN --name
 ### Build manually
 
 - with `libpcap`:
-  Make sure you have `go`, `libpcap-devel` and `linux-headers` packages installed. The name of the packages might differ based on your distribution. After this, simply clone the repository and run `go build ./...`
+  Make sure you have `go`, `libpcap-devel` and `linux-headers` packages installed. The name of the packages might differ based on your distribution. After this, simply clone the repository and run `go build ./cmd/dnsmonster`
 
 ```sh
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster ./...
+go build -o dnsmonster ./cmd/dnsmonster
 ```
 
 - without `libpcap`:
@@ -102,7 +102,7 @@ go build -o dnsmonster ./...
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster -tags nolibpcap ./...
+go build -o dnsmonster -tags nolibpcap ./cmd/dnsmonster
 ```
 
 The above build also works on ARMv7 (RPi4) and AArch64.
@@ -143,7 +143,7 @@ Much the same as Linux and Windows, make sure you have `git`, `libpcap` and `go`
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster ./...
+go build -o dnsmonster ./cmd/dnsmonster
 ```
 
 # Architecture

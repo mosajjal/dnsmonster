@@ -24,13 +24,13 @@ jobs:
     - name: Get dependencies
       run: |
         sudo apt install -y libpcap0.8-dev  
-        go get -v ./...
+        go get -v ./cmd/dnsmonster
 
     - name: Build
-      run: go build -v ./...
+      run: go build -v ./cmd/dnsmonster
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v ./cmd/dnsmonster
 
     - name: generate sample config file 
       run: ./dnsmonster --writeConfig=config-sample.ini

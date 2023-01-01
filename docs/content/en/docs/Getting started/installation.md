@@ -37,7 +37,7 @@ Check out the configuration section to understand the provided command line argu
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster ./...
+go build -o dnsmonster ./cmd/dnsmonster
 ```
 
 - without `libpcap`:
@@ -47,7 +47,7 @@ go build -o dnsmonster ./...
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster -tags nolibpcap ./...
+go build -o dnsmonster -tags nolibpcap ./cmd/dnsmonster
 ```
 
 The above build also works on ARMv7 (RPi4) and AArch64.

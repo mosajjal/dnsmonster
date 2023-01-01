@@ -1,5 +1,5 @@
-//go:build nolibpcap
-// +build nolibpcap
+//go:build nolibpcap || nocgo
+// +build nolibpcap nocgo
 
 // this file's sole purpose is to convert a tcpdump filter into bpf bytecode
 

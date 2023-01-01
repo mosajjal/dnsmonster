@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	_ "github.com/mosajjal/dnsmonster/output" // this will automatically set up all the outputs
-	"github.com/mosajjal/dnsmonster/util"
+	_ "github.com/mosajjal/dnsmonster/internal/output" // this will automatically set up all the outputs
+	"github.com/mosajjal/dnsmonster/internal/util"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )

@@ -86,13 +86,13 @@ sudo docker run --rm -it --net=host --cap-add NET_RAW --cap-add NET_ADMIN --name
 ### Build manually
 
 - with `libpcap`:
-  Make sure you have `go`, `libpcap-devel` and `linux-headers` packages installed. The name of the packages might differ based on your distribution. After this, simply clone the repository and run `go build .`
+  Make sure you have `go`, `libpcap-devel` and `linux-headers` packages installed. The name of the packages might differ based on your distribution. After this, simply clone the repository and run `go build ./...`
 
 ```sh
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster .
+go build -o dnsmonster ./...
 ```
 
 - without `libpcap`:
@@ -102,7 +102,7 @@ go build -o dnsmonster .
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster -tags nolibpcap .
+go build -o dnsmonster -tags nolibpcap ./...
 ```
 
 The above build also works on ARMv7 (RPi4) and AArch64.
@@ -115,14 +115,14 @@ If you have a copy of `libpcap.a`, you can build the statically link it to `dnsm
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster
 cd /tmp/dnsmonster/
 go get
-go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster
+go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster ./...
 ```
 
 For more information on how the statically linked binary is created, take a look at [this](Dockerfile) Dockerfile.
 
 ## Windows
 
-Bulding on Windows is much the same as Linux. Just make sure that you have `npcap`. Clone the repository (`--history 1` works), and run `go get` and `go build .`
+Bulding on Windows is much the same as Linux. Just make sure that you have `npcap`. Clone the repository (`--history 1` works), and run `go get` and `go build ./...`
 
 As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. It's been tested in a Windows 10 environment and it executed without an issue. To find interface names to give `--devName` parameter and start sniffing, you'll need to do the following:
 
@@ -143,7 +143,7 @@ Much the same as Linux and Windows, make sure you have `git`, `libpcap` and `go`
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster 
 cd /tmp/dnsmonster
 go get
-go build -o dnsmonster .
+go build -o dnsmonster ./...
 ```
 
 # Architecture

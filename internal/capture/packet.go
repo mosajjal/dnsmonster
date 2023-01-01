@@ -9,7 +9,7 @@ import (
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	mkdns "github.com/miekg/dns"
-	"github.com/mosajjal/dnsmonster/util"
+	"github.com/mosajjal/dnsmonster/internal/util"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )

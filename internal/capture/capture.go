@@ -19,7 +19,7 @@ import (
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/tcpassembly/tcpreader"
-	"github.com/mosajjal/dnsmonster/util"
+	"github.com/mosajjal/dnsmonster/internal/util"
 )
 
 type captureConfig struct {

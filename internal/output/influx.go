@@ -6,7 +6,7 @@ import (
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"github.com/mosajjal/dnsmonster/util"
+	"github.com/mosajjal/dnsmonster/internal/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )

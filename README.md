@@ -115,14 +115,14 @@ If you have a copy of `libpcap.a`, you can build the statically link it to `dnsm
 git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster
 cd /tmp/dnsmonster/
 go get
-go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster ./...
+go build --ldflags "-L /root/libpcap-1.9.1/libpcap.a -linkmode external -extldflags \"-I/usr/include/libnl3 -lnl-genl-3 -lnl-3 -static\"" -a -o dnsmonster ./cmd/dnsmonster
 ```
 
 For more information on how the statically linked binary is created, take a look at [this](Dockerfile) Dockerfile.
 
 ## Windows
 
-Bulding on Windows is much the same as Linux. Just make sure that you have `npcap`. Clone the repository (`--history 1` works), and run `go get` and `go build ./...`
+Bulding on Windows is much the same as Linux. Just make sure that you have `npcap`. Clone the repository (`--history 1` works), and run `go get` and `go build ./cmd/dnsmonster`
 
 As mentioned, Windows release of the binary depends on [npcap](https://nmap.org/npcap/#download) to be installed. After installation, the binary should work out of the box. It's been tested in a Windows 10 environment and it executed without an issue. To find interface names to give `--devName` parameter and start sniffing, you'll need to do the following:
 

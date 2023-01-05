@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -110,7 +109,7 @@ func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Clie
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
+	log.Infof("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
 	return client, err
 }

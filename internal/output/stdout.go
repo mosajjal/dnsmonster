@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/mosajjal/dnsmonster/internal/util"
 	metrics "github.com/rcrowley/go-metrics"
@@ -74,7 +75,7 @@ func (stdConfig stdoutConfig) stdoutOutputWorker(ctx context.Context) {
 					continue
 				}
 				stdoutSentToOutput.Inc(1)
-				fmt.Print(stdConfig.outputMarshaller.Marshal(data) + "\n")
+				fmt.Fprint(os.Stdout, stdConfig.outputMarshaller.Marshal(data)+"\n")
 			}
 		case <-ctx.Done():
 			log.Debug("exitting out of stdout output worker") //todo:remove

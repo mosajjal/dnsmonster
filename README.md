@@ -377,6 +377,9 @@ Note that command line arguments are case-insensitive as of v0.9.5
 # Minimum capacity of the cache array used to send data to Kafka
 --kafkabatchsize=1000
 
+# Output format. options:json, gob. 
+--kafkaoutputformat=json
+
 # Kafka connection timeout in seconds
 --kafkatimeout=3
 

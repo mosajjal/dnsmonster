@@ -22,6 +22,7 @@ type kafkaConfig struct {
 	KafkaOutputBroker       []string      `long:"kafkaoutputbroker"           ini-name:"kafkaoutputbroker"           env:"DNSMONSTER_KAFKAOUTPUTBROKER"           default:""                                                        description:"kafka broker address(es), example: 127.0.0.1:9092. Used if kafkaOutputType is not none"`
 	KafkaOutputTopic        string        `long:"kafkaoutputtopic"            ini-name:"kafkaoutputtopic"            env:"DNSMONSTER_KAFKAOUTPUTTOPIC"            default:"dnsmonster"                                              description:"Kafka topic for logging"`
 	KafkaBatchSize          uint          `long:"kafkabatchsize"              ini-name:"kafkabatchsize"              env:"DNSMONSTER_KAFKABATCHSIZE"              default:"1000"                                                    description:"Minimum capacity of the cache array used to send data to Kafka"`
+	KafkaOutputFormat       string        `long:"kafkaoutputformat"           ini-name:"kafkaoutputformat"           env:"DNSMONSTER_KAFKAOUTPUTFORMAT"           default:"json"                                                    description:"Output format. options:json, gob. "                                                                                                                                               choice:"json" choice:"gob"`
 	KafkaTimeout            uint          `long:"kafkatimeout"                ini-name:"kafkatimeout"                env:"DNSMONSTER_KAFKATIMEOUT"                default:"3"                                                       description:"Kafka connection timeout in seconds"`
 	KafkaBatchDelay         time.Duration `long:"kafkabatchdelay"             ini-name:"kafkabatchdelay"             env:"DNSMONSTER_KAFKABATCHDELAY"             default:"1s"                                                      description:"Interval between sending results to Kafka if Batch size is not filled"`
 	KafkaCompress           bool          `long:"kafkacompress"               ini-name:"kafkacompress"               env:"DNSMONSTER_KAFKACOMPRESS"                                                                                 description:"Compress Kafka connection"`
@@ -46,7 +47,7 @@ func init() {
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (kafConfig kafkaConfig) Initialize(ctx context.Context) error {
 	var err error
-	kafConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
+	kafConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller(kafConfig.KafkaOutputFormat, "")
 	if err != nil {
 		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
 		return err

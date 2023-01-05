@@ -171,6 +171,10 @@ func OutputFormatToMarshaller(outputFormat string, t string) (OutputMarshaller, 
 		goOut := goTemplateOutput{RawTemplate: t}
 		_, err := goOut.Init()
 		return &goOut, "", err
+	case "gob":
+		gobOut := gobOutput{}
+		_, err := gobOut.Init()
+		return &gobOut, "", err
 	}
 	return nil, "", fmt.Errorf("%s is not a valid output format", outputFormat)
 }

@@ -144,8 +144,6 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 			panic(err)
 		}
 	} else {
-		// command, _ := http2curl.GetCurlCommand(req)
-		// fmt.Println(command)
 		res, err = http.DefaultClient.Do(req)
 		if err != nil {
 			panic(err)

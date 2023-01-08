@@ -173,7 +173,7 @@ func (esConfig elasticConfig) elasticSendData(ctx context.Context, client *elast
 			_, err := client.Index().
 				Index(esConfig.ElasticOutputIndex).
 				Type("_doc").
-				BodyString(esConfig.outputMarshaller.Marshal(batch[i])).
+				BodyString(string(esConfig.outputMarshaller.Marshal(batch[i]))).
 				Do(ctx)
 			if err != nil {
 				log.Fatal(err)

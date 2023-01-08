@@ -36,7 +36,7 @@ type GenericOutput interface {
 // OutputMarshaller is an interface to make it easier to build
 // output formats regardless of the output.
 type OutputMarshaller interface {
-	Marshal(d DNSResult) string // marshal the DNSResult into the output format
+	Marshal(d DNSResult) []byte // marshal the DNSResult into the output format
 	Init() (string, error)      // initialize the output format
 }
 

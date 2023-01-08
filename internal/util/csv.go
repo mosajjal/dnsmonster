@@ -34,8 +34,8 @@ type csvRow struct {
 }
 
 // currently there's not a better way to do this unless you sacrifice performance by 10x
-func formatCsvRow(csvrow csvRow) string {
-	return fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v",
+func formatCsvRow(csvrow csvRow) []byte {
+	return []byte(fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v",
 		csvrow.Year,
 		csvrow.Month,
 		csvrow.Day,
@@ -58,10 +58,10 @@ func formatCsvRow(csvrow csvRow) string {
 		csvrow.Edns0Present,
 		csvrow.DoBit,
 		csvrow.ID,
-	)
+	))
 }
 
-func (c csvOutput) Marshal(d DNSResult) string {
+func (c csvOutput) Marshal(d DNSResult) []byte {
 	// the integer version of the IP is much more useful in Machine learning than the string
 	var SrcIP, DstIP uint64
 	if d.IPVersion == 4 {

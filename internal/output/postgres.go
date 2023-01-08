@@ -136,7 +136,7 @@ func (psqConf psqlConfig) OutputWorker() {
 
 				fullQuery := ""
 				if psqConf.PsqlSaveFullQuery {
-					fullQuery = psqConf.outputMarshaller.Marshal(data)
+					fullQuery = string(psqConf.outputMarshaller.Marshal(data))
 				}
 
 				QR := uint8(0)

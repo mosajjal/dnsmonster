@@ -12,13 +12,13 @@ type goTemplateOutput struct {
 	template    *template.Template
 }
 
-func (g goTemplateOutput) Marshal(r DNSResult) string {
+func (g goTemplateOutput) Marshal(r DNSResult) []byte {
 	var tpl bytes.Buffer
 	err := g.template.Execute(&tpl, r)
 	if err != nil {
-		return ""
+		return nil
 	}
-	return tpl.String()
+	return tpl.Bytes()
 }
 
 func (g *goTemplateOutput) Init() (string, error) {

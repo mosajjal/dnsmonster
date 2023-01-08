@@ -323,8 +323,14 @@ Note that command line arguments are case-insensitive as of v0.9.5
 #	4: Enable Output and apply both skip and allow domains logic
 --fileoutputtype=0
 
-# Path to output file. Used if fileOutputType is not none
+# Path to output folder. Used if fileOutputType is not none
 --fileoutputpath=
+
+# Interval to rotate the file in cron format
+--fileOutputrotatecron=0 0 0 * *
+
+# Number of files to keep. 0 to disable rotation
+--fileoutputrotatecount=4
 
 # Output format for file. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
 --fileoutputformat=json

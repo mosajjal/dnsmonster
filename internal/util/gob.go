@@ -22,7 +22,7 @@ type DNSResultBinary struct {
 	Version      string `json:",omitempty"`
 }
 
-func (g gobOutput) Marshal(d DNSResult) string {
+func (g gobOutput) Marshal(d DNSResult) []byte {
 	d.DNS.Compress = true
 	bMsg, _ := d.DNS.Pack()
 	dnsBin := DNSResultBinary{
@@ -42,9 +42,9 @@ func (g gobOutput) Marshal(d DNSResult) string {
 	var b bytes.Buffer
 	enc := gob.NewEncoder(&b)
 	if err := enc.Encode(dnsBin); err != nil {
-		return ""
+		return nil
 	}
-	return b.String()
+	return b.Bytes()
 }
 
 func (g gobOutput) Init() (string, error) {

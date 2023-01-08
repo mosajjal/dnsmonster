@@ -183,7 +183,7 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 
 				fullQuery := ""
 				if chConfig.ClickhouseSaveFullQuery {
-					fullQuery = chConfig.outputMarshaller.Marshal(data)
+					fullQuery = string(chConfig.outputMarshaller.Marshal(data))
 				}
 
 				QR := uint8(0)

@@ -185,7 +185,7 @@ func (seConfig sentinelConfig) Output(ctx context.Context) {
 				}
 
 				cnt++
-				batch += seConfig.outputMarshaller.Marshal(data)
+				batch += string(seConfig.outputMarshaller.Marshal(data))
 				batch += ","
 				if int(cnt%seConfig.SentinelBatchSize) == div {
 					// remove the last ,

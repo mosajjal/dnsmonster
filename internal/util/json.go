@@ -8,9 +8,9 @@ import (
 
 type jsonOutput struct{}
 
-func (j jsonOutput) Marshal(d DNSResult) string {
+func (j jsonOutput) Marshal(d DNSResult) []byte {
 	res, _ := sonic.Marshal(d)
-	return string(res)
+	return res
 }
 
 func (j jsonOutput) Init() (string, error) {

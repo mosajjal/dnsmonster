@@ -41,7 +41,9 @@ func (stdConfig stdoutConfig) Initialize(ctx context.Context) error {
 	}
 
 	// print header to stdout
-	fmt.Println(header)
+	if header != "" {
+		fmt.Println(header)
+	}
 
 	if stdConfig.StdoutOutputType > 0 && stdConfig.StdoutOutputType < 5 {
 		log.Info("Creating Stdout Output Channel")

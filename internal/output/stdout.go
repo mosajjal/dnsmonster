@@ -75,8 +75,8 @@ func (stdConfig stdoutConfig) stdoutOutputWorker(ctx context.Context) {
 					continue
 				}
 				stdoutSentToOutput.Inc(1)
-				fmt.Fprint(os.Stdout, stdConfig.outputMarshaller.Marshal(data))
-				fmt.Fprint(os.Stdout, []byte("\n"))
+				fmt.Fprint(os.Stdout, string(stdConfig.outputMarshaller.Marshal(data)))
+				fmt.Fprint(os.Stdout, "\n")
 			}
 		case <-ctx.Done():
 			log.Debug("exitting out of stdout output worker") //todo:remove

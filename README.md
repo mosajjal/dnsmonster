@@ -327,7 +327,7 @@ Note that command line arguments are case-insensitive as of v0.9.5
 --fileoutputpath=
 
 # Interval to rotate the file in cron format
---fileOutputrotatecron=0 0 0 * *
+--fileOutputrotatecron=0 0 * * *
 
 # Number of files to keep. 0 to disable rotation
 --fileoutputrotatecount=4

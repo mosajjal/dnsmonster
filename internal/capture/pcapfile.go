@@ -34,7 +34,6 @@ func initializeOfflineCapture(fileName string, filter string) genericPacketHandl
 		return nil
 	}
 
-	log.Warnf("%x", magic) //TODO: remove
 	if magic[0] == 0x0a && magic[1] == 0x0d && magic[2] == 0x0d && magic[3] == 0x0a {
 		log.Infof("using pcapng file: %s", fileName)
 		return initializeOfflinePcapNg(bufF, filter)

@@ -3,7 +3,7 @@ module github.com/mosajjal/dnsmonster
 go 1.19
 
 require (
-	github.com/ClickHouse/clickhouse-go/v2 v2.4.3
+	github.com/ClickHouse/clickhouse-go/v2 v2.5.0
 	github.com/arthurkiller/rollingwriter v1.1.3
 	github.com/deathowl/go-metrics-prometheus v0.0.0-20221009205350-f2a1482ba35b
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
@@ -31,7 +31,7 @@ require (
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.6.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/pprof v0.0.0-20221219190121-3cb0bae90811 // indirect
+	github.com/google/pprof v0.0.0-20230111200839-76d1ae5aea2b // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -64,7 +64,7 @@ require (
 )
 
 require (
-	github.com/bytedance/sonic v1.6.1
+	github.com/bytedance/sonic v1.7.0
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/fortytw2/leaktest v1.3.0 // indirect

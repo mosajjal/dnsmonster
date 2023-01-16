@@ -1,6 +1,8 @@
 package capture
 
 import (
+	"bufio"
+	"io"
 	"os"
 
 	"github.com/gopacket/gopacket"
@@ -10,11 +12,11 @@ import (
 
 type pcapFileHandle struct {
 	reader   *pcapgo.Reader
-	file     *os.File
+	file     io.Reader
 	pktsRead uint
 }
 
-func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
+func initializeOfflineCapture(fileName string, filter string) genericPacketHandler {
 	var f *os.File
 	if fileName == "-" {
 		f = os.Stdin
@@ -22,13 +24,30 @@ func initializeOfflinePcap(fileName, filter string) *pcapFileHandle {
 		var err error
 		f, err = os.Open(fileName)
 		if err != nil {
-			log.Fatal(err)
+			return nil
 		}
 	}
-	handle, err := pcapgo.NewReader(f)
 
+	bufF := bufio.NewReader(f)
+	magic, err := bufF.Peek(4)
+	if err != nil {
+		return nil
+	}
+
+	log.Warnf("%x", magic) //TODO: remove
+	if magic[0] == 0x0a && magic[1] == 0x0d && magic[2] == 0x0d && magic[3] == 0x0a {
+		log.Infof("using pcapng file: %s", fileName)
+		return initializeOfflinePcapNg(bufF, filter)
+	} else {
+		log.Infof("using pcap file: %s", fileName)
+		return initializeOfflinePcap(bufF, filter)
+	}
+
+}
+
+func initializeOfflinePcap(f io.Reader, filter string) *pcapFileHandle {
+	handle, err := pcapgo.NewReader(f)
 	// Set Filter
-	log.Infof("Using File: %s", fileName)
 	log.Warnf("BPF Filter is not supported in offline mode.")
 	if err != nil {
 		log.Fatal(err)
@@ -53,7 +72,7 @@ func (h *pcapFileHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.Capt
 }
 
 func (h *pcapFileHandle) Close() {
-	h.file.Close()
+	// h.file.Close()
 }
 
 func (h *pcapFileHandle) Stat() (uint, uint, error) {

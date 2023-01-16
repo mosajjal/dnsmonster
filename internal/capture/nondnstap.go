@@ -28,8 +28,12 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 		log.Info("Waiting for packets using AFpacket")
 
 	} else {
-		myHandler = initializeOfflinePcap(config.PcapFile, config.Filter)
+		myHandler = initializeOfflineCapture(config.PcapFile, config.Filter)
 		log.Info("Reading off Pcap file")
+	}
+
+	if myHandler == nil {
+		log.Fatal("Unable to initialize packet handler")
 	}
 
 	defer myHandler.Close() // closes the packet handler and/or capture files. there might be a duplicate of this in pcapfile

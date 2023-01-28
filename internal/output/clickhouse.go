@@ -157,8 +157,6 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 
 	c := uint(0)
 
-	now := time.Now()
-
 	ticker := time.NewTicker(time.Second * 5)
 	div := 0
 
@@ -199,7 +197,7 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 				}
 				err := batch.Append(
 					data.Timestamp,
-					now,
+					time.Now(),
 					util.GeneralFlags.ServerName,
 					data.IPVersion,
 					data.SrcIP.To16(),
@@ -221,7 +219,6 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 					clickhouseFailed.Inc(1)
 				}
 				if int(c%chConfig.ClickhouseBatchSize) == div {
-					now = time.Now()
 					err = batch.Send()
 					if err != nil {
 						log.Warnf("Error while executing batch: %v", err)
@@ -232,7 +229,6 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 				}
 			}
 		case <-ticker.C:
-			now = time.Now()
 			err := batch.Send()
 			if err != nil {
 				log.Warnf("Error while executing batch: %v", err)

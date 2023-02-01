@@ -15,7 +15,8 @@ RUN git clone https://${REPO}.git /opt/dnsmonster --depth 1 \
 ENV CGO_ENABLED=1
 ENV GOOS=windows
 ENV GOARCH=amd64
-RUN sh -c 'cd /opt/dnsmonster && go build -o /tmp/dnsmonster-windows-amd64.exe' ./cmd/dmsmonster
+RUN cd /opt/dnsmonster \
+    && go build -o /tmp/dnsmonster-windows-amd64.exe ./cmd/dnsmonster
 
 WORKDIR /opt/dnsmonster
 
@@ -35,7 +36,7 @@ RUN cd /opt/dnsmonster \
     && mv /tmp/dnsmonster_*_amd64.deb /tmp/dnsmonster-latest.deb
 
 # build rpm file and move it to /tmp/dnsmonster-latest.rpm
-RUN export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` && echo -e '\
+RUN export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1) | awk -F- '{print $1}'` && echo -e '\
 Name:       dnsmonster \n\
 Version:    '${LATEST_TAG:1}' \n\
 Release:    1 \n\

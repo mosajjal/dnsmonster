@@ -62,7 +62,6 @@ RUN export GOOS=openbsd && export CGO_ENABLED=0 && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=arm && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=386 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
-    export GOARCH=mips64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR}
 
 # Android
 RUN echo "Building Android binaries"

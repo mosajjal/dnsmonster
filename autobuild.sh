@@ -11,7 +11,7 @@ EOF
 
 dockercomposetemplate=$(cat <<EOF
   ch:
-    image: yandex/clickhouse-server:21.12-alpine
+    image: clickhouse/clickhouse-server:22.8.13.20-alpine
     restart: always
     ports:
       - "8123:8123"
@@ -36,7 +36,7 @@ dockercomposetemplate=$(cat <<EOF
         timeout: 10s
         retries: 3
   grafana:
-    image: grafana/grafana:8.4.3
+    image: grafana/grafana:9.3.6
     restart: always
     ports:
       - "3000:3000"

@@ -54,7 +54,7 @@ ENGINE=SummingMergeTree
   ORDER BY (DnsDate, (timestamp,Server))
   TTL DnsDate  + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
   SETTINGS index_granularity = 8192
-  AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, Protocol, count(*) as c FROM DNS_LOG GROUP BY Server, DnsDate, timestamp, Protocol;
+  AS SELECT toDate(PacketTime) as DnsDate, toStartOfMinute(PacketTime) as timestamp, Server, Protocol, count(*) as c FROM DNS_LOG GROUP BY Server, DnsDate, timestamp, Protocol;
 
 
 -- View with packet sizes

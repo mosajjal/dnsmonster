@@ -1,4 +1,4 @@
-//go:build !(openbsd || freebsd || dragonfly || netbsd || go1.20)
+//go:build !(openbsd || freebsd || dragonfly || netbsd)
 
 package util
 

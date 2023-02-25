@@ -49,7 +49,7 @@ jobs:
 
     - name: Commit changes
       if: ${{ github.event_name == 'push' }} # only commit changes if it's a push to branch not a PR
-      uses: EndBug/add-and-commit@v5
+      uses: EndBug/add-and-commit@v9
       with:
         author_name: Ali Mosajjal
         author_email: mosajjal@gmail.com

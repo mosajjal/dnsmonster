@@ -12,9 +12,10 @@ jobs:
   path-context:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+
+      - uses: actions/checkout@v3
       - uses: docker/setup-qemu-action@v2
-      - uses: docker/setup-buildx-action@v1
+      - uses: docker/setup-buildx-action@v2
       - uses: azure/docker-login@v1
         with:
           login-server: ${{ env.REGISTRY }}
@@ -22,7 +23,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build ${{ env.REPO }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./Dockerfile

@@ -536,7 +536,7 @@ Note that command line arguments are case-insensitive as of v0.9.5
 # index used to save data in Zinc
 --zincoutputindex=dnsmonster
 
-# zinc endpoint address, example: http://127.0.0.1:9200/api/default/default/_bulk. Used if zincOutputType is not none
+# zinc endpoint address, example: http://127.0.0.1:9200/api/default/_bulk. Used if zincOutputType is not none
 --zincoutputendpoint=
 
 # zinc username, example: admin@admin.com. Used if zincOutputType is not none

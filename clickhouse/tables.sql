@@ -19,132 +19,206 @@ CREATE TABLE IF NOT EXISTS DNS_LOG (
   ) 
   ENGINE = MergeTree()
   PARTITION BY toYYYYMMDD(PacketTime)
-  PRIMARY KEY (toStartOfHour(PacketTime), Server, reverse(Question), toUnixTimestamp(PacketTime))
   ORDER BY (toStartOfHour(PacketTime), Server,  reverse(Question), toUnixTimestamp(PacketTime))
   SAMPLE BY toUnixTimestamp(PacketTime)
   TTL toDate(PacketTime) + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192;
+  ;
 
 -- View for top queried domains
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_COUNT
-ENGINE=SummingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_DOMAIN_COUNT (
+    DnsDate Date,
+    t DateTime,
+    Server LowCardinality(String),
+    Question String CODEC(ZSTD(1)),
+    QH UInt64,
+    c SimpleAggregateFunction(sum, UInt64)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY (DnsDate, Server, QH)
-  ORDER BY (DnsDate, Server, QH)
+  ORDER BY (Server, QH)
   SAMPLE BY QH
   TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_COUNT_MV TO DNS_DOMAIN_COUNT
   AS SELECT toDate(PacketTime) as DnsDate, toStartOfMinute(PacketTime) as t, Server, Question, cityHash64(Question) as QH, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY DnsDate, t, Server, Question;
 
 -- View for unique domain count
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_UNIQUE
-ENGINE=AggregatingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_DOMAIN_UNIQUE (
+    DnsDate Date,
+    timestamp DateTime64,
+    Server LowCardinality(String),
+    UniqueDnsCount AggregateFunction(uniq, String)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY (DnsDate, (timestamp, Server)) 
-  ORDER BY (DnsDate, (timestamp, Server))
+  ORDER BY (Server, timestamp)
   TTL toDate(timestamp)  + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DOMAIN_UNIQUE_MV TO DNS_DOMAIN_UNIQUE
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, uniqState(Question) AS UniqueDnsCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
 
 -- View for count by protocol
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_PROTOCOL
-ENGINE=SummingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_PROTOCOL (
+    DnsDate Date,
+    timestamp DateTime,
+    Server LowCardinality(String),
+    Protocol FixedString(3),
+    c SimpleAggregateFunction(sum, UInt64)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY (DnsDate, (timestamp,Server))
-  ORDER BY (DnsDate, (timestamp,Server))
+  ORDER BY (Server, timestamp)
   TTL DnsDate  + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_PROTOCOL_MV TO DNS_PROTOCOL
   AS SELECT toDate(PacketTime) as DnsDate, toStartOfMinute(PacketTime) as timestamp, Server, Protocol, count(*) as c FROM DNS_LOG GROUP BY Server, DnsDate, timestamp, Protocol;
 
 
 -- View with packet sizes
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_GENERAL_AGGREGATIONS
-ENGINE=AggregatingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_GENERAL_AGGREGATIONS (
+    DnsDate Date,
+    timestamp DateTime64,
+    Server LowCardinality(String),
+    TotalSize AggregateFunction(sum, UInt16),       -- TODO: Change to SimpleAggregateFunction and UInt64
+    AverageSize AggregateFunction(avg, UInt16)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY (DnsDate, (timestamp, Server)) 
-  ORDER BY (DnsDate, (timestamp, Server))
+  ORDER BY (Server, timestamp)
   TTL DnsDate  + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_GENERAL_AGGREGATIONS_MV TO DNS_GENERAL_AGGREGATIONS
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, sumState(Size) AS TotalSize, avgState(Size) AS AverageSize FROM DNS_LOG GROUP BY Server, DnsDate, timestamp;
 
 
 -- View with edns information
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_EDNS
-ENGINE=AggregatingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_EDNS (
+    DnsDate Date,
+    timestamp DateTime64,   -- TODO: This is pretty useless
+    Server LowCardinality(String),
+    EdnsCount AggregateFunction(sum, UInt8),    -- TODO: These should be SimpleAggregateFunction with UInt64
+    DoBitCount AggregateFunction(sum, UInt8),
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY (DnsDate, (timestamp, Server)) 
-  ORDER BY (DnsDate, (timestamp, Server))
+  ORDER BY (Server, timestamp)
   TTL DnsDate  + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_EDNS_MV TO DNS_EDNS
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, sumState(Edns0Present) as EdnsCount, sumState(DoBit) as DoBitCount FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp;
 
 
 -- View wih query OpCode
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_OPCODE
-ENGINE=SummingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_OPCODE (
+    DnsDate Date,
+    timestamp DateTime64,
+    Server LowCardinality(String),
+    OpCode UInt8,
+    c SimpleAggregateFunction(sum, UInt64)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, OpCode)
-  ORDER BY  (timestamp, Server, OpCode)
+  ORDER BY (Server, OpCode, timestamp)
   SAMPLE BY OpCode
   TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_OPCODE_MV TO DNS_OPCODE
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, OpCode, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp, OpCode;
 
 
 -- View with Query Types
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_TYPE
-ENGINE=SummingMergeTree 
+CREATE TABLE IF NOT EXISTS DNS_TYPE (
+    DnsDate Date,
+    timestamp DateTime,
+    Server LowCardinality(String),
+    Type UInt16,
+    c SimpleAggregateFunction(sum, UInt64)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, Type)
-  ORDER BY  (timestamp, Server, Type)
+  ORDER BY (Server, Type, timestamp)
   SAMPLE BY Type
   TTL DnsDate  + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_TYPE_MV TO DNS_TYPE
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, Type, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp, Type;
 
 -- View with Query Class
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_CLASS
-ENGINE=SummingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_CLASS (
+    DnsDate Date,
+    timestamp DateTime,
+    Server LowCardinality(String),
+    Class UInt16,
+    c SimpleAggregateFunction(sum, UInt64)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, Class)
-  ORDER BY  (timestamp, Server, Class)
+  ORDER BY (Server, Class, timestamp)
   SAMPLE BY Class
   TTL DnsDate  + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_CLASS_MV TO DNS_CLASS
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, Class, count(*) as c FROM DNS_LOG WHERE QR=0 GROUP BY Server, DnsDate, timestamp, Class;  
 
 -- View with query responses
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_RESPONSECODE
-ENGINE=SummingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_RESPONSECODE (
+    DnsDate Date,
+    timestamp DateTime,
+    Server LowCardinality(String),
+    ResponseCode UInt8,
+    c SimpleAggregateFunction(sum, UInt64)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, ResponseCode)
-  ORDER BY  (timestamp, Server, ResponseCode)
+  ORDER BY (Server, ResponseCode, timestamp)
   SAMPLE BY ResponseCode
-  TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  TTL DnsDate  + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
+  ;
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_RESPONSECODE_MV TO DNS_RESPONSECODE
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, ResponseCode, count(*) as c FROM DNS_LOG WHERE QR=1 GROUP BY Server, DnsDate, timestamp, ResponseCode;    
 
 
 -- View with Source IP Prefix
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_SRCIP_MASK
-ENGINE=SummingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_SRCIP_MASK (
+    DnsDate Date,
+    timestamp DateTime,
+    Server LowCardinality(String),
+    IPVersion UInt8,
+    SrcIP IPv6,
+    c SimpleAggregateFunction(sum, UInt64)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, IPVersion, cityHash64(SrcIP))
-  ORDER BY  (timestamp, Server, IPVersion, cityHash64(SrcIP))
+  ORDER BY (Server, IPVersion, cityHash64(SrcIP))
   SAMPLE BY cityHash64(SrcIP)
   TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_SRCIP_MASK_MV TO DNS_SRCIP_MASK
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, IPVersion, SrcIP, count(*) as c FROM DNS_LOG GROUP BY Server, DnsDate, timestamp, IPVersion, SrcIP ;  
 
 -- View with Destination IP Prefix
-CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DSTIP_MASK
-ENGINE=SummingMergeTree
+CREATE TABLE IF NOT EXISTS DNS_DSTIP_MASK (
+    DnsDate Date,
+    timestamp DateTime,
+    Server LowCardinality(String),
+    IPVersion UInt8,
+    DstIP IPv6,
+    c SimpleAggregateFunction(sum, UInt64)
+  )
+  ENGINE=AggregatingMergeTree
   PARTITION BY toYYYYMMDD(DnsDate)
-  PRIMARY KEY  (timestamp, Server, IPVersion, cityHash64(DstIP))
-  ORDER BY  (timestamp, Server, IPVersion, cityHash64(DstIP))
+  ORDER BY (Server, IPVersion, cityHash64(DstIP))
   SAMPLE BY cityHash64(DstIP)
   TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE
-  SETTINGS index_granularity = 8192
+  ;
+CREATE MATERIALIZED VIEW IF NOT EXISTS DNS_DSTIP_MASK_MV TO DNS_DSTIP_MASK
   AS SELECT toDate(PacketTime) as DnsDate, PacketTime as timestamp, Server, IPVersion, DstIP, count(*) as c FROM DNS_LOG GROUP BY Server, DnsDate, timestamp, IPVersion, DstIP ;  
 
 -- sample queries

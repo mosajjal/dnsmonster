@@ -1,0 +1,75 @@
+# A sample docker-compose environment containing Grafana, CH and DNSMonster.
+# DNSMonster listens for DNSTap traffic on port 5555, Grafana is exposed on
+# port 3000. Data is stored locally under ./clickhouse-data and ./grafana/data
+#
+# Prior to spinning up you should run:
+#   mkdir -p grafana/data/
+#   sudo chown 472.472 grafana/data/
+#
+# You can set dnsdist to send traffic over DNSTap by adding the following to
+# the config file:
+#
+#   -- Get hostname of server
+#   local f = io.popen ("/bin/hostname")
+#   local hostname = f:read("*a") or "dnsdist"
+#   f:close()
+#   hostname = string.gsub(hostname, "\n$", "")
+# 
+#   -- Set up dnstap logging over TCP
+#   logger = newFrameStreamTcpLogger("<dnsmonster server>:5555")
+#   addAction(AllRule(), DnstapLogAction(hostname, logger))
+#   addResponseAction(AllRule(), DnstapLogResponseAction(hostname, logger))
+#   addCacheHitResponseAction(AllRule(), DnstapLogResponseAction(hostname, logger))
+
+version: "3.9"
+
+services:
+  # Access like:
+  #   docker-compose exec clickhouse clickhouse client -mn
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.3
+    restart: unless-stopped
+    networks:
+      - overlay
+    volumes:
+      - "./clickhouse-data:/var/lib/clickhouse"
+      # For first-time provisioning
+      - "./tables.sql:/docker-entrypoint-initdb.d/tables.sql:ro"
+
+  grafana:
+    image: grafana/grafana:9.4.7
+    restart: unless-stopped
+    networks:
+      - overlay
+    environment:
+      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
+    volumes:
+      #- "./grafana/config:/etc/grafana"
+      - "./grafana/data:/var/lib/grafana"
+    ports:
+      - 3000:3000
+
+  dnsmonster:
+    image: ghcr.io/mosajjal/dnsmonster:latest
+    restart: unless-stopped
+    networks:
+      - overlay
+    depends_on:
+      - clickhouse
+    ports:
+      - 5555:5555
+    environment:
+      - PUID=1000
+      - PGID=1000
+    command:
+      - "--dnstapSocket=tcp://0.0.0.0:5555"
+      # See config at https://dnsmonster.dev/docs/outputs/clickhouse/
+      - "--clickhouseOutputType=1"
+      - "--clickhouseAddress=clickhouse:9000"
+      - "--clickhouseDelay=1s"
+      - "--clickhouseBatchSize=100000"
+      #- "--stdoutOutputType=1"
+      #- "--stdoutOutputFormat=json"
+
+networks:
+  overlay:

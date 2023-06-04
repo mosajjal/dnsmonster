@@ -1,3 +1,18 @@
+/* {{{ Copyright (C) 2022 Ali Mosajjal
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>. }}} */
+
 package util
 
 import (
@@ -42,3 +57,4 @@ type OutputMarshaller interface {
 
 // GlobalDispatchList acts as a fanout mechanism, sending the dnsresult channel to all the outputs
 var GlobalDispatchList = make([]GenericOutput, 0, 1024) // 1024 outputs is an absurdly high number
+// vim: foldmethod=marker

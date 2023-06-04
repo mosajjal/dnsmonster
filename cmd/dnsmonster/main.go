@@ -1,3 +1,18 @@
+/* {{{ Copyright (C) 2022 Ali Mosajjal
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>. }}} */
+
 // dnsmonster implements a packet sniffer for DNS traffic. It can accept traffic from a pcap file or a live interface,
 // and can be used to index and store hundreds of thousands of queries per second. It aims to be scalable and easy to use, and help
 // security teams to understand the details about an enterprise's DNS traffic. It does not aim to breach
@@ -96,3 +111,4 @@ func main() {
 	metricsJSON, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
 	os.Stderr.WriteString(fmt.Sprintf("metrics: %s\n", metricsJSON))
 }
+// vim: foldmethod=marker

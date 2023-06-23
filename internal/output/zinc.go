@@ -41,8 +41,6 @@ type zincConfig struct {
 	outputChannel      chan util.DNSResult
 	outputMarshaller   util.OutputMarshaller
 	closeChannel       chan bool
-	sent               metrics.Counter
-	failed             metrics.Counter
 }
 
 func init() {
@@ -56,8 +54,6 @@ func init() {
 
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (zConfig *zincConfig) Initialize(ctx context.Context) error {
-	zConfig.sent = metrics.GetOrRegisterCounter("zincSent", metrics.DefaultRegistry)
-	zConfig.failed = metrics.GetOrRegisterCounter("zincFailed", metrics.DefaultRegistry)
 
 	var err error
 	zConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
@@ -131,6 +127,8 @@ func (zConfig zincConfig) Output(ctx context.Context) {
 }
 
 func (zConfig *zincConfig) zincSendData(ctx context.Context, client *http.Client, batch []byte) error {
+	sentCount := metrics.GetOrRegisterCounter("zincSent", metrics.DefaultRegistry)
+	failedCount := metrics.GetOrRegisterCounter("zincFailed", metrics.DefaultRegistry)
 	// convery batch to io.Reader
 	data := bytes.NewReader(batch)
 
@@ -155,14 +153,13 @@ func (zConfig *zincConfig) zincSendData(ctx context.Context, client *http.Client
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		records := bytes.Count(batch, []byte{'\n'}) / 2
-		zConfig.failed.Inc(int64(records))
+		failedCount.Inc(int64(records))
 		return fmt.Errorf("zinc returned status code %d", resp.StatusCode)
-	} else {
-		// count newlines in batch to get number of records. /2 because we have 2 newlines per record
-		records := bytes.Count(batch, []byte{'\n'}) / 2
-		zConfig.sent.Inc(int64(records))
 	}
-
+	// count newlines in batch to get number of records. /2 because we have 2 newlines per record
+	records := bytes.Count(batch, []byte{'\n'}) / 2
+	sentCount.Inc(int64(records))
 	return nil
 }
+
 // vim: foldmethod=marker

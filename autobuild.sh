@@ -11,7 +11,7 @@ EOF
 
 dockercomposetemplate=$(cat <<EOF
   ch:
-    image: clickhouse/clickhouse-server:22.8.13.20-alpine
+    image: clickhouse/clickhouse-server:23.8.4.69-alpine
     restart: always
     ports:
       - "8123:8123"
@@ -74,14 +74,12 @@ dnsmonsteragent=$(cat <<EOF
 EOF
 )
 
-echo "Starting the DNSMonster AIO Builder using docker-compose."
+echo "Starting the DNSMonster AIO Builder using docker compose."
 echo "IMPORTANT: this script should be run when you are inside dnsmonster directory (./autobuild.sh). Do NOT run this from another directory"
 echo -n "before we begin, make sure to have TCP ports 3000, 8123 and 9000 available in your host machine and press Enter to continue..."
 read
-echo -n "Checking if docker-compose binary exists.."
-which docker-compose
-echo -n "Checking to see if Docker binary exists..."
-which docker
+echo "Checking if docker compose exists.."
+docker compose > /dev/null
 echo -n "Checking to see if sed exists..."
 which sed
 echo -n "Checking to see if tr exists..."
@@ -144,30 +142,30 @@ old_ttl_line="TTL DnsDate + INTERVAL 30 DAY -- DNS_TTL_VARIABLE"
 sed -i "s/$old_ttl_line/$new_ttl_line/" ./clickhouse/tables.sql
 
 echo "Starting the containers..."
-docker-compose up -d
+docker compose up -d
 
 echo "Waiting 20 seconds for Containers to be fully up and running "
 sleep 20
 
 echo "Create tables for Clickhouse"
-docker-compose exec ch /bin/sh -c 'cat /tmp/tables.sql | clickhouse-client -h 127.0.0.1 --multiquery'
+docker compose exec ch /bin/sh -c 'cat /tmp/tables.sql | clickhouse-client -h 127.0.0.1 --multiquery'
 
 echo "downloading latest version of Clickhouse plugin for Grafana"
-# docker-compose exec grafana /sbin/curl -L https://github.com/Vertamedia/clickhouse-grafana/releases/download/v2.4.2/vertamedia-clickhouse-datasource-2.4.2.zip -o /tmp/vertamedia-clickhouse-datasource-2.4.2.zip
-# docker-compose exec grafana unzip /tmp/vertamedia-clickhouse-datasource-2.4.2.zip -d /var/lib/grafana/plugins/
-docker-compose exec grafana grafana-cli plugins install vertamedia-clickhouse-datasource
+# docker compose exec grafana /sbin/curl -L https://github.com/Vertamedia/clickhouse-grafana/releases/download/v2.4.2/vertamedia-clickhouse-datasource-2.4.2.zip -o /tmp/vertamedia-clickhouse-datasource-2.4.2.zip
+# docker compose exec grafana unzip /tmp/vertamedia-clickhouse-datasource-2.4.2.zip -d /var/lib/grafana/plugins/
+docker compose exec grafana grafana-cli plugins install vertamedia-clickhouse-datasource
 
 echo "restarting grafana container after plugin installation"
-docker-compose restart grafana
+docker compose restart grafana
 sleep 10
 
 echo "Adding the datasource to Grafana"
-docker-compose exec grafana /sbin/curl -H 'Content-Type:application/json' 'http://admin:admin@127.0.0.1:3000/api/datasources' --data-raw '{"name":"ClickHouse","type":"vertamedia-clickhouse-datasource","url":"http://ch:8123","access":"proxy"}'
+docker compose exec grafana /sbin/curl -H 'Content-Type:application/json' 'http://admin:admin@127.0.0.1:3000/api/datasources' --data-raw '{"name":"ClickHouse","type":"vertamedia-clickhouse-datasource","url":"http://ch:8123","access":"proxy"}'
 echo
 
 echo "Adding the dashboard to Grafana"
 dashboard_json=`cat grafana/panel.json | bin/jq '{Dashboard:.} | .Dashboard.id = null'`
-docker-compose exec grafana /sbin/curl -H 'Content-Type:application/json' 'http://admin:admin@127.0.0.1:3000/api/dashboards/db' --data "$dashboard_json"
+docker compose exec grafana /sbin/curl -H 'Content-Type:application/json' 'http://admin:admin@127.0.0.1:3000/api/dashboards/db' --data "$dashboard_json"
 echo
 
 echo

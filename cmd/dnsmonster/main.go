@@ -52,7 +52,7 @@ func handleInterrupt(ctx context.Context) {
 		log.Infof("SIGINT Received. Stopping capture...")
 		go util.GlobalCancel()
 		go ctx.Done()
-		<-time.After(2 * time.Second)
+		<-time.After(4 * time.Second)
 		log.Fatal("emergency exit")
 		os.Exit(1)
 	}()
@@ -106,9 +106,10 @@ func main() {
 
 	// block until capture and output finish their loop, in order to exit cleanly
 	g.Wait()
-	// <-time.After(2 * time.Second)
+	<-time.After(4 * time.Second)
 	// print metrics for one last time before exiting the program
 	metricsJSON, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
 	os.Stderr.WriteString(fmt.Sprintf("metrics: %s\n", metricsJSON))
 }
+
 // vim: foldmethod=marker

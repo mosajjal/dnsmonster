@@ -212,4 +212,5 @@ func ProcessFlags(ctx context.Context) {
 		log.Fatal("--packetLimit must be equal or greather than 0")
 	}
 }
+
 // vim: foldmethod=marker

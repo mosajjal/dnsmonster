@@ -89,7 +89,7 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 	for {
 		data, ci, err := myHandler.ReadPacketData() // todo: ZeroCopyReadPacketData is slower than ReadPacketData. need to investigate why
 		if data == nil || err != nil {
-			log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for 2 seconds waiting for processing to finish")
+			log.Info("PacketSource returned nil, exiting (Possible end of pcap file?). Sleeping for a few seconds waiting for processing to finish")
 			time.Sleep(time.Second * 2)
 			//todo: commence clean exit from errorgroup
 			util.GlobalCancel()
@@ -129,4 +129,5 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 
 	}
 }
+
 // vim: foldmethod=marker

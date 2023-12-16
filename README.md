@@ -45,7 +45,61 @@ the privacy of the end-users, with the ability to mask Layer 3 IPs (IPv4 and IPv
 
 The code before version 1.x is considered beta quality and is subject to breaking changes. Please visit the release notes for each tag to see the list of breaking scenarios between each release, and how to mitigate potential data loss.
 
-![Inner logic of dnsmonster](static/dnsmonster-inner.svg)
+```mermaid
+graph TD
+    subgraph Input
+        B1["network input"]
+        B2["pcap file"]
+        B3["dnstap socket"]
+    end
+    
+    subgraph "Process"
+        C1["Sampling based of ratio"]
+        C2["Packet Process"]
+        C3["Dispatcher"]
+        O11["Output1"]
+        O12["Domain Skip (optional)"]
+        O13["Domain Allow (optional)"]
+        O21["Output2"]
+        O22["Domain Skip (optional)"]
+        O23["Domain Allow (optional)"]
+        O31["Output3"]
+        O32["Domain Skip (optional)"]
+        O33["Domain Allow (optional)"]
+    end
+    
+    B1 --> Process
+    B2 --> Process
+    B3 --> Process
+    
+    C1 --> C2
+    C2 --> C3
+    C3 --> O11
+    C3 --> O21
+    C3 --> O31
+    
+    O11 --> O12 --> O13
+    O21 --> O22 --> O23
+    O31 --> O32 --> O33
+    
+    subgraph Output
+        Splunk
+        Syslog
+        H["ClickHouse"]
+        Postgres
+        Kafka
+        I["JSON File"]
+        Influx
+        Elastic
+        J["stdout"]
+        Parquet
+        Sentinel
+    end
+    
+    O13 --> H
+    O23 --> I
+    O33 --> J
+```
 
 # Main features
 

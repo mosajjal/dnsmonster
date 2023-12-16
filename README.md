@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/github/license/mosajjal/dnsmonster?style=flat-square)
 ![Open Issues](https://img.shields.io/github/issues/mosajjal/dnsmonster?style=flat-square)
 
-<img src="static/dnsmonster-logo.png" width=20%>
+<img src="static/dnsmonster-logo.png" width=60%>
 
 Table of Contents
 - [Dnsmonster](#dnsmonster)

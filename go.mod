@@ -137,8 +137,8 @@ require (
 	github.com/rogpeppe/fastuuid v1.2.0
 	github.com/segmentio/kafka-go v0.4.44
 	github.com/sirupsen/logrus v1.9.3
-	golang.org/x/crypto v0.14.0 // indirect
+	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/net v0.17.0
-	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 	google.golang.org/protobuf v1.31.0
 )

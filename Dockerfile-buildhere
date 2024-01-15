@@ -1,0 +1,14 @@
+FROM alpine:edge AS stage1
+LABEL maintainer "Ali Mosajjal <hi@n0p.me>"
+
+RUN apk add --no-cache libcap-static libpcap-dev linux-headers git go file dpkg rpm --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/
+
+RUN mkdir /app && mkdir /release
+
+WORKDIR /app
+COPY . /app/
+
+RUN go build --ldflags "-L /usr/lib/libcap.a -linkmode external -extldflags \"-static\"" -o /release/dnsmonster ./cmd/dnsmonster
+
+FROM scratch AS export-stage
+COPY --from=stage1 /release/dnsmonster .

@@ -1,3 +1,5 @@
+//go:build !(openbsd || freebsd || dragonfly || netbsd)
+
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *
  * This program is free software: you can redistribute it and/or modify
@@ -12,8 +14,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>. }}} */
-
-//go:build !(openbsd || freebsd || dragonfly || netbsd)
 
 package util
 
@@ -31,4 +31,5 @@ func (j jsonOutput) Marshal(d DNSResult) []byte {
 func (j jsonOutput) Init() (string, error) {
 	return "", nil
 }
+
 // vim: foldmethod=marker

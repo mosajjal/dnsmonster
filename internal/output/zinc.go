@@ -99,6 +99,7 @@ func (zConfig zincConfig) Output(ctx context.Context) {
 
 	client := zConfig.connectzinc(ctx)
 	batch := make([]byte, 0, zConfig.ZincBatchSize)
+	c := 0
 
 	ticker := time.NewTicker(zConfig.ZincBatchDelay)
 
@@ -107,19 +108,36 @@ func (zConfig zincConfig) Output(ctx context.Context) {
 	for {
 		select {
 		case data := <-zConfig.outputChannel:
+			c++
 			if util.GeneralFlags.PacketLimit == 0 || len(batch) < util.GeneralFlags.PacketLimit {
-				batch = append(batch, itemPrefix...)
+				batch = append(batch, []byte(itemPrefix)...)
 				batch = append(batch, '\n')
 				batch = append(batch, zConfig.outputMarshaller.Marshal(data)...)
 				// add a newline to the end of the batch
 				batch = append(batch, '\n')
 			}
-		case <-ticker.C:
-			if err := zConfig.zincSendData(ctx, client, batch); err != nil {
-				log.Info(err)
+			if c >= int(zConfig.ZincBatchSize) {
+				// Batch size is reached first, flush and stop the timer
+				if err := zConfig.zincSendData(ctx, client, batch); err != nil {
+					log.Info(err)
+				}
 				client = zConfig.connectzinc(ctx)
-			} else {
 				batch = make([]byte, 0, zConfig.ZincBatchSize)
+				ticker.Stop()
+				// } else if !ticker.Stop() {
+				// 	// Timer is not already stopped, so reset it
+				// 	ticker.Reset(zConfig.ZincBatchDelay)
+			}
+
+		case <-ticker.C:
+
+			if c > 0 {
+				if err := zConfig.zincSendData(ctx, client, batch); err != nil {
+					log.Info(err)
+				}
+				client = zConfig.connectzinc(ctx)
+				batch = make([]byte, 0, zConfig.ZincBatchSize)
+				c = 0
 			}
 
 		}

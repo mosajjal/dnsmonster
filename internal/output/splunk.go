@@ -218,7 +218,7 @@ func (spConfig splunkConfig) splunkSendData(client *splunk.Client, batch []util.
 			splunkSentToOutput.Inc(1)
 			events = append(
 				events,
-				client.NewEventWithTime(batch[i].Timestamp, spConfig.outputMarshaller.Marshal(batch[i]), spConfig.SplunkOutputSource, spConfig.SplunkOutputSourceType, spConfig.SplunkOutputIndex),
+				client.NewEventWithTime(batch[i].Timestamp, string(spConfig.outputMarshaller.Marshal(batch[i])), spConfig.SplunkOutputSource, spConfig.SplunkOutputSourceType, spConfig.SplunkOutputIndex),
 			)
 		}
 	}

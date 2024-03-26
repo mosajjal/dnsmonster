@@ -112,4 +112,5 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 
 	return nil
 }
+
 // vim: foldmethod=marker

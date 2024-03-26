@@ -18,11 +18,11 @@ package output
 import (
 	"context"
 	"crypto/tls"
+	"database/sql"
 	"errors"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/mosajjal/dnsmonster/internal/util"
 	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -31,6 +31,7 @@ import (
 
 type clickhouseConfig struct {
 	ClickhouseAddress           []string      `long:"clickhouseaddress"           ini-name:"clickhouseaddress"           env:"DNSMONSTER_CLICKHOUSEADDRESS"           default:"localhost:9000"                                          description:"Address of the clickhouse database to save the results. multiple values can be provided."`
+	ClickhouseProtocol          string        `long:"clickhouseprotocol"          ini-name:"clickhouseprotocol"          env:"DNSMONSTER_CLICKHOUSEPROTOCOL"          default:"native"                                                  description:"clickhouse connection protocol. options: native, http" choice:"native" choice:"http"`
 	ClickhouseUsername          string        `long:"clickhouseusername"          ini-name:"clickhouseusername"          env:"DNSMONSTER_CLICKHOUSEUSERNAME"          default:""                                                        description:"Username to connect to the clickhouse database"`
 	ClickhousePassword          string        `long:"clickhousepassword"          ini-name:"clickhousepassword"          env:"DNSMONSTER_CLICKHOUSEPASSWORD"          default:""                                                        description:"Password to connect to the clickhouse database"`
 	ClickhouseDatabase          string        `long:"clickhousedatabase"          ini-name:"clickhousedatabase"          env:"DNSMONSTER_CLICKHOUSEDATABASE"          default:"default"                                                 description:"Database to connect to the clickhouse database"`
@@ -91,7 +92,7 @@ func (chConfig clickhouseConfig) OutputChannel() chan util.DNSResult {
 	return chConfig.outputChannel
 }
 
-func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (driver.Conn, driver.Batch) {
+func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (*sql.Conn, error) {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if chConfig.ClickhouseOutputType == 0 {
@@ -99,9 +100,9 @@ func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (dr
 	}
 	defer tick.Stop()
 	for {
-		c, b, err := chConfig.connectClickhouse(ctx)
+		c, err := chConfig.connectClickhouse(ctx)
 		if err == nil {
-			return c, b
+			return c, nil
 		}
 
 		log.Errorf("Error connecting to Clickhouse: %s", err)
@@ -113,7 +114,7 @@ func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (dr
 	}
 }
 
-func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (driver.Conn, driver.Batch, error) {
+func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (*sql.Conn, error) {
 	compressOption := clickhouse.Compression{Method: clickhouse.CompressionNone, Level: 0}
 	if chConfig.ClickhouseCompress > 0 {
 		compressOption = clickhouse.Compression{Method: clickhouse.CompressionLZ4, Level: int(chConfig.ClickhouseCompress)}
@@ -124,29 +125,42 @@ func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (driver.
 		tlsOption = nil
 	}
 
-	connection, err := clickhouse.Open(&clickhouse.Options{
-		Addr: chConfig.ClickhouseAddress,
+	// determine protocol
+	protocol := clickhouse.HTTP
+	if chConfig.ClickhouseProtocol == "native" {
+		log.Debug("Using native protocol for Clickhouse")
+		protocol = clickhouse.Native
+	} else {
+		log.Debug("Using HTTP protocol for Clickhouse")
+	}
+
+	db := clickhouse.OpenDB(&clickhouse.Options{
+		Addr:     chConfig.ClickhouseAddress,
+		Protocol: protocol,
 		Auth: clickhouse.Auth{
 			Database: chConfig.ClickhouseDatabase,
 			Username: chConfig.ClickhouseUsername,
 			Password: chConfig.ClickhousePassword,
 		},
-		DialTimeout:     time.Second * 2,
-		MaxOpenConns:    32,
-		MaxIdleConns:    16,
-		ConnMaxLifetime: time.Hour,
-		TLS:             tlsOption,
-		Debug:           chConfig.ClickhouseDebug,
-		Compression:     &compressOption,
+		DialTimeout: time.Second * 5,
+		TLS:         tlsOption,
+		Debug:       chConfig.ClickhouseDebug,
+		Compression: &compressOption,
 	})
-	// connection, err := clickhouse.Open(fmt.Sprintf("tcp://%v?debug=%v&skip_verify=%v&secure=%v&compress=%v&username=%s&password=%s&database=%s", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug, util.GeneralFlags.SkipTLSVerification, chConfig.ClickhouseSecure, chConfig.ClickhouseCompress, chConfig.ClickhouseUsername, chConfig.ClickhousePassword, chConfig.ClickhouseDatabase))
+	db.SetMaxIdleConns(16)
+	db.SetMaxOpenConns(32)
+	db.SetConnMaxLifetime(time.Hour)
+
+	connection, err := db.Conn(ctx)
 	if err != nil {
-		log.Error(err)
-		return connection, nil, err
+		return nil, err
 	}
 
-	batch, err := connection.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
-	return connection, batch, err
+	if connection.PingContext(ctx) != nil {
+		return nil, err
+	}
+
+	return connection, err
 }
 
 /*
@@ -164,8 +178,34 @@ func (chConfig clickhouseConfig) Output(ctx context.Context) {
 	}
 }
 
+func refreshBatchRetry(ctx context.Context, conn *sql.Conn) (tx *sql.Tx, batch *sql.Stmt) {
+	tx, batch, err := refreshBatch(ctx, conn)
+	if err != nil {
+		time.Sleep(5 * time.Second)
+		return refreshBatchRetry(ctx, conn)
+	}
+	return tx, batch
+}
+
+func refreshBatch(ctx context.Context, conn *sql.Conn) (tx *sql.Tx, batch *sql.Stmt, err error) {
+	tx, err = conn.BeginTx(ctx, nil)
+	if err != nil {
+		return tx, nil, err
+	}
+	batch, err = tx.PrepareContext(ctx, "INSERT INTO DNS_LOG")
+	return tx, batch, err
+}
+
 func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) error {
-	conn, batch := chConfig.connectClickhouseRetry(ctx)
+	conn, err := chConfig.connectClickhouseRetry(ctx)
+	if err != nil {
+		log.Errorf("Error connecting to Clickhouse: %s", err)
+	}
+	tx, batch, err := refreshBatch(ctx, conn)
+	if err != nil {
+		log.Errorf("Error preparing batch: %s", err)
+	}
+
 	clickhouseSentToOutput := metrics.GetOrRegisterCounter("clickhouseSentToOutput", metrics.DefaultRegistry)
 	clickhouseSkipped := metrics.GetOrRegisterCounter("clickhouseSkipped", metrics.DefaultRegistry)
 	clickhouseFailed := metrics.GetOrRegisterCounter("clickhouseFailed", metrics.DefaultRegistry)
@@ -210,49 +250,54 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 						doBit = 1
 					}
 				}
-				err := batch.Append(
-					data.Timestamp,
-					time.Now(),
-					util.GeneralFlags.ServerName,
-					data.IPVersion,
-					data.SrcIP.To16(),
-					data.DstIP.To16(),
-					data.Protocol,
-					QR,
-					uint8(data.DNS.Opcode),
-					uint16(dnsQuery.Qclass),
-					uint16(dnsQuery.Qtype),
-					edns,
-					doBit,
-					fullQuery,
-					uint8(data.DNS.Rcode),
-					dnsQuery.Name,
-					data.PacketLength,
-				)
-				if err != nil {
-					log.Warnf("Error while executing batch: %v", err)
+				if batch != nil {
+					_, err := batch.Exec(
+						data.Timestamp,
+						time.Now(),
+						util.GeneralFlags.ServerName,
+						data.IPVersion,
+						data.SrcIP.To16(),
+						data.DstIP.To16(),
+						data.Protocol,
+						QR,
+						uint8(data.DNS.Opcode),
+						uint16(dnsQuery.Qclass),
+						uint16(dnsQuery.Qtype),
+						edns,
+						doBit,
+						fullQuery,
+						uint8(data.DNS.Rcode),
+						dnsQuery.Name,
+						data.PacketLength,
+					)
+					if err != nil {
+						log.Warnf("Error while executing batch: %v", err)
+						clickhouseFailed.Inc(1)
+					}
+				} else {
+					log.Warnf("Batch is nil")
 					clickhouseFailed.Inc(1)
 				}
 				if int(c%chConfig.ClickhouseBatchSize) == div {
-					err = batch.Send()
+					err = tx.Commit()
 					if err != nil {
 						log.Warnf("Error while executing batch: %v", err)
 						clickhouseFailed.Inc(int64(c))
 					}
 					c = 0
-					batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+					tx, batch = refreshBatchRetry(ctx, conn)
 				}
 			}
 		case <-ticker.C:
-			err := batch.Send()
+			err := tx.Commit()
 			if err != nil {
 				log.Warnf("Error while executing batch: %v", err)
 				clickhouseFailed.Inc(int64(c))
 			}
 			c = 0
-			batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+			tx, batch = refreshBatchRetry(ctx, conn)
 		case <-ctx.Done():
-			err := batch.Flush()
+			err := tx.Commit()
 			if err != nil {
 				log.Warnf("Errro while executing batch: %v", err)
 				clickhouseFailed.Inc(int64(c))

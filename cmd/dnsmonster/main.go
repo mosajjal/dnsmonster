@@ -106,7 +106,7 @@ func main() {
 
 	// block until capture and output finish their loop, in order to exit cleanly
 	g.Wait()
-	<-time.After(4 * time.Second)
+	<-time.After(1 * time.Second)
 	// print metrics for one last time before exiting the program
 	metricsJSON, _ := json.Marshal(metrics.DefaultRegistry.GetAll())
 	os.Stderr.WriteString(fmt.Sprintf("metrics: %s\n", metricsJSON))

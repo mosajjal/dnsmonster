@@ -17,7 +17,6 @@ package capture
 
 import (
 	"context"
-	"math/rand"
 	"net"
 	"time"
 
@@ -134,7 +133,7 @@ func (config captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawP
 				}
 			}
 		case <-ctx.Done():
-			log.Debug("goroutine inputhandlerworker exiting") //todo:remove
+			log.Debug("exiting out of inputhandler goroutine") //todo:remove
 			return nil
 		}
 
@@ -142,7 +141,6 @@ func (config captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawP
 }
 
 func (config captureConfig) StartPacketDecoder(ctx context.Context) error {
-	rand.Seed(20)
 	var ip4 layers.IPv4
 
 	var udp layers.UDP
@@ -207,9 +205,10 @@ func (config captureConfig) StartPacketDecoder(ctx context.Context) error {
 		// case packet := <-config.processingChannel:
 		// 	workerHandlerChannel <- packet
 		case <-ctx.Done():
-			log.Debug("packet decoder goroutine exiting") //todo:remove
+			log.Debug("exiting out of packet decoder goroutine") //todo:remove
 			return nil
 		}
 	}
 }
+
 // vim: foldmethod=marker

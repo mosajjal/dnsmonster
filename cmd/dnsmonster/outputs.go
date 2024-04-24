@@ -87,11 +87,12 @@ func setupOutputs(ctx context.Context, resultChannel *chan util.DNSResult) error
 			case <-allowDomainsFileTickerChan:
 				util.GeneralFlags.LoadAllowDomain()
 			case <-gCtx.Done():
-				log.Debug("exitting out of output dispatcher") //todo:remove
+				log.Debug("exiting out of output dispatcher") //todo:remove
 				return nil
 			}
 		}
 	})
 	return nil
 }
+
 // vim: foldmethod=marker

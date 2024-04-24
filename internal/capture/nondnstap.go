@@ -78,7 +78,7 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 					packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
 				}
 			case <-gCtx.Done():
-				log.Debug("exitting out of metric update goroutine") //todo:remove
+				log.Debug("exiting out of metric update goroutine") //todo:remove
 				return nil
 			}
 		}

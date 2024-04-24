@@ -100,7 +100,7 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 					}
 					os.Stderr.WriteString(fmt.Sprintf("%s metrics: %s\n", time.Now().Format(time.RFC3339), out))
 				case <-gCtx.Done():
-					log.Debug("metric goroutine exiting")
+					log.Debug("exiting out of metrics goroutine")
 					return nil
 				}
 			}
@@ -112,4 +112,5 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 
 	return nil
 }
+
 // vim: foldmethod=marker

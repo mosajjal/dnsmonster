@@ -1,3 +1,6 @@
+//go:build linux && !android && !nocgo
+// +build linux,!android,!nocgo
+
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *
  * This program is free software: you can redistribute it and/or modify
@@ -12,9 +15,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>. }}} */
-
-//go:build linux && !android && !nocgo
-// +build linux,!android,!nocgo
 
 package capture
 
@@ -141,4 +141,5 @@ func (h *afpacketHandle) Stat() (uint, uint, error) {
 	}
 	return uint(mystats.Packets() + statsv3.Packets()), uint(mystats.Drops() + statsv3.Drops()), nil
 }
+
 // vim: foldmethod=marker

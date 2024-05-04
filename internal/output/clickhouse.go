@@ -258,7 +258,7 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 				clickhouseFailed.Inc(int64(c))
 			}
 			conn.Close()
-			log.Debug("exitting out of clickhouse output") //todo:remove
+			log.Debug("exiting out of clickhouse output") //todo:remove
 			return nil
 		}
 	}

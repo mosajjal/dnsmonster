@@ -130,7 +130,7 @@ func (config fileConfig) Output(ctx context.Context) {
 
 		case <-ctx.Done():
 			config.writer.Close()
-			log.Debug("exitting out of file output") //todo:remove
+			log.Debug("exiting out of file output") //todo:remove
 			return
 		}
 	}

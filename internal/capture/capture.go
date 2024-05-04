@@ -141,7 +141,7 @@ func (config *captureConfig) CheckFlagsAndStart(ctx context.Context) {
 					log.Infof("cleaning up dedup hash table")
 					config.dedupHashTable = make(map[uint64]bool)
 				case <-gCtx.Done():
-					log.Debug("exitting out of dedup goroutine") //todo:remove
+					log.Debug("exiting out of dedup goroutine") //todo:remove
 					return nil
 				}
 			}

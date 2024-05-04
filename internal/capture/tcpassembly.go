@@ -119,9 +119,10 @@ func tcpAssembler(ctx context.Context, tcpchannel chan tcpPacket, tcpReturnChann
 			flushed, closed = assemblerV6.FlushOlderThan(time.Now().Add(gcTime * -1))
 			log.Infof("ipv6 flushed: %d, closed: %d", flushed, closed)
 		case <-ctx.Done():
-			log.Debug("exitting out of TCP assembly goroutine") //todo:remove
+			log.Debug("exiting out of TCP assembly goroutine") //todo:remove
 			return nil
 		}
 	}
 }
+
 // vim: foldmethod=marker

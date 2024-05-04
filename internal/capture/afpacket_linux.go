@@ -1,3 +1,6 @@
+//go:build linux && !android && !nocgo
+// +build linux,!android,!nocgo
+
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *
  * This program is free software: you can redistribute it and/or modify
@@ -13,14 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>. }}} */
 
-//go:build linux && !android && !nocgo
-// +build linux,!android,!nocgo
-
 package capture
 
 import (
 	"os"
-	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -46,19 +45,17 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 	return layers.LinkTypeEthernet
 }
 
-func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (err error) {
+func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) error {
 	pcapBPF := tcpdumpToPcapgoBpf(filter)
 	// nil means the binary is compiled w/o bpf support
 	if pcapBPF != nil {
 		log.Infof("Filter: %s", filter)
-		err = h.TPacket.SetBPF(pcapBPF)
+		err := h.TPacket.SetBPF(pcapBPF)
 		if err != nil {
-			if err != nil {
-				log.Fatal(err)
-			}
+			return err
 		}
 	}
-	return err
+	return nil
 }
 
 func (h *afpacketHandle) Close() {
@@ -86,15 +83,15 @@ func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 	return frameSize, blockSize, numBlocks, nil
 }
 
-func (config captureConfig) setPromiscuous() error {
-	var err error
-	if !config.NoPromiscuous {
-		// TODO: replace with x/net/bpf or pcap
-		err = syscall.SetLsfPromisc(config.DevName, !config.NoPromiscuous)
-		log.Infof("Promiscuous mode: %v", !config.NoPromiscuous)
-	}
-	return err
-}
+// func (config captureConfig) setPromiscuous() error {
+// 	var err error
+// 	if !config.NoPromiscuous {
+// 		// TODO: replace with x/net/bpf or pcap
+// 		err = syscall.SetLsfPromisc(config.DevName, !config.NoPromiscuous)
+// 		log.Infof("Promiscuous mode: %v", !config.NoPromiscuous)
+// 	}
+// 	return err
+// }
 
 func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	// Open device
@@ -123,13 +120,21 @@ func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpa
 	if err != nil {
 		log.Fatal("Error setting BPF filter.. exiting")
 	}
+
+	if err := handle.TPacket.SetPromiscuous(!config.NoPromiscuous); err != nil {
+		log.Fatal("Error setting the interface to promiscuous.. exiting")
+	} else {
+		log.Infof("Promiscuous mode: %v", !config.NoPromiscuous)
+	}
+
 	// set up promisc mode. first we need to get the fd for the interface we just opened. using a hacky mode
 	// v := reflect.ValueOf(handle.TPacket)
 	// fd := v.FieldByName("fd").Int()
-	err = config.setPromiscuous()
-	if err != nil {
-		log.Fatal("Error setting the interface to promiscuous.. exiting")
-	}
+	// err = config.setPromiscuous()
+	// if err != nil {
+	// 	log.Fatal("Error setting the interface to promiscuous.. exiting")
+	// }
+
 	log.Infof("Opened: %s", devName)
 	return handle
 }
@@ -141,4 +146,5 @@ func (h *afpacketHandle) Stat() (uint, uint, error) {
 	}
 	return uint(mystats.Packets() + statsv3.Packets()), uint(mystats.Drops() + statsv3.Drops()), nil
 }
+
 // vim: foldmethod=marker

@@ -115,7 +115,7 @@ func (config *parquetConfig) Initialize(ctx context.Context) error {
 
 		config.parquetWriter = parquet.NewGenericWriter[parquetRow](config.writer,
 			parquet.BloomFilters(
-				parquet.SplitBlockFilter(10, "query_name"),
+				parquet.SplitBlockFilter(10, "query_name"), //query_name is usually the A query question or response
 			),
 			parquet.WriteBufferSize(int(config.ParquetWriteBufferSize)), // 256KB
 			parquet.CreatedBy("dnsmonster", "version", "build"),         //TODO: bring real values here

@@ -35,6 +35,9 @@ KafkaBatchDelay = 1s
 ; Compress Kafka connection
 KafkaCompress = false
 
+; Compression Type[gzip, snappy, lz4, zstd] default is snappy
+KafkaCompressiontype = snappy
+
 ; Use TLS for kafka connection
 KafkaSecure = false
 

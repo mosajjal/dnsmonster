@@ -449,6 +449,9 @@ Note that command line arguments are case-insensitive as of v0.9.5
 # Compress Kafka connection
 --kafkacompress
 
+# Compression Type[gzip, snappy, lz4, zstd] default is snappy
+--kafkacompressiontype=snappy
+
 # Use TLS for kafka connection
 --kafkasecure
 

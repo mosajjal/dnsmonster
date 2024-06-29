@@ -44,6 +44,7 @@ type kafkaConfig struct {
 	KafkaTimeout            uint          `long:"kafkatimeout"                ini-name:"kafkatimeout"                env:"DNSMONSTER_KAFKATIMEOUT"                default:"3"                                                       description:"Kafka connection timeout in seconds"`
 	KafkaBatchDelay         time.Duration `long:"kafkabatchdelay"             ini-name:"kafkabatchdelay"             env:"DNSMONSTER_KAFKABATCHDELAY"             default:"1s"                                                      description:"Interval between sending results to Kafka if Batch size is not filled"`
 	KafkaCompress           bool          `long:"kafkacompress"               ini-name:"kafkacompress"               env:"DNSMONSTER_KAFKACOMPRESS"                                                                                 description:"Compress Kafka connection"`
+	KafkaCompressionType	string        `long:"kafkacompressiontype"        ini-name:"kafkacompressiontype"        env:"DNSMONSTER_KAFKACOMPRESSIONTYPE"        default:"snappy"                                                  description:"Compression Type Kafka connection [snappy gzip lz4 zstd]; default(snappy)."                                        choice:"snappy" choice:"gzip" choice:"lz4" choice:"zstd"`
 	KafkaSecure             bool          `long:"kafkasecure"                 ini-name:"kafkasecure"                 env:"DNSMONSTER_KAFKASECURE"                                                                                   description:"Use TLS for kafka connection"`
 	KafkaCACertificatePath  string        `long:"kafkacacertificatepath"      ini-name:"kafkacacertificatepath"      env:"DNSMONSTER_KAFKACACERTIFICATEPATH"      default:""                                                        description:"Path of CA certificate that signs Kafka broker certificate"`
 	KafkaTLSCertificatePath string        `long:"kafkatlscertificatepath"     ini-name:"kafkatlscertificatepath"     env:"DNSMONSTER_KAFKATLSCERTIFICATEPATH"     default:""                                                        description:"Path of TLS certificate to present to broker"`
@@ -148,7 +149,20 @@ func (kafConfig kafkaConfig) getWriter() *kafka.Writer {
 	}
 
 	if kafConfig.KafkaCompress {
-		kWriter.Compression = kafka.Snappy
+		switch kafConfig.KafkaCompressionType {
+		case "gzip":
+			kWriter.Compression = kafka.Gzip
+			log.Info("Kafka using compression: gzip")
+		case "snappy":
+			kWriter.Compression = kafka.Snappy
+			log.Info("Kafka using compression: snappy")
+		case "lz4":
+			kWriter.Compression = kafka.Lz4
+			log.Info("Kafka using compression: lz4")
+		case "zstd":
+			kWriter.Compression = kafka.Zstd
+			log.Info("Kafka using compression: zstd")
+		}
 	}
 
 	return kWriter

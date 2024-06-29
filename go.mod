@@ -52,6 +52,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/oapi-codegen/runtime v1.1.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/oschwald/maxminddb-golang v1.13.1 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
@@ -89,6 +90,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/net v0.25.0
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
 	google.golang.org/protobuf v1.34.1
 )

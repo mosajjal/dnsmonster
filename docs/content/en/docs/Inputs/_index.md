@@ -56,3 +56,5 @@ The configuration for inputs and packet processing is contained within the `capt
 
 
 Above flags are used in variety of ways. Check the [Filters and Masks](./filters_masks) and [inputs](./inputs) for more detailed info.
+
+Check the [GeoIP](./geoip.md) for GeoIP more detailed info.

@@ -302,6 +302,18 @@ Note that command line arguments are case-insensitive as of v0.9.5
 # Do not put the interface in promiscuous mode
 --nopromiscuous
 
+# Enable Geo location lookup with maxmind database
+--geoip
+
+# Path to maxmind country db
+--geoipcountryfile
+
+# Path to maxmind country db
+--geoipcityfile
+
+# Path to maxmind asn db
+--geoipasnfile
+
 # [clickhouse_output]
 # Address of the clickhouse database to save the results. multiple values can be provided.
 --clickhouseaddress=localhost:9000

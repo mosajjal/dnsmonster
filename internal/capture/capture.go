@@ -28,6 +28,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/oschwald/maxminddb-golang"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
@@ -58,6 +59,10 @@ type captureConfig struct {
 	NoEthernetframe            bool          `long:"noetherframe"               ini-name:"noetherframe"               env:"DNSMONSTER_NOETHERFRAME"               description:"The PCAP capture does not contain ethernet frames"`
 	Dedup                      bool          `long:"dedup"                      ini-name:"dedup"                      env:"DNSMONSTER_DEDUP"                      description:"Deduplicate incoming packets, Only supported with --devName and --pcapFile. Experimental "`
 	NoPromiscuous              bool          `long:"nopromiscuous"              ini-name:"nopromiscuous"              env:"DNSMONSTER_NOPROMISCUOUS"              description:"Do not put the interface in promiscuous mode"`
+	GeoIP                      bool          `long:"geoip"                      ini-name:"geoip"                      env:"DNSMONSTER_GEOIP"                      description:"Enable GeoIP lookup"`
+	GeoIpCountryFile           string        `long:"geoipcountryfile"           ini-name:"geoipcountryfile"           env:"DNSMONSTER_GEOIPCOUNTRYFILE"              default:""                                                                                                  description:"Path to the MaxMind GeoIP2 Country database"`
+	GeoIpCityFile              string        `long:"geoipcityfile"              ini-name:"geoipcityfile"              env:"DNSMONSTER_GEOIPCITYFILE"                 default:""                                                                                                  description:"Path to the MaxMind GeoIP2 City database"`
+	GeoIpASNFile               string        `long:"geoipasnfile"               ini-name:"geoipasnfile"               env:"DNSMONSTER_GEOIPASNFILE"                  default:""                                                                                                  description:"Path to the MaxMind GeoIP2 ASN database"`
 	processingChannel          chan *rawPacketBytes
 	ip4Defrgger                chan ipv4ToDefrag
 	ip6Defrgger                chan ipv6FragmentInfo
@@ -66,6 +71,9 @@ type captureConfig struct {
 	tcpAssembly                chan tcpPacket
 	tcpReturnChannel           chan tcpData
 	resultChannel              chan util.DNSResult
+	dbCountryReader            *maxminddb.Reader
+	dbCityReader               *maxminddb.Reader
+	dbASNReader                *maxminddb.Reader
 	ratioA                     int
 	ratioB                     int
 	dedupHashTable             map[uint64]bool
@@ -78,7 +86,7 @@ var GlobalCaptureConfig *captureConfig
 func init() {
 	config := captureConfig{}
 	if _, err := util.GlobalParser.AddGroup("capture", "Options specific to capture side", &config); err != nil {
-		log.Fatalf("error adding capture Module")
+		log.Fatalf("error adding capture Module: %s", err)
 	}
 	GlobalCaptureConfig = &config
 
@@ -116,6 +124,11 @@ func (config *captureConfig) CheckFlagsAndStart(ctx context.Context) {
 			log.Fatal("You must provide a unix:// or tcp:// socket for dnstap")
 		}
 	}
+	if config.GeoIP {
+		if config.GeoIpCountryFile == "" && config.GeoIpASNFile == "" && config.GeoIpCityFile == "" {
+			log.Fatal("You must provide at least one of --geoipcountryfile, --geoipasnfile or --geoipcityfile")
+		}
+	}
 	ratioNumbers := strings.Split(config.SampleRatio, ":")
 	if len(ratioNumbers) != 2 {
 		log.Fatal("wrong --sampleRatio syntax")
@@ -149,6 +162,9 @@ func (config *captureConfig) CheckFlagsAndStart(ctx context.Context) {
 	}
 
 	// NOTE: there is a race condition when resultchannel created here, and when outputs.go expects it to be available
+	if config.GeoIP {
+		config.LoadGeoIP()
+	}
 	config.resultChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
 	config.tcpAssembly = make(chan tcpPacket, config.TCPAssemblyChannelSize)
 	config.tcpReturnChannel = make(chan tcpData, config.TCPResultChannelSize)

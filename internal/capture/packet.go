@@ -43,10 +43,20 @@ func (config captureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 						MaskSize = util.GeneralFlags.MaskSize6
 						BitSize = 8 * net.IPv6len
 					}
-					config.resultChannel <- util.DNSResult{
-						Timestamp: timestamp,
-						DNS:       msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
-						DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
+					switch config.GeoIP {
+					case true:
+						config.resultChannel <- util.DNSResult{
+							Timestamp: timestamp,
+							DNS:       msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+							DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
+							GeoIP: config.maxmindGeoIP(SrcIP),
+						}
+					case false:
+						config.resultChannel <- util.DNSResult{
+							Timestamp: timestamp,
+							DNS:       msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+							DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
+						}
 					}
 				}
 			}

@@ -23,6 +23,14 @@ import (
 	mkdns "github.com/miekg/dns"
 )
 
+type GeoRecord struct {
+	Continent      string
+	CountryISOCode string
+	City           string
+	ASN            string
+	ASO            string
+}
+
 // DNSResult is the middleware that connects the packet encoder to Any output.
 // For DNStap, this is probably going to be replaced with something else.
 type DNSResult struct {
@@ -37,6 +45,7 @@ type DNSResult struct {
 	PacketLength uint16
 	Identity     string `json:",omitempty"`
 	Version      string `json:",omitempty"`
+	GeoIP        GeoRecord
 }
 
 // GenericOutput is an interface to speficy the behaviour of output modules

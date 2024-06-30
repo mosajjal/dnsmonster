@@ -50,6 +50,7 @@ type parquetConfig struct {
 
 type parquetRow struct {
 	Timestamp    time.Time `parquet:"timestamp,snappy"`
+	Server	     string    `parquet:"server,snappy"`
 	IPVersion    uint32    `parquet:"ip_version,snappy,dict"`
 	SrcIP        net.IP    `parquet:"src_ip,snappy"`
 	DstIP        net.IP    `parquet:"dst_ip,snappy"`

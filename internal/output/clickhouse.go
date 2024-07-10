@@ -91,7 +91,7 @@ func (chConfig clickhouseConfig) OutputChannel() chan util.DNSResult {
 	return chConfig.outputChannel
 }
 
-func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (driver.Conn, driver.Batch) {
+func (chConfig clickhouseConfig) connectClickhouseRetry(clickhouseContext context.Context) (driver.Conn, driver.Batch) {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if chConfig.ClickhouseOutputType == 0 {
@@ -99,7 +99,7 @@ func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (dr
 	}
 	defer tick.Stop()
 	for {
-		c, b, err := chConfig.connectClickhouse(ctx)
+		c, b, err := chConfig.connectClickhouse(clickhouseContext)
 		if err == nil {
 			return c, b
 		}
@@ -113,7 +113,7 @@ func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (dr
 	}
 }
 
-func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (driver.Conn, driver.Batch, error) {
+func (chConfig clickhouseConfig) connectClickhouse(clickhouseContext context.Context) (driver.Conn, driver.Batch, error) {
 	compressOption := clickhouse.Compression{Method: clickhouse.CompressionNone, Level: 0}
 	if chConfig.ClickhouseCompress > 0 {
 		compressOption = clickhouse.Compression{Method: clickhouse.CompressionLZ4, Level: int(chConfig.ClickhouseCompress)}
@@ -145,7 +145,7 @@ func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (driver.
 		return connection, nil, err
 	}
 
-	batch, err := connection.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+	batch, err := connection.PrepareBatch(clickhouseContext, "INSERT INTO DNS_LOG")
 	return connection, batch, err
 }
 
@@ -158,14 +158,15 @@ needs to make sure that there is proper Database connection and table are presen
 clickhouse folder for the file tables.sql
 */
 func (chConfig clickhouseConfig) Output(ctx context.Context) {
-	g, gCtx := errgroup.WithContext(ctx)
+	clickhouseContext := context.Background()
+	g, gCtx := errgroup.WithContext(clickhouseContext)
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
-		g.Go(func() error { return chConfig.clickhouseOutputWorker(gCtx) })
+		g.Go(func() error { return chConfig.clickhouseOutputWorker(gCtx, ctx) })
 	}
 }
 
-func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) error {
-	conn, batch := chConfig.connectClickhouseRetry(ctx)
+func (chConfig clickhouseConfig) clickhouseOutputWorker(clickhouseContext context.Context, ctx context.Context) error {
+	conn, batch := chConfig.connectClickhouseRetry(clickhouseContext)
 	clickhouseSentToOutput := metrics.GetOrRegisterCounter("clickhouseSentToOutput", metrics.DefaultRegistry)
 	clickhouseSkipped := metrics.GetOrRegisterCounter("clickhouseSkipped", metrics.DefaultRegistry)
 	clickhouseFailed := metrics.GetOrRegisterCounter("clickhouseFailed", metrics.DefaultRegistry)
@@ -240,7 +241,7 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 						clickhouseFailed.Inc(int64(c))
 					}
 					c = 0
-					batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+					batch, _ = conn.PrepareBatch(clickhouseContext, "INSERT INTO DNS_LOG")
 				}
 			}
 		case <-ticker.C:
@@ -250,13 +251,14 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 				clickhouseFailed.Inc(int64(c))
 			}
 			c = 0
-			batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+			batch, _ = conn.PrepareBatch(clickhouseContext, "INSERT INTO DNS_LOG")
 		case <-ctx.Done():
-			err := batch.Flush()
+			err := batch.Send()
 			if err != nil {
 				log.Warnf("Errro while executing batch: %v", err)
 				clickhouseFailed.Inc(int64(c))
 			}
+			clickhouseContext.Done()
 			conn.Close()
 			log.Debug("exiting out of clickhouse output") //todo:remove
 			return nil

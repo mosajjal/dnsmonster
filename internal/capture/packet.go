@@ -45,6 +45,7 @@ func (config captureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 					}
 					config.resultChannel <- util.DNSResult{
 						Timestamp: timestamp,
+						Server: util.GeneralFlags.ServerName,
 						DNS:       msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
 						DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
 					}

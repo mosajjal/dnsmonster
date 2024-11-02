@@ -46,17 +46,21 @@ func (config captureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 					config.resultChannel <- util.DNSResult{
 						Timestamp: timestamp,
 						DNS:       msg, IPVersion: IPVersion, SrcIP: SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
-						DstIP: DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "udp", PacketLength: uint16(len(udp.Payload)),
+						DstIP:        DstIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+						DstPort:      uint16(udp.DstPort),
+						Protocol:     "udp",
+						PacketLength: uint16(len(udp.Payload)),
+						SrcPort:      uint16(udp.SrcPort),
 					}
 				}
 			}
 		case layers.LayerTypeTCP:
 			if uint16(tcp.SrcPort) == uint16(config.Port) || uint16(tcp.DstPort) == uint16(config.Port) {
 				config.tcpAssembly <- tcpPacket{
-					IPVersion,
-					*tcp,
-					timestamp,
-					flow,
+					IPVersion: IPVersion,
+					tcp:       *tcp,
+					timestamp: timestamp,
+					flow:      flow,
 				}
 			}
 		}
@@ -175,9 +179,13 @@ func (config captureConfig) StartPacketDecoder(ctx context.Context) error {
 					BitSize = 8 * net.IPv6len
 				}
 				config.resultChannel <- util.DNSResult{
-					Timestamp: data.timestamp,
-					DNS:       msg, IPVersion: data.IPVersion, SrcIP: data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
-					DstIP: data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)), Protocol: "tcp", PacketLength: uint16(len(data.data)),
+					Timestamp:    data.timestamp,
+					DNS:          msg,
+					IPVersion:    data.IPVersion,
+					SrcIP:        data.SrcIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+					DstIP:        data.DstIP.Mask(net.CIDRMask(MaskSize, BitSize)),
+					Protocol:     "tcp",
+					PacketLength: uint16(len(data.data)),
 				}
 			}
 		case packet := <-config.ip4DefrggerReturn:

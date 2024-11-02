@@ -176,6 +176,8 @@ func OutputFormatToMarshaller(outputFormat string, t string) (OutputMarshaller, 
 	switch outputFormat {
 	case "json":
 		return jsonOutput{}, "", nil
+	case "json-ocsf":
+		return OCSFMarshaler{}, "", nil
 	case "csv":
 		csvOut := csvOutput{}
 		header, _ := csvOut.Init()
@@ -193,4 +195,5 @@ func OutputFormatToMarshaller(outputFormat string, t string) (OutputMarshaller, 
 	}
 	return nil, "", fmt.Errorf("%s is not a valid output format", outputFormat)
 }
+
 // vim: foldmethod=marker

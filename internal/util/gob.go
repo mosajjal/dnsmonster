@@ -25,6 +25,7 @@ import (
 type gobOutput struct{}
 type DNSResultBinary struct {
 	Timestamp    time.Time
+	Server	     string
 	DNS          []byte //packed version of dns.msg (dns.Msg.Pack())
 	IPVersion    uint8
 	SrcIP        net.IP
@@ -42,6 +43,7 @@ func (g gobOutput) Marshal(d DNSResult) []byte {
 	bMsg, _ := d.DNS.Pack()
 	dnsBin := DNSResultBinary{
 		Timestamp:    d.Timestamp,
+		Server:	      d.Server,
 		DNS:          bMsg,
 		IPVersion:    d.IPVersion,
 		SrcIP:        d.SrcIP,

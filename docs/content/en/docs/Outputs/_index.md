@@ -24,7 +24,7 @@ Other than `Type`, each output module may require additional configuration param
 
 - `json`: the standard JSON output. The output looks like below sample
 ```json
-{"Timestamp":"2020-08-08T00:19:42.567768Z","DNS":{"Id":54443,"Response":true,"Opcode":0,"Authoritative":false,"Truncated":false,"RecursionDesired":true,"RecursionAvailable":true,"Zero":false,"AuthenticatedData":false,"CheckingDisabled":false,"Rcode":0,"Question":[{"Name":"imap.gmail.com.","Qtype":1,"Qclass":1}],"Answer":[{"Hdr":{"Name":"imap.gmail.com.","Rrtype":1,"Class":1,"Ttl":242,"Rdlength":4},"A":"172.217.194.108"},{"Hdr":{"Name":"imap.gmail.com.","Rrtype":1,"Class":1,"Ttl":242,"Rdlength":4},"A":"172.217.194.109"}],"Ns":null,"Extra":null},"IPVersion":4,"SrcIP":"1.1.1.1","DstIP":"2.2.2.2","Protocol":"udp","PacketLength":64}
+{"Timestamp":"2020-08-08T00:19:42.567768Z","Server": "default","DNS":{"Id":54443,"Response":true,"Opcode":0,"Authoritative":false,"Truncated":false,"RecursionDesired":true,"RecursionAvailable":true,"Zero":false,"AuthenticatedData":false,"CheckingDisabled":false,"Rcode":0,"Question":[{"Name":"imap.gmail.com.","Qtype":1,"Qclass":1}],"Answer":[{"Hdr":{"Name":"imap.gmail.com.","Rrtype":1,"Class":1,"Ttl":242,"Rdlength":4},"A":"172.217.194.108"},{"Hdr":{"Name":"imap.gmail.com.","Rrtype":1,"Class":1,"Ttl":242,"Rdlength":4},"A":"172.217.194.109"}],"Ns":null,"Extra":null},"IPVersion":4,"SrcIP":"1.1.1.1","DstIP":"2.2.2.2","Protocol":"udp","PacketLength":64}
 ```
 - `csv`: the CSV output. The fields and headers are non-customizable at the moment. to get a custom output, please look at `gotemplate`.
 ```csv

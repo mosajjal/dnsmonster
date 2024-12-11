@@ -27,6 +27,7 @@ import (
 // For DNStap, this is probably going to be replaced with something else.
 type DNSResult struct {
 	Timestamp    time.Time
+	Server       string
 	DNS          mkdns.Msg
 	IPVersion    uint8
 	SrcIP        net.IP

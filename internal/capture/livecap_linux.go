@@ -1,3 +1,6 @@
+//go:build linux
+// +build linux
+
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *
  * This program is free software: you can redistribute it and/or modify
@@ -12,9 +15,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>. }}} */
-
-//go:build linux
-// +build linux
 
 package capture
 
@@ -72,4 +72,5 @@ func (h *livePcapHandle) Stat() (uint, uint, error) {
 	}
 	return uint(stats.Packets), uint(stats.Drops), nil
 }
+
 // vim: foldmethod=marker

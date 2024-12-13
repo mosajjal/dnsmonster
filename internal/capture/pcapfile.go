@@ -95,4 +95,5 @@ func (h *pcapFileHandle) Stat() (uint, uint, error) {
 	// it's controlled by I/O and not network
 	return h.pktsRead, 0, nil
 }
+
 // vim: foldmethod=marker

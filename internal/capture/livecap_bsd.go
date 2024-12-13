@@ -1,3 +1,6 @@
+//go:build darwin || dragonfly || freebsd || netbsd || openbsd
+// +build darwin dragonfly freebsd netbsd openbsd
+
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *
  * This program is free software: you can redistribute it and/or modify
@@ -12,9 +15,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>. }}} */
-
-//go:build darwin || dragonfly || freebsd || netbsd || openbsd
-// +build darwin dragonfly freebsd netbsd openbsd
 
 package capture
 
@@ -91,4 +91,5 @@ func (h *BsdHandle) Close() {
 func (h *BsdHandle) Stat() (uint, uint, error) {
 	return h.readCnt, h.droppedCnt, nil
 }
+
 // vim: foldmethod=marker

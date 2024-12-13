@@ -1,9 +1,8 @@
-module github.com/google/docsy-example
+module github.com/mosajjal/dnsmonster/docs
 
-go 1.12
+go 1.22
 
 require (
-	github.com/FortAwesome/Font-Awesome v0.0.0-20210804190922-7d3d774145ac // indirect
-	github.com/google/docsy v0.2.0 // indirect
-	github.com/twbs/bootstrap v4.6.1+incompatible // indirect
+	github.com/google/docsy v0.11.0 // indirect
+	github.com/google/docsy/dependencies v0.7.2 // indirect
 )

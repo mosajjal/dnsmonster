@@ -9,7 +9,7 @@ There are a few ways to manipulate incoming packets in various steps of `dnsmons
 ## BPF
 {{< alert >}}Applied at kernel level{{< /alert >}} 
 
-BPF is by far the most performant way to filter incoming packets. It's only supported on live capture (`--devName`). It uses the `tcpdump`'s [pcap-filter](https://www.tcpdump.org/manpages/pcap-filter.7.html) language to filter out the packets. There are plans to potentially move away from this method and accept base64-encoded `bpf` bytecode in the future. 
+BPF is by far the most performant way to filter incoming packets. It's only supported on live capture (`--devName`). It uses the `tcpdump`'s [pcap-filter](https://www.tcpdump.org/manpages/pcap-filter.7.html) language to filter out the packets.
 
 ## Sample Ratio
 {{< alert >}}Applied at capture level{{< /alert >}} 

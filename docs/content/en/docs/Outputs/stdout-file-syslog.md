@@ -4,7 +4,9 @@ linkTitle: "Stdout, syslog, or Log File"
 weight: 4
 ---
 
-Stdout, syslog and file are supported outputs for `dnsmonster` out of the box. They are useful specially if you have a SIEM agent reading the files as they come in. Note that `dnsmonster` does not provide support for log rotation and the capacity of the hard drive while writing into a file. You can use a tool like `logrotate` to perform cleanups on the log files. The signalling on log rotation (SIGHUP) has not been tested with `dnsmonster`. 
+Stdout, syslog and file are supported outputs for `dnsmonster` out of the box. They are useful specially if you have a SIEM agent reading the files as they come in. Note that `dnsmonster` does not provide support for log rotation and the capacity of the hard drive while writing into a file. You can use a tool like `logrotate` to perform cleanups on the log files. The signalling on log rotation (SIGHUP) has not been tested with `dnsmonster`.
+
+The JSON schema used to send the logs can be configured to be compatible with Open Cybersecurity Schema Framework (OCSF) as well.
 
 Currently, Syslog output is only supported on Linux.
 
@@ -23,7 +25,7 @@ FileOutputType = 0
 ; Path to output file. Used if fileOutputType is not none
 FileOutputPath =
 
-; Output format for file. options:json,csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
+; Output format for file. options:json, json-ocsf, csv, csv_no_header, gotemplate. note that the csv splits the datetime format into multiple fields
 FileOutputFormat = json
 
 ; Go Template to format the output as needed

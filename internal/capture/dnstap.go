@@ -178,4 +178,5 @@ func (config captureConfig) StartDNSTap(ctx context.Context) error {
 		}
 	}
 }
+
 // vim: foldmethod=marker

@@ -50,4 +50,5 @@ func (i *detectIP) CanDecode() gopacket.LayerClass {
 func (i *detectIP) NextLayerType() gopacket.LayerType {
 	return i.family.LayerType()
 }
+
 // vim: foldmethod=marker

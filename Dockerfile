@@ -1,6 +1,8 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:edge
+FROM alpine:edge
 LABEL maintainer="Ali Mosajjal <hi@n0p.me>"
 
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -12,7 +14,8 @@ RUN git clone https://${REPO}.git /opt/dnsmonster --depth 1 \
     && cd /opt/dnsmonster \
     && git fetch --tags \
     && export LATEST_TAG=`git describe --tags --always` \
-    && GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build --ldflags "-L /usr/lib/libcap.a -linkmode external -X ${REPO}/util.releaseVersion=${LATEST_TAG} -extldflags \"-static\"" ./cmd/dnsmonster
+    && export GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=1  \
+    && go build --ldflags "-L /usr/lib/libcap.a -linkmode external -X ${REPO}/util.releaseVersion=${LATEST_TAG} -extldflags \"-static\"" ./cmd/dnsmonster
 
 FROM scratch
 COPY --from=0 /opt/dnsmonster/dnsmonster /dnsmonster

@@ -7,10 +7,10 @@ RUN apk add --no-cache libcap-static libpcap-dev linux-headers git go file --rep
 
 RUN git clone https://${REPO}.git /opt/dnsmonster --depth 1 \
     && cd /opt/dnsmonster \
-    && git fetch --tags \ 
+    && git fetch --tags \
     && export LATEST_TAG=`git describe --tags --always` \
-    && go build --ldflags "-L /usr/lib/libcap.a -linkmode external -X ${REPO}/util.releaseVersion=${LATEST_TAG} -extldflags \"-static\"" ./cmd/dnsmonster
+    && GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build --ldflags "-L /usr/lib/libcap.a -linkmode external -X ${REPO}/util.releaseVersion=${LATEST_TAG} -extldflags \"-static\"" ./cmd/dnsmonster
 
 FROM scratch
 COPY --from=0 /opt/dnsmonster/dnsmonster /dnsmonster
-ENTRYPOINT ["/dnsmonster"] 
+ENTRYPOINT ["/dnsmonster"]

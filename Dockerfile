@@ -1,6 +1,9 @@
 FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:edge
 LABEL maintainer="Ali Mosajjal <hi@n0p.me>"
 
+ARG TARGETOS
+ARG TARGETARCH
+
 ENV REPO="github.com/mosajjal/dnsmonster"
 
 RUN apk add --no-cache libcap-static libpcap-dev linux-headers git go file --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/

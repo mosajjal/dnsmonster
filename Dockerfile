@@ -1,5 +1,5 @@
-FROM alpine:edge
-LABEL maintainer "Ali Mosajjal <hi@n0p.me>"
+FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine:edge
+LABEL maintainer="Ali Mosajjal <hi@n0p.me>"
 
 ENV REPO="github.com/mosajjal/dnsmonster"
 

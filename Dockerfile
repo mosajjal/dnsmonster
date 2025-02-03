@@ -8,7 +8,7 @@ ARG TARGETARCH
 
 ENV REPO="github.com/mosajjal/dnsmonster"
 
-RUN apk add --no-cache libcap-static libpcap-dev linux-headers git go file --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/
+RUN apk add --no-cache libcap-static libpcap-dev linux-headers gcc git go file --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/
 
 RUN git clone https://${REPO}.git /opt/dnsmonster --depth 1 \
     && cd /opt/dnsmonster \

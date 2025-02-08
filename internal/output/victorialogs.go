@@ -124,7 +124,7 @@ func (viConfig victoriaConfig) victoriaOutputWorker(_ context.Context) {
 	log.Infof("starting VictoriaOutput")
 	victoriaSkipped := metrics.GetOrRegisterCounter("victoriaSkipped", metrics.DefaultRegistry)
 
-	batch := "["
+	batch := ""
 	cnt := uint(0)
 
 	ticker := time.NewTicker(time.Second * 5)
@@ -150,7 +150,7 @@ func (viConfig victoriaConfig) victoriaOutputWorker(_ context.Context) {
 				batch += string(viConfig.outputMarshaller.Marshal(data))
 				batch += "\n"
 				if int(cnt%viConfig.VictoriaBatchSize) == div {
-					// remove the last ,
+					// remove the last new line
 					batch = strings.TrimSuffix(batch, "\n")
 					viConfig.sendBatch(batch, int(cnt))
 					// reset counters

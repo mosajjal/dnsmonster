@@ -31,21 +31,68 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ParquetConfig is the configuration and runtime struct for Parquet output
 type parquetConfig struct {
-	ParquetOutputType uint           `long:"parquetoutputtype"              ini-name:"parquetoutputtype"              env:"DNSMONSTER_PARQUETOUTPUTTYPE"              default:"0"                                                       description:"What should be written to parquet file. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"          choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	ParquetOutputPath flags.Filename `long:"parquetoutputpath"              ini-name:"parquetoutputpath"              env:"DNSMONSTER_PARQUETOUTPUTPATH"              default:""                                                        description:"Path to output folder. Used if parquetoutputtype is not none"`
-	// ParquetOutputRotateCron  string         `long:"parquetoutputrotatecron"        ini-name:"parquetoutputrotatecron"        env:"DNSMONSTER_PARQUETOUTPUTROTATECRON"        default:"0 0 * * *"                                               description:"Interval to rotate the parquet file in cron format"`
-	// ParquetOutputRotateCount uint           `long:"parquetoutputrotatecount"       ini-name:"parquetoutputrotatecount"       env:"DNSMONSTER_PARQUETOUTPUTROTATECOUNT"       default:"4"                                                       description:"Number of parquet files to keep. 0 to disable rotation"`
-	ParquetFlushBatchSize  uint `long:"parquetflushbatchsize"          ini-name:"parquetflushbatchsize"          env:"DNSMONSTER_PARQUETFLUSHBATCHSIZE"          default:"10000"                                                   description:"Number of records to write to parquet file before flushing"`
-	ParquetWorkerCount     uint `long:"parquetworkercount"             ini-name:"parquetworkercount"             env:"DNSMONSTER_PARQUETWORKERCOUNT"             default:"4"                                                       description:"Number of workers to write to parquet file"`
-	ParquetWriteBufferSize uint `long:"parquetwritebuffersize"             ini-name:"parquetwritebuffersize"             env:"DNSMONSTER_PARQUETWRITEBUFFERSIZE"             default:"256000"                                                       description:"Size of the write buffer in bytes"`
-	outputChannel          chan util.DNSResult
-	closeChannel           chan bool
-	writer                 io.WriteCloser
-	parquetWriter          *parquet.GenericWriter[parquetRow]
-	parquetWriterLock      *sync.RWMutex
-	parquetSentToOutput    metrics.Counter
-	parquetSkipped         metrics.Counter
+	// Configuration options
+	OutputType      uint           `long:"parquetoutputtype" ini-name:"parquetoutputtype" env:"DNSMONSTER_PARQUETOUTPUTTYPE" default:"0" description:"What should be written to parquet file. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
+	OutputPath      flags.Filename `long:"parquetoutputpath" ini-name:"parquetoutputpath" env:"DNSMONSTER_PARQUETOUTPUTPATH" default:"" description:"Path to output folder. Used if parquetoutputtype is not none"`
+	FlushBatchSize  uint           `long:"parquetflushbatchsize" ini-name:"parquetflushbatchsize" env:"DNSMONSTER_PARQUETFLUSHBATCHSIZE" default:"10000" description:"Number of records to write to parquet file before flushing"`
+	WorkerCount     uint           `long:"parquetworkercount" ini-name:"parquetworkercount" env:"DNSMONSTER_PARQUETWORKERCOUNT" default:"4" description:"Number of workers to write to parquet file"`
+	WriteBufferSize uint           `long:"parquetwritebuffersize" ini-name:"parquetwritebuffersize" env:"DNSMONSTER_PARQUETWRITEBUFFERSIZE" default:"256000" description:"Size of the write buffer in bytes"`
+
+	// Runtime resources
+	outputChannel       chan util.DNSResult
+	closeChannel        chan bool
+	writer              io.WriteCloser
+	parquetWriter       *parquet.GenericWriter[parquetRow]
+	parquetWriterLock   *sync.RWMutex
+	parquetSentToOutput metrics.Counter
+	parquetSkipped      metrics.Counter
+}
+
+// NewParquetConfig creates a new ParquetConfig with default values
+func NewParquetConfig() *parquetConfig {
+	return &parquetConfig{
+		outputChannel: nil,
+		closeChannel:  nil,
+	}
+}
+
+// WithOutputType sets the OutputType and returns the config for chaining
+func (c *parquetConfig) WithOutputType(t uint) *parquetConfig {
+	c.OutputType = t
+	return c
+}
+
+// WithOutputPath sets the OutputPath and returns the config for chaining
+func (c *parquetConfig) WithOutputPath(path flags.Filename) *parquetConfig {
+	c.OutputPath = path
+	return c
+}
+
+// WithFlushBatchSize sets the FlushBatchSize and returns the config for chaining
+func (c *parquetConfig) WithFlushBatchSize(size uint) *parquetConfig {
+	c.FlushBatchSize = size
+	return c
+}
+
+// WithWorkerCount sets the WorkerCount and returns the config for chaining
+func (c *parquetConfig) WithWorkerCount(count uint) *parquetConfig {
+	c.WorkerCount = count
+	return c
+}
+
+// WithWriteBufferSize sets the WriteBufferSize and returns the config for chaining
+func (c *parquetConfig) WithWriteBufferSize(size uint) *parquetConfig {
+	c.WriteBufferSize = size
+	return c
+}
+
+// WithChannelSize initializes the output and close channels and returns the config for chaining
+func (c *parquetConfig) WithChannelSize(channelSize int) *parquetConfig {
+	c.outputChannel = make(chan util.DNSResult, channelSize)
+	c.closeChannel = make(chan bool)
+	return c
 }
 
 type parquetRow struct {
@@ -79,7 +126,7 @@ func init() {
 
 // initialize function should not block. otherwise the dispatcher will get stuck
 func (config *parquetConfig) Initialize(ctx context.Context) error {
-	if config.ParquetOutputType > 0 && config.ParquetOutputType < 5 {
+	if config.OutputType > 0 && config.OutputType < 5 {
 		log.Info("Creating Parquet Output Channel")
 
 		config.parquetSentToOutput = metrics.GetOrRegisterCounter("parquetSentToOutput", metrics.DefaultRegistry)
@@ -88,7 +135,7 @@ func (config *parquetConfig) Initialize(ctx context.Context) error {
 		// TODO: pending github.com/arthurkiller/rollingwriter/issues/52
 
 		// rollerConfig := &rollingwriter.Config{
-		// 	LogPath:                string(config.ParquetOutputPath),
+		// 	LogPath:                string(config.OutputPath),
 		// 	TimeTagFormat:          time.RFC3339,
 		// 	FileName:               "dnsmonster",
 		// 	MaxRemain:              int(config.ParquetOutputRotateCount),
@@ -107,7 +154,7 @@ func (config *parquetConfig) Initialize(ctx context.Context) error {
 		// }
 
 		var err error
-		config.writer, err = os.OpenFile(string(config.ParquetOutputPath), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		config.writer, err = os.OpenFile(string(config.OutputPath), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
 			log.Fatal(err)
 			return err
@@ -117,8 +164,8 @@ func (config *parquetConfig) Initialize(ctx context.Context) error {
 			parquet.BloomFilters(
 				parquet.SplitBlockFilter(10, "query_name"), //query_name is usually the A query question or response
 			),
-			parquet.WriteBufferSize(int(config.ParquetWriteBufferSize)), // 256KB
-			parquet.CreatedBy("dnsmonster", "version", "build"),         //TODO: bring real values here
+			parquet.WriteBufferSize(int(config.WriteBufferSize)), // 256KB
+			parquet.CreatedBy("dnsmonster", "version", "build"),  //TODO: bring real values here
 		)
 
 		go config.Output(ctx)
@@ -138,19 +185,48 @@ func (config parquetConfig) OutputChannel() chan util.DNSResult {
 	return config.outputChannel
 }
 
-func (config parquetConfig) Output(ctx context.Context) {
-	for i := uint(0); i < config.ParquetWorkerCount; i++ {
-		go config.OutputWorker(ctx)
+func (config *parquetConfig) Output(ctx context.Context) {
+	parquetSentToOutput := metrics.GetOrRegisterCounter("parquetSentToOutput", metrics.DefaultRegistry)
+	parquetSkipped := metrics.GetOrRegisterCounter("parquetSkipped", metrics.DefaultRegistry)
+
+	batch := make([]parquetRow, 0, config.FlushBatchSize)
+	ticker := time.NewTicker(time.Second * 5)
+
+	for {
+		select {
+		case data := <-config.outputChannel:
+			if len(data.DNS.Question) == 1 {
+				q := data.DNS.Question[0]
+				if util.CheckIfWeSkip(config.OutputType, q.Name) {
+					parquetSkipped.Inc(1)
+					continue
+				}
+				parquetSentToOutput.Inc(1)
+				batch = append(batch, parquetRow{
+					Timestamp: data.Timestamp,
+					QueryName: q.Name,
+					// ...other fields...
+				})
+			}
+		case <-ticker.C:
+			if len(batch) > 0 {
+				config.parquetWriterLock.Lock()
+				if _, err := config.parquetWriter.Write(batch); err != nil {
+					log.Warnf("Error writing to parquet: %v", err)
+				}
+				config.parquetWriter.Flush()
+				config.parquetWriterLock.Unlock()
+				batch = batch[:0]
+			}
+		case <-ctx.Done():
+			config.parquetWriterLock.Lock()
+			config.parquetWriter.Flush()
+			config.writer.Close()
+			config.parquetWriterLock.Unlock()
+			log.Debug("Exiting Parquet output")
+			return
+		}
 	}
-	<-ctx.Done()
-	config.parquetWriterLock.Lock()
-	if err := config.parquetWriter.Close(); err != nil {
-		log.Error(err)
-	}
-	if err := config.writer.Close(); err != nil {
-		log.Error(err)
-	}
-	config.parquetWriterLock.Unlock()
 }
 
 func (config *parquetConfig) OutputWorker(ctx context.Context) {
@@ -169,7 +245,7 @@ func (config *parquetConfig) OutputWorker(ctx context.Context) {
 				continue
 			}
 			q0 := data.DNS.Question[0]
-			if util.CheckIfWeSkip(config.ParquetOutputType, q0.Name) {
+			if util.CheckIfWeSkip(config.OutputType, q0.Name) {
 				config.parquetSkipped.Inc(1)
 				continue
 			}
@@ -204,7 +280,7 @@ func (config *parquetConfig) OutputWorker(ctx context.Context) {
 				Identity:     data.Identity,
 				Version:      data.Version,
 			})
-			if cnt%config.ParquetFlushBatchSize == 0 {
+			if cnt%config.FlushBatchSize == 0 {
 				config.parquetWriterLock.Lock()
 				if n, err := config.parquetWriter.Write(dataArr); err != nil {
 					config.parquetSkipped.Inc(int64(n))

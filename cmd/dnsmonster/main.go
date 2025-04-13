@@ -34,6 +34,8 @@ import (
 	"time"
 
 	"github.com/mosajjal/dnsmonster/internal/capture"
+	"github.com/mosajjal/dnsmonster/internal/config"
+	"github.com/mosajjal/dnsmonster/internal/output"
 	"github.com/mosajjal/dnsmonster/internal/util"
 	"github.com/pkg/profile"
 	"github.com/rcrowley/go-metrics"
@@ -58,22 +60,49 @@ func handleInterrupt(ctx context.Context) {
 	}()
 }
 
-func main() {
-
-	for i := range os.Args {
-
-		var re = regexp.MustCompile(`(?m)--(\w+)`)
-		os.Args[i] = (re.ReplaceAllStringFunc(os.Args[i], func(m string) string {
+func normalizeCmdArgs(args []string) {
+	re := regexp.MustCompile(`(?m)--(\w+)`)
+	for i := range args {
+		args[i] = re.ReplaceAllStringFunc(args[i], func(m string) string {
 			return strings.ToLower(m)
-		}))
-
+		})
 	}
+}
+
+func main() {
+	normalizeCmdArgs(os.Args)
 
 	var ctx context.Context
 	ctx, util.GlobalCancel = context.WithCancel(context.Background())
-	g, _ := errgroup.WithContext(ctx)
+	g, gCtx := errgroup.WithContext(ctx)
+
 	// process and handle flags
-	util.ProcessFlags(ctx)
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	cfgJson, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		log.Fatalf("Failed to marshal config: %v", err)
+	}
+	log.Infof("Loaded config:\n%s", string(cfgJson))
+
+	// Integrate cfg into the rest of the application: register outputs from config
+	// Elastic output
+	if cfg.Outputs.Elastic.OutputType > 0 {
+		elasticOutput := output.NewElasticConfig().
+			WithOutputType(uint(cfg.Outputs.Elastic.OutputType)).
+			WithAddress(cfg.Outputs.Elastic.Address).
+			WithOutputIndex(cfg.Outputs.Elastic.OutputIndex).
+			WithBatchSize(cfg.Outputs.Elastic.BatchSize).
+			WithBatchDelay(cfg.Outputs.Elastic.BatchDelay).
+			WithChannelSize(int(util.GeneralFlags.ResultChannelSize))
+		if err != nil {
+			log.Fatalf("Failed to configure elastic output: %v", err)
+		}
+		util.GlobalDispatchList = append(util.GlobalDispatchList, elasticOutput)
+	}
 
 	// debug and profile options
 	runtime.GOMAXPROCS(util.GeneralFlags.Gomaxprocs)
@@ -89,7 +118,7 @@ func main() {
 	handleInterrupt(ctx)
 
 	// set up capture
-	g.Go(func() error { capture.GlobalCaptureConfig.CheckFlagsAndStart(ctx); return nil })
+	capture.GlobalCaptureConfig.CheckFlagsAndStart(gCtx)
 	// Set up output dispatch
 	var c chan util.DNSResult
 	for {

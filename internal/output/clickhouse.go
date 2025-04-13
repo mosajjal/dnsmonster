@@ -29,75 +29,112 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type clickhouseConfig struct {
-	ClickhouseAddress           []string      `long:"clickhouseaddress"           ini-name:"clickhouseaddress"           env:"DNSMONSTER_CLICKHOUSEADDRESS"           default:"localhost:9000"                                          description:"Address of the clickhouse database to save the results. multiple values can be provided."`
-	ClickhouseUsername          string        `long:"clickhouseusername"          ini-name:"clickhouseusername"          env:"DNSMONSTER_CLICKHOUSEUSERNAME"          default:""                                                        description:"Username to connect to the clickhouse database"`
-	ClickhousePassword          string        `long:"clickhousepassword"          ini-name:"clickhousepassword"          env:"DNSMONSTER_CLICKHOUSEPASSWORD"          default:""                                                        description:"Password to connect to the clickhouse database"`
-	ClickhouseDatabase          string        `long:"clickhousedatabase"          ini-name:"clickhousedatabase"          env:"DNSMONSTER_CLICKHOUSEDATABASE"          default:"default"                                                 description:"Database to connect to the clickhouse database"`
-	ClickhouseDelay             time.Duration `long:"clickhousedelay"             ini-name:"clickhousedelay"             env:"DNSMONSTER_CLICKHOUSEDELAY"             default:"0s"                                                      description:"Interval between sending results to ClickHouse. If non-0, Batch size is ignored and batch delay is used"`
-	ClickhouseCompress          uint8         `long:"clickhousecompress"          ini-name:"clickhousecompress"          env:"DNSMONSTER_CLICKHOUSECOMPRESS"          description:"Clickhouse connection LZ4 compression level, 0 means no compression"`
-	ClickhouseDebug             bool          `long:"clickhousedebug"             ini-name:"clickhousedebug"             env:"DNSMONSTER_CLICKHOUSEDEBUG"             description:"Debug Clickhouse connection"`
-	ClickhouseSecure            bool          `long:"clickhousesecure"            ini-name:"clickhousesecure"            env:"DNSMONSTER_CLICKHOUSESECURE"            description:"Use TLS for Clickhouse connection"`
-	ClickhouseSaveFullQuery     bool          `long:"clickhousesavefullquery"     ini-name:"clickhousesavefullquery"     env:"DNSMONSTER_CLICKHOUSESAVEFULLQUERY"     description:"Save full packet query and response in JSON format."`
-	ClickhouseOutputType        uint          `long:"clickhouseoutputtype"        ini-name:"clickhouseoutputtype"        env:"DNSMONSTER_CLICKHOUSEOUTPUTTYPE"        default:"0"                                                       description:"What should be written to clickhouse. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"    choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	ClickhouseBatchSize         uint          `long:"clickhousebatchsize"         ini-name:"clickhousebatchsize"         env:"DNSMONSTER_CLICKHOUSEBATCHSIZE"         default:"100000"                                                  description:"Minimum capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations"`
-	ClickhouseWorkers           uint          `long:"clickhouseworkers"           ini-name:"clickhouseworkers"           env:"DNSMONSTER_CLICKHOUSEWORKERS"           default:"1"                                                       description:"Number of Clickhouse output Workers"`
-	ClickhouseWorkerChannelSize uint          `long:"clickhouseworkerchannelsize" ini-name:"clickhouseworkerchannelsize" env:"DNSMONSTER_CLICKHOUSEWORKERCHANNELSIZE" default:"100000"                                                  description:"Channel Size for each Clickhouse Worker"`
-	outputChannel               chan util.DNSResult
-	outputMarshaller            util.OutputMarshaller
-	closeChannel                chan bool
+// ClickhouseConfig is the configuration and runtime struct for ClickHouse output.
+type ClickhouseConfig struct {
+	BaseConfig
+	Address          []string
+	Username         string
+	Password         string
+	Database         string
+	Compress         int
+	Debug            bool
+	Secure           bool
+	SaveFullQuery    bool
+	Workers          int
+	outputChannel    chan util.DNSResult
+	closeChannel     chan bool
+	Delay            time.Duration
+	OutputType       uint
+	outputMarshaller util.OutputMarshaller
 }
 
-// init function runs at import time
-func init() {
-	c := clickhouseConfig{}
-	if _, err := util.GlobalParser.AddGroup("clickhouse_output", "ClickHouse Output", &c); err != nil {
-		log.Fatalf("error adding output Module")
+// NewClickhouseConfig creates a new ClickhouseConfig with default values.
+func NewClickhouseConfig() *ClickhouseConfig {
+	return &ClickhouseConfig{
+		outputChannel: nil,
+		closeChannel:  nil,
 	}
-	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 }
 
-// Initialize function should not block. otherwise the dispatcher will get stuck
-func (chConfig clickhouseConfig) Initialize(ctx context.Context) error {
-	var err error
-	chConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
-	if err != nil {
-		log.Warnf("Could not initialize output marshaller, removing output: %s", err)
-		return err
+// WithAddress sets the Address and returns the config for chaining.
+func (c *ClickhouseConfig) WithAddress(addr []string) *ClickhouseConfig {
+	c.Address = addr
+	return c
+}
+func (c *ClickhouseConfig) WithUsername(u string) *ClickhouseConfig {
+	c.Username = u
+	return c
+}
+func (c *ClickhouseConfig) WithPassword(p string) *ClickhouseConfig {
+	c.Password = p
+	return c
+}
+func (c *ClickhouseConfig) WithDatabase(db string) *ClickhouseConfig {
+	c.Database = db
+	return c
+}
+func (c *ClickhouseConfig) WithCompress(compr int) *ClickhouseConfig {
+	c.Compress = compr
+	return c
+}
+func (c *ClickhouseConfig) WithSecure(secure bool) *ClickhouseConfig {
+	c.Secure = secure
+	return c
+}
+func (c *ClickhouseConfig) WithSaveFullQuery(sfq bool) *ClickhouseConfig {
+	c.SaveFullQuery = sfq
+	return c
+}
+func (c *ClickhouseConfig) WithWorkers(w int) *ClickhouseConfig {
+	c.Workers = w
+	return c
+}
+func (c *ClickhouseConfig) WithChannelSize(size int) *ClickhouseConfig {
+	c.outputChannel = make(chan util.DNSResult, size)
+	c.closeChannel = make(chan bool)
+	return c
+}
+
+func (c *ClickhouseConfig) IsEnabled() bool {
+	return c.Enabled
+}
+
+// Initialize function should not block
+func (chConfig *ClickhouseConfig) Initialize(ctx context.Context) error {
+	if !chConfig.Enabled {
+		return errors.New("output not enabled")
 	}
 
-	if chConfig.ClickhouseOutputType > 0 && chConfig.ClickhouseOutputType < 5 {
-		log.Info("Creating Clickhouse Output Channel")
-		go chConfig.Output(ctx)
-	} else {
-		// we will catch this error in the dispatch loop and remove any output from the registry if they don't have the correct output type
-		return errors.New("no output")
+	if chConfig.BatchSize == 0 {
+		chConfig.BatchSize = 100000
 	}
 
-	if chConfig.ClickhouseCompress > 9 {
-		log.Warnf("invalid compression level provided. Things might break")
+	if chConfig.Workers == 0 {
+		chConfig.Workers = 1
 	}
 
+	if chConfig.Compress > 9 {
+		log.Warn("invalid compression level provided")
+	}
+
+	log.Info("Creating Clickhouse Output Channel")
+	go chConfig.Output(ctx)
 	return nil
 }
 
-func (chConfig clickhouseConfig) Close() {
+func (chConfig *ClickhouseConfig) Close() {
 	// todo: implement this
 	<-chConfig.closeChannel
 }
 
-func (chConfig clickhouseConfig) OutputChannel() chan util.DNSResult {
+func (chConfig *ClickhouseConfig) OutputChannel() chan util.DNSResult {
 	return chConfig.outputChannel
 }
 
-func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (driver.Conn, driver.Batch) {
+func (chConfig *ClickhouseConfig) connectClickhouseRetry(ctx context.Context) (driver.Conn, driver.Batch) {
 	tick := time.NewTicker(5 * time.Second)
-	// don't retry connection if we're doing dry run
-	if chConfig.ClickhouseOutputType == 0 {
-		tick.Stop()
-	}
 	defer tick.Stop()
+
 	for {
 		c, b, err := chConfig.connectClickhouse(ctx)
 		if err == nil {
@@ -105,38 +142,39 @@ func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (dr
 		}
 
 		log.Errorf("Error connecting to Clickhouse: %s", err)
-		// todo: try and create table if it doesn't exist
-
-		// Error getting connection, wait the timer or check if we are exiting
-		<-tick.C
-		continue
+		select {
+		case <-tick.C:
+			continue
+		case <-ctx.Done():
+			return nil, nil
+		}
 	}
 }
 
-func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (driver.Conn, driver.Batch, error) {
+func (chConfig *ClickhouseConfig) connectClickhouse(ctx context.Context) (driver.Conn, driver.Batch, error) {
 	compressOption := clickhouse.Compression{Method: clickhouse.CompressionNone, Level: 0}
-	if chConfig.ClickhouseCompress > 0 {
-		compressOption = clickhouse.Compression{Method: clickhouse.CompressionLZ4, Level: int(chConfig.ClickhouseCompress)}
+	if chConfig.Compress > 0 {
+		compressOption = clickhouse.Compression{Method: clickhouse.CompressionLZ4, Level: int(chConfig.Compress)}
 	}
 
 	tlsOption := &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification}
-	if !chConfig.ClickhouseSecure {
+	if !chConfig.Secure {
 		tlsOption = nil
 	}
 
 	connection, err := clickhouse.Open(&clickhouse.Options{
-		Addr: chConfig.ClickhouseAddress,
+		Addr: chConfig.Address,
 		Auth: clickhouse.Auth{
-			Database: chConfig.ClickhouseDatabase,
-			Username: chConfig.ClickhouseUsername,
-			Password: chConfig.ClickhousePassword,
+			Database: chConfig.Database,
+			Username: chConfig.Username,
+			Password: chConfig.Password,
 		},
 		DialTimeout:     time.Second * 2,
 		MaxOpenConns:    32,
 		MaxIdleConns:    16,
 		ConnMaxLifetime: time.Hour,
 		TLS:             tlsOption,
-		Debug:           chConfig.ClickhouseDebug,
+		Debug:           chConfig.Debug,
 		Compression:     &compressOption,
 	})
 	// connection, err := clickhouse.Open(fmt.Sprintf("tcp://%v?debug=%v&skip_verify=%v&secure=%v&compress=%v&username=%s&password=%s&database=%s", chConfig.ClickhouseAddress, chConfig.ClickhouseDebug, util.GeneralFlags.SkipTLSVerification, chConfig.ClickhouseSecure, chConfig.ClickhouseCompress, chConfig.ClickhouseUsername, chConfig.ClickhousePassword, chConfig.ClickhouseDatabase))
@@ -157,14 +195,14 @@ the table structure of Clickhouse is hardcoded into the code so before outputtin
 needs to make sure that there is proper Database connection and table are present. Refer to the project's
 clickhouse folder for the file tables.sql
 */
-func (chConfig clickhouseConfig) Output(ctx context.Context) {
+func (chConfig *ClickhouseConfig) Output(ctx context.Context) {
 	g, gCtx := errgroup.WithContext(ctx)
-	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
+	for i := 0; i < int(chConfig.Workers); i++ {
 		g.Go(func() error { return chConfig.clickhouseOutputWorker(gCtx) })
 	}
 }
 
-func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) error {
+func (chConfig *ClickhouseConfig) clickhouseOutputWorker(ctx context.Context) error {
 	conn, batch := chConfig.connectClickhouseRetry(ctx)
 	clickhouseSentToOutput := metrics.GetOrRegisterCounter("clickhouseSentToOutput", metrics.DefaultRegistry)
 	clickhouseSkipped := metrics.GetOrRegisterCounter("clickhouseSkipped", metrics.DefaultRegistry)
@@ -175,10 +213,10 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 	ticker := time.NewTicker(time.Second * 5)
 	div := 0
 
-	if chConfig.ClickhouseDelay > 0 {
-		chConfig.ClickhouseBatchSize = 1
+	if chConfig.Delay > 0 {
+		chConfig.BatchSize = 1
 		div = -1
-		ticker = time.NewTicker(chConfig.ClickhouseDelay)
+		ticker = time.NewTicker(chConfig.Delay)
 	} else {
 		ticker.Stop()
 	}
@@ -188,14 +226,14 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 		case data := <-chConfig.outputChannel:
 			for _, dnsQuery := range data.DNS.Question {
 				c++
-				if util.CheckIfWeSkip(chConfig.ClickhouseOutputType, dnsQuery.Name) {
+				if util.CheckIfWeSkip(chConfig.OutputType, dnsQuery.Name) {
 					clickhouseSkipped.Inc(1)
 					continue
 				}
 				clickhouseSentToOutput.Inc(1)
 
 				fullQuery := ""
-				if chConfig.ClickhouseSaveFullQuery {
+				if chConfig.SaveFullQuery {
 					fullQuery = string(chConfig.outputMarshaller.Marshal(data))
 				}
 
@@ -233,7 +271,7 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 					log.Warnf("Error while executing batch: %v", err)
 					clickhouseFailed.Inc(1)
 				}
-				if int(c%chConfig.ClickhouseBatchSize) == div {
+				if int(c%chConfig.BatchSize) == div {
 					err = batch.Send()
 					if err != nil {
 						log.Warnf("Error while executing batch: %v", err)

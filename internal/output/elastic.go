@@ -29,28 +29,69 @@ import (
 	"github.com/olivere/elastic"
 )
 
-type elasticConfig struct {
-	ElasticOutputType     uint          `long:"elasticoutputtype"           ini-name:"elasticoutputtype"           env:"DNSMONSTER_ELASTICOUTPUTTYPE"           default:"0"                                                       description:"What should be written to elastic. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"       choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	ElasticOutputEndpoint string        `long:"elasticoutputendpoint"       ini-name:"elasticoutputendpoint"       env:"DNSMONSTER_ELASTICOUTPUTENDPOINT"       default:""                                                        description:"elastic endpoint address, example: http://127.0.0.1:9200. Used if elasticOutputType is not none"`
-	ElasticOutputIndex    string        `long:"elasticoutputindex"          ini-name:"elasticoutputindex"          env:"DNSMONSTER_ELASTICOUTPUTINDEX"          default:"default"                                                 description:"elastic index"`
-	ElasticBatchSize      uint          `long:"elasticbatchsize"            ini-name:"elasticbatchsize"            env:"DNSMONSTER_ELASTICBATCHSIZE"            default:"1000"                                                    description:"Send data to Elastic in batch sizes"`
-	ElasticBatchDelay     time.Duration `long:"elasticbatchdelay"           ini-name:"elasticbatchdelay"           env:"DNSMONSTER_ELASTICBATCHDELAY"           default:"1s"                                                      description:"Interval between sending results to Elastic if Batch size is not filled"`
-	outputChannel         chan util.DNSResult
-	outputMarshaller      util.OutputMarshaller
-	closeChannel          chan bool
+// (OutputConfig interface now defined in output.go)
+
+// ElasticConfig is the configuration and runtime struct for Elastic output.
+type ElasticConfig struct {
+	OutputType       uint
+	Address          []string
+	OutputIndex      string
+	BatchSize        uint
+	BatchDelay       time.Duration
+	outputChannel    chan util.DNSResult
+	outputMarshaller util.OutputMarshaller
+	closeChannel     chan bool
 }
 
-func init() {
-	c := elasticConfig{}
-	if _, err := util.GlobalParser.AddGroup("elastic_output", "Elastic Output", &c); err != nil {
-		log.Fatalf("error adding output Module")
+// NewElasticConfig creates a new ElasticConfig with default values.
+func NewElasticConfig() *ElasticConfig {
+	return &ElasticConfig{
+		outputChannel: nil,
+		closeChannel:  nil,
 	}
-	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
 }
+
+// WithOutputType sets the OutputType and returns the config for chaining.
+func (c *ElasticConfig) WithOutputType(t uint) *ElasticConfig {
+	c.OutputType = t
+	return c
+}
+
+// WithAddress sets the Address and returns the config for chaining.
+func (c *ElasticConfig) WithAddress(addr []string) *ElasticConfig {
+	c.Address = addr
+	return c
+}
+
+// WithOutputIndex sets the OutputIndex and returns the config for chaining.
+func (c *ElasticConfig) WithOutputIndex(index string) *ElasticConfig {
+	c.OutputIndex = index
+	return c
+}
+
+// WithBatchSize sets the BatchSize and returns the config for chaining.
+func (c *ElasticConfig) WithBatchSize(size uint) *ElasticConfig {
+	c.BatchSize = size
+	return c
+}
+
+// WithBatchDelay sets the BatchDelay and returns the config for chaining.
+func (c *ElasticConfig) WithBatchDelay(delay time.Duration) *ElasticConfig {
+	c.BatchDelay = delay
+	return c
+}
+
+// WithChannelSize initializes the output and close channels and returns the config for chaining.
+func (c *ElasticConfig) WithChannelSize(channelSize int) *ElasticConfig {
+	c.outputChannel = make(chan util.DNSResult, channelSize)
+	c.closeChannel = make(chan bool)
+	return c
+}
+
+// Configuration for Elastic output is now provided via the main TOML config and passed in at runtime.
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (esConfig elasticConfig) Initialize(ctx context.Context) error {
+func (esConfig *ElasticConfig) Initialize(ctx context.Context) error {
 	var err error
 	esConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -58,7 +99,7 @@ func (esConfig elasticConfig) Initialize(ctx context.Context) error {
 		return err
 	}
 
-	if esConfig.ElasticOutputType > 0 && esConfig.ElasticOutputType < 5 {
+	if esConfig.OutputType > 0 && esConfig.OutputType < 5 {
 		log.Info("Creating Elastic Output Channel")
 		go esConfig.Output(ctx)
 	} else {
@@ -68,22 +109,22 @@ func (esConfig elasticConfig) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (esConfig elasticConfig) Close() {
+func (esConfig *ElasticConfig) Close() {
 	// todo: implement this
 	<-esConfig.closeChannel
 }
 
-func (esConfig elasticConfig) OutputChannel() chan util.DNSResult {
+func (esConfig *ElasticConfig) OutputChannel() chan util.DNSResult {
 	return esConfig.outputChannel
 }
 
 // var elasticUuidGen = fastuuid.MustNewGenerator()
 // var ctx = context.Background()
 
-func (esConfig elasticConfig) connectelasticRetry(ctx context.Context) *elastic.Client {
+func (esConfig *ElasticConfig) connectelasticRetry(ctx context.Context) *elastic.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
-	if esConfig.ElasticOutputType == 0 {
+	if esConfig.OutputType == 0 {
 		tick.Stop()
 	}
 	defer tick.Stop()
@@ -100,7 +141,7 @@ func (esConfig elasticConfig) connectelasticRetry(ctx context.Context) *elastic.
 	}
 }
 
-func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Client, error) {
+func (esConfig *ElasticConfig) connectelastic(ctx context.Context) (*elastic.Client, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification},
 	}
@@ -108,7 +149,7 @@ func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Clie
 
 	client, err := elastic.NewClient(
 		elastic.SetHttpClient(httpClient),
-		elastic.SetURL(esConfig.ElasticOutputEndpoint),
+		elastic.SetURL(esConfig.Address...),
 		elastic.SetSniff(false),
 		elastic.SetHealthcheckInterval(10*time.Second),
 		// elastic.SetRetrier(connectelasticRetry(exiting, elasticEndpoint)),
@@ -120,7 +161,7 @@ func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Clie
 	}
 
 	// Ping the Elasticsearch server to get e.g. the version number
-	info, code, err := client.Ping(esConfig.ElasticOutputEndpoint).Do(ctx)
+	info, code, err := client.Ping(esConfig.Address[0]).Do(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,21 +170,21 @@ func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Clie
 	return client, err
 }
 
-func (esConfig elasticConfig) Output(ctx context.Context) {
+func (esConfig *ElasticConfig) Output(ctx context.Context) {
 	client := esConfig.connectelasticRetry(ctx)
-	batch := make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
+	batch := make([]util.DNSResult, 0, esConfig.BatchSize)
 
-	ticker := time.NewTicker(esConfig.ElasticBatchDelay)
+	ticker := time.NewTicker(esConfig.BatchDelay)
 
 	// Use the IndexExists service to check if a specified index exists.
-	exists, err := client.IndexExists(esConfig.ElasticOutputIndex).Do(ctx)
+	exists, err := client.IndexExists(esConfig.OutputIndex).Do(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if !exists {
 		// Create a new index.
-		createIndex, err := client.CreateIndex(esConfig.ElasticOutputIndex).Do(ctx)
+		createIndex, err := client.CreateIndex(esConfig.OutputIndex).Do(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -164,20 +205,20 @@ func (esConfig elasticConfig) Output(ctx context.Context) {
 				log.Info(err)
 				client = esConfig.connectelasticRetry(ctx)
 			} else {
-				batch = make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
+				batch = make([]util.DNSResult, 0, esConfig.BatchSize)
 			}
 
 		}
 	}
 }
 
-func (esConfig elasticConfig) elasticSendData(ctx context.Context, client *elastic.Client, batch []util.DNSResult) error {
+func (esConfig *ElasticConfig) elasticSendData(ctx context.Context, client *elastic.Client, batch []util.DNSResult) error {
 	elasticSentToOutput := metrics.GetOrRegisterCounter("elasticSentToOutput", metrics.DefaultRegistry)
 	elasticSkipped := metrics.GetOrRegisterCounter("elasticSkipped", metrics.DefaultRegistry)
 
 	for i := range batch {
 		for _, dnsQuery := range batch[i].DNS.Question {
-			if util.CheckIfWeSkip(esConfig.ElasticOutputType, dnsQuery.Name) {
+			if util.CheckIfWeSkip(esConfig.OutputType, dnsQuery.Name) {
 				elasticSkipped.Inc(1)
 				continue
 			}
@@ -186,7 +227,7 @@ func (esConfig elasticConfig) elasticSendData(ctx context.Context, client *elast
 			// batch[i].UUID = elasticUuidGen.Hex128()
 
 			_, err := client.Index().
-				Index(esConfig.ElasticOutputIndex).
+				Index(esConfig.OutputIndex).
 				Type("_doc").
 				BodyString(string(esConfig.outputMarshaller.Marshal(batch[i]))).
 				Do(ctx)
@@ -195,7 +236,7 @@ func (esConfig elasticConfig) elasticSendData(ctx context.Context, client *elast
 			}
 		}
 	}
-	_, err := client.Flush().Index(esConfig.ElasticOutputIndex).Do(ctx)
+	_, err := client.Flush().Index(esConfig.OutputIndex).Do(ctx)
 	return err
 }
 

@@ -34,30 +34,62 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type sentinelConfig struct {
-	SentinelOutputType       uint          `long:"sentineloutputtype"          ini-name:"sentineloutputtype"          env:"DNSMONSTER_SENTINELOUTPUTTYPE"          default:"0"                                                       description:"What should be written to Microsoft Sentinel. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
-	SentinelOutputSharedKey  string        `long:"sentineloutputsharedkey"     ini-name:"sentineloutputsharedkey"     env:"DNSMONSTER_SENTINELOUTPUTSHAREDKEY"     default:""                                                        description:"Sentinel Shared Key, either the primary or secondary, can be found in Agents Management page under Log Analytics workspace"`
-	SentinelOutputCustomerID string        `long:"sentineloutputcustomerid"    ini-name:"sentineloutputcustomerid"    env:"DNSMONSTER_SENTINELOUTPUTCUSTOMERID"    default:""                                                        description:"Sentinel Customer Id. can be found in Agents Management page under Log Analytics workspace"`
-	SentinelOutputLogType    string        `long:"sentineloutputlogtype"       ini-name:"sentineloutputlogtype"       env:"DNSMONSTER_SENTINELOUTPUTLOGTYPE"       default:"dnsmonster"                                              description:"Sentinel Output LogType"`
-	SentinelOutputProxy      string        `long:"sentineloutputproxy"         ini-name:"sentineloutputproxy"         env:"DNSMONSTER_SENTINELOUTPUTPROXY"         default:""                                                        description:"Sentinel Output Proxy in URI format"`
-	SentinelBatchSize        uint          `long:"sentinelbatchsize"           ini-name:"sentinelbatchsize"           env:"DNSMONSTER_SENTINELBATCHSIZE"           default:"100"                                                     description:"Sentinel Batch Size"`
-	SentinelBatchDelay       time.Duration `long:"sentinelbatchdelay"          ini-name:"sentinelbatchdelay"          env:"DNSMONSTER_SENTINELBATCHDELAY"          default:"0s"                                                      description:"Interval between sending results to Sentinel if Batch size is not filled. Any value larger than zero takes precedence over Batch Size"`
-	outputChannel            chan util.DNSResult
-	outputMarshaller         util.OutputMarshaller
-	closeChannel             chan bool
+// SentinelConfig is the configuration and runtime struct for Sentinel output.
+type SentinelConfig struct {
+	OutputType       uint
+	SharedKey        string
+	CustomerID       string
+	LogType          string
+	Proxy            string
+	BatchSize        uint
+	BatchDelay       time.Duration
+	outputChannel    chan util.DNSResult
+	outputMarshaller util.OutputMarshaller
+	closeChannel     chan bool
 }
 
-func init() {
-	c := sentinelConfig{}
-	if _, err := util.GlobalParser.AddGroup("sentinel_output", "Microsoft Sentinel Output", &c); err != nil {
-		log.Fatalf("error adding output Module")
-	}
-	c.outputChannel = make(chan util.DNSResult, util.GeneralFlags.ResultChannelSize)
-	util.GlobalDispatchList = append(util.GlobalDispatchList, &c)
+// NewSentinelConfig creates a new SentinelConfig with default values.
+func NewSentinelConfig() *SentinelConfig {
+	return &SentinelConfig{}
+}
+
+// WithOutputType sets the OutputType and returns the config for chaining.
+func (c *SentinelConfig) WithOutputType(t uint) *SentinelConfig {
+	c.OutputType = t
+	return c
+}
+func (c *SentinelConfig) WithSharedKey(k string) *SentinelConfig {
+	c.SharedKey = k
+	return c
+}
+func (c *SentinelConfig) WithCustomerID(id string) *SentinelConfig {
+	c.CustomerID = id
+	return c
+}
+func (c *SentinelConfig) WithLogType(lt string) *SentinelConfig {
+	c.LogType = lt
+	return c
+}
+func (c *SentinelConfig) WithProxy(p string) *SentinelConfig {
+	c.Proxy = p
+	return c
+}
+func (c *SentinelConfig) WithBatchSize(bs uint) *SentinelConfig {
+	c.BatchSize = bs
+	return c
+}
+func (c *SentinelConfig) WithBatchDelay(d time.Duration) *SentinelConfig {
+	c.BatchDelay = d
+	return c
+}
+func (c *SentinelConfig) WithChannelSize(channelSize int) *SentinelConfig {
+	c.outputChannel = make(chan util.DNSResult, channelSize)
+	c.closeChannel = make(chan bool)
+	return c
 }
 
 // initialize function should not block. otherwise the dispatcher will get stuck
-func (seConfig sentinelConfig) Initialize(ctx context.Context) error {
+func (seConfig *SentinelConfig) Initialize(ctx context.Context) error {
 	var err error
 	seConfig.outputMarshaller, _, err = util.OutputFormatToMarshaller("json", "")
 	if err != nil {
@@ -65,7 +97,7 @@ func (seConfig sentinelConfig) Initialize(ctx context.Context) error {
 		return err
 	}
 
-	if seConfig.SentinelOutputType > 0 && seConfig.SentinelOutputType < 5 {
+	if seConfig.OutputType > 0 && seConfig.OutputType < 5 {
 		log.Info("Creating Sentinel Output Channel")
 		go seConfig.Output(ctx)
 	} else {
@@ -75,12 +107,12 @@ func (seConfig sentinelConfig) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (seConfig sentinelConfig) Close() {
+func (seConfig *SentinelConfig) Close() {
 	// todo: implement this
 	<-seConfig.closeChannel
 }
 
-func (seConfig sentinelConfig) OutputChannel() chan util.DNSResult {
+func (seConfig *SentinelConfig) OutputChannel() chan util.DNSResult {
 	return seConfig.outputChannel
 }
 
@@ -93,7 +125,7 @@ type signatureElements struct {
 	Resource      string
 }
 
-func (seConfig sentinelConfig) BuildSignature(sigelements signatureElements) string {
+func (seConfig *SentinelConfig) BuildSignature(sigelements signatureElements) string {
 	// build HMAC signature
 	tmpl, err := template.New("sign").Parse(`{{.Method}}
 {{.ContentLength}}
@@ -107,17 +139,17 @@ x-ms-date:{{.Date}}
 	if err := tmpl.Execute(&buf, sigelements); err != nil {
 		log.Fatal(err)
 	}
-	sharedKeyBytes, err := base64.StdEncoding.DecodeString(seConfig.SentinelOutputSharedKey)
+	sharedKeyBytes, err := base64.StdEncoding.DecodeString(seConfig.SharedKey)
 	if err != nil {
 		panic(err)
 	}
 	h := hmac.New(sha256.New, []byte(sharedKeyBytes))
 	h.Write(buf.Bytes())
-	signature := fmt.Sprintf("SharedKey %s:%s", seConfig.SentinelOutputCustomerID, base64.StdEncoding.EncodeToString(h.Sum(nil)))
+	signature := fmt.Sprintf("SharedKey %s:%s", seConfig.CustomerID, base64.StdEncoding.EncodeToString(h.Sum(nil)))
 	return signature
 }
 
-func (seConfig sentinelConfig) sendBatch(batch string, count int) {
+func (seConfig *SentinelConfig) sendBatch(batch string, count int) {
 	sentinelSentToOutput := metrics.GetOrRegisterCounter("sentinelSentToOutput", metrics.DefaultRegistry)
 	sentinelFailed := metrics.GetOrRegisterCounter("sentinelFailed", metrics.DefaultRegistry)
 	// send batch to Microsoft Sentinel
@@ -132,12 +164,12 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 	}
 	signature := seConfig.BuildSignature(s)
 	// build request
-	uri := "https://" + seConfig.SentinelOutputCustomerID + ".ods.opinsights.azure.com" + s.Resource + "?api-version=2016-04-01"
+	uri := "https://" + seConfig.CustomerID + ".ods.opinsights.azure.com" + s.Resource + "?api-version=2016-04-01"
 	headers := map[string]string{
 		"x-ms-date":     s.Date,
 		"content-type":  s.ContentType,
 		"Authorization": signature,
-		"Log-Type":      seConfig.SentinelOutputLogType,
+		"Log-Type":      seConfig.LogType,
 	}
 	// send request
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer([]byte(batch)))
@@ -148,8 +180,8 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 	for k, v := range headers {
 		req.Header[k] = []string{v}
 	}
-	if seConfig.SentinelOutputProxy != "" {
-		proxyURL, err := url.Parse(seConfig.SentinelOutputProxy)
+	if seConfig.Proxy != "" {
+		proxyURL, err := url.Parse(seConfig.Proxy)
 		if err != nil {
 			panic(err)
 		}
@@ -173,7 +205,7 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 	}
 }
 
-func (seConfig sentinelConfig) Output(ctx context.Context) {
+func (seConfig *SentinelConfig) Output(ctx context.Context) {
 	log.Infof("starting SentinelOutput")
 	sentinelSkipped := metrics.GetOrRegisterCounter("sentinelSkipped", metrics.DefaultRegistry)
 
@@ -182,10 +214,10 @@ func (seConfig sentinelConfig) Output(ctx context.Context) {
 
 	ticker := time.NewTicker(time.Second * 5)
 	div := 0
-	if seConfig.SentinelBatchDelay > 0 {
-		seConfig.SentinelBatchSize = 1
+	if seConfig.BatchDelay > 0 {
+		seConfig.BatchSize = 1
 		div = -1
-		ticker = time.NewTicker(seConfig.SentinelBatchDelay)
+		ticker = time.NewTicker(seConfig.BatchDelay)
 	} else {
 		ticker.Stop()
 	}
@@ -194,7 +226,7 @@ func (seConfig sentinelConfig) Output(ctx context.Context) {
 		case data := <-seConfig.outputChannel:
 			for _, dnsQuery := range data.DNS.Question {
 
-				if util.CheckIfWeSkip(seConfig.SentinelOutputType, dnsQuery.Name) {
+				if util.CheckIfWeSkip(seConfig.OutputType, dnsQuery.Name) {
 					sentinelSkipped.Inc(1)
 					continue
 				}
@@ -202,7 +234,7 @@ func (seConfig sentinelConfig) Output(ctx context.Context) {
 				cnt++
 				batch += string(seConfig.outputMarshaller.Marshal(data))
 				batch += ","
-				if int(cnt%seConfig.SentinelBatchSize) == div {
+				if int(cnt%seConfig.BatchSize) == div {
 					// remove the last ,
 					batch = strings.TrimSuffix(batch, ",")
 					batch += "]"

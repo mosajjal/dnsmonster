@@ -1,0 +1,358 @@
+[input]
+# Device used to capture
+devname = ""
+# Pcap filename to run
+pcapfile = ""
+# dnstap socket path. Example: unix:///tmp/dnstap.sock, tcp://127.0.0.1:8080
+dnstapsocket = ""
+# Port selected to filter packets
+port = 53
+# Capture Sampling by a:b. eg sampleRatio of 1:100 will process 1 percent of the incoming packets
+sampleratio = "1:1"
+# Cleans up packet hash table used for deduplication
+dedupcleanupinterval = "1m0s"
+# Set the dnstap socket permission, only applicable when unix:// is used
+dnstappermission = 755
+# Number of routines used to handle received packets
+packethandlercount = 2
+# Size of the tcp assembler
+tcpassemblychannelsize = 10000
+# Size of the tcp result channel
+tcpresultchannelsize = 10000
+# Number of routines used to handle tcp packets
+tcphandlercount = 1
+# Size of the channel to send packets to be defragged
+defraggerchannelsize = 10000
+# Size of the channel where the defragged packets are returned
+defraggerchannelreturnsize = 10000
+# Size of the packet handler channel
+packetchannelsize = 1000
+# Afpacket Buffersize in MB
+afpacketbuffersizemb = 64
+# BPF filter applied to the packet stream. If port is selected, the packets will not be defragged.
+filter = '((ip and (ip[9] == 6 or ip[9] == 17)) or (ip6 and (ip6[6] == 17 or ip6[6] == 6 or ip6[6] == 44)))'
+# Use AFPacket for live captures. Supported on Linux 3.0+ only
+useafpacket = false
+# The PCAP capture does not contain ethernet frames
+noetherframe = false
+# Deduplicate incoming packets, Only supported with --devName and --pcapFile. Experimental
+dedup = false
+# Do not put the interface in promiscuous mode
+nopromiscuous = false
+
+[process]
+# Garbage Collection interval for tcp assembly and ip defragmentation
+gctime = "10s"
+# Duration to calculate interface stats
+capturestatsdelay = "1s"
+# Mask IPv4s by bits. 32 means all the bits of IP is saved in DB
+masksize4 = 32
+# Mask IPv6s by bits. 32 means all the bits of IP is saved in DB
+masksize6 = 128
+# Size of the result processor channel size
+resultchannelsize = 100000
+# Limit of packets logged to clickhouse every iteration. Default 0 (disabled)
+packetlimit = 0
+# Skip outputting domains matching items in the CSV file path. Can accept a URL (http:// or https://) or path
+skipdomainsfile = ""
+# Hot-Reload skipdomainsfile interval
+skipdomainsrefreshinterval = "1m0s"
+# Allow Domains logic input file. Can accept a URL (http:// or https://) or path
+allowdomainsfile = ""
+# Hot-Reload allowdomainsfile file interval
+allowdomainsrefreshinterval = "1m0s"
+# Skip TLS verification when making HTTPS connections
+skiptlsverification = false
+
+[outputs.clickhouse]
+# Enable or disable ClickHouse output
+enabled = false
+# Address of the clickhouse database to save the results. multiple values can be provided
+address = ["localhost:9000"]
+# Username to connect to the clickhouse database
+username = ""
+# Password to connect to the clickhouse database
+password = ""
+# Database to connect to the clickhouse database
+database = "default"
+# Minimum capacity of the cache array used to send data to clickhouse. Set close to the QPS received
+batch_size = 100000
+# Interval between sending results to ClickHouse. If non-0, Batch size is ignored and batch delay is used
+batch_delay = "5s"
+# Clickhouse connection LZ4 compression level, 0 means no compression
+compress = 0
+# Debug Clickhouse connection
+debug = false
+# Use TLS for Clickhouse connection
+secure = false
+# Save full packet query and response in JSON format
+save_full_query = false
+# Number of Clickhouse output Workers
+workers = 1
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.elastic]
+# Enable or disable Elastic output
+enabled = false
+# What should be written to elastic, controlled by filter_mode
+output_type = 0
+# Elastic endpoint address, example: http://127.0.0.1:9200
+endpoint = "http://localhost:9200"
+# Elastic index
+index = "dnsmonster"
+# Send data to Elastic in batch sizes
+batch_size = 1000
+# Interval between sending results to Elastic if Batch size is not filled
+batch_delay = "1s"
+# Max queue size
+max_queue_size = 100000
+# Enable sniffing
+sniff = false
+# Enable compression
+compression = true
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.file]
+# Enable or disable File output
+enabled = false
+# What should be written to file. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Path to output folder. Used if output_type is not none
+output_path = "/path/to/output.log"
+# Interval to rotate the file in cron format
+rotate_cron = "0 0 * * *"
+# Number of files to keep. 0 to disable rotation
+rotate_count = 4
+# Output format for file. Options: json, csv, csv_no_header, gotemplate
+# Note that csv splits the datetime format into multiple fields
+output_format = "json"
+# Go Template to format the output as needed
+go_template = "{{.}}"
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.influx]
+# Enable or disable InfluxDB output
+enabled = false
+# What should be written to influx. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Influx Server address, example: http://localhost:8086. Used if output_type is not 0
+server = "http://localhost:8086"
+# Influx Server Auth Token
+token = "dnsmonster"
+# Influx Server Bucket
+bucket = "dnsmonster"
+# Influx Server Organization
+org = "dnsmonster"
+# Number of workers for Influx output
+workers = 8
+# Batch size for sending data to Influx
+batch_size = 1000
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.kafka]
+# Enable or disable Kafka output
+enabled = false
+# What should be written to Kafka. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 0
+# Kafka broker address(es), example: 127.0.0.1:9092
+brokers = ["localhost:9092"]
+# Kafka topic for logging
+topic = "dnsmonster"
+# Batch size for sending data to Kafka
+batch_size = 1000
+# Kafka connection timeout in seconds
+timeout = 3
+# Interval between sending results to Kafka if Batch size is not filled
+batch_delay = "1s"
+# Compress Kafka connection
+compress = false
+# Compression Type for Kafka connection [snappy, gzip, lz4, zstd]; default is snappy
+compression_type = "none"
+# Use TLS for Kafka connection
+secure = false
+# Path of CA certificate that signs Kafka broker certificate
+ca_certificate_path = ""
+# Path of TLS certificate to present to broker
+tls_certificate_path = ""
+# Path of TLS certificate key
+tls_key_path = ""
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+# Maximum message bytes 
+max_message_bytes = 1000000
+# Max queue size
+max_queue_size = 100000
+
+[outputs.parquet]
+# Enable or disable Parquet output
+enabled = false
+# What should be written to parquet file. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Path to output folder. Used if output_type is not 0
+output_path = "/path/to/output.parquet"
+# Number of records to write to parquet file before flushing
+flush_batch_size = 10000
+# Number of workers to write to parquet file
+worker_count = 4
+# Size of the write buffer in bytes
+write_buffer_size = 256000
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.postgres]
+# Enable or disable PostgreSQL output
+enabled = false
+# What should be written to PSQL. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# PSQL endpoint URI, format: postgres://username:password@hostname:port/database?sslmode=disable
+endpoint = "postgres://username:password@hostname:port/database?sslmode=disable"
+# Number of PostgreSQL workers
+workers = 1
+# PostgreSQL Batch Size
+batch_size = 1
+# Interval between sending results if Batch size is not filled (any value > 0 takes precedence over Batch Size)
+batch_delay = "0s"
+# Timeout for any INSERT operation before considering them failed
+batch_timeout = "5s"
+# Save full packet query and response in JSON format
+save_full_query = false
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.sentinel]
+# Enable or disable Microsoft Sentinel output
+enabled = false
+# What should be written to Sentinel. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Sentinel Shared Key (primary or secondary), found in Agents Management page under Log Analytics workspace
+shared_key = ""
+# Sentinel Customer Id, found in Agents Management page under Log Analytics workspace
+customer_id = ""
+# Sentinel Output LogType
+log_type = "dnsmonster"
+# Sentinel Output Proxy in URI format
+proxy = ""
+# Sentinel Batch Size
+batch_size = 100
+# Interval between sending results if Batch size is not filled
+batch_delay = "1s"
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.splunk]
+# Enable or disable Splunk HEC output
+enabled = false
+# What should be written to HEC. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Splunk endpoint address(es), example: http://127.0.0.1:8088 (multiple values for load balance/HA)
+endpoint = ["http://127.0.0.1:8088"]
+# Splunk HEC Token
+token = "00000000-0000-0000-0000-000000000000"
+# Splunk Output Index
+index = "temp"
+# Splunk Output Proxy in URI format
+proxy = ""
+# Splunk Output Source
+source = "dnsmonster"
+# Splunk Output Sourcetype
+sourcetype = "json"
+# Send data to HEC in batch sizes
+batch_size = 1000
+# Interval between sending results if Batch size is not filled
+batch_delay = "1s"
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.stdout]
+# Enable or disable stdout output
+enabled = false
+# What should be written to stdout. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Output format for stdout. Options: json, csv, csv_no_header, gotemplate
+output_format = "json"
+# Go Template to format the output as needed
+go_template = "{{.}}"
+# Number of stdout output workers
+worker_count = 8
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.syslog]
+# Enable or disable syslog output
+enabled = false
+# What should be written to Syslog server. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Syslog endpoint address, example: udp://127.0.0.1:514, tcp://127.0.0.1:514
+endpoint = "udp://127.0.0.1:514"
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.victorialogs]
+# Enable or disable VictoriaLogs output
+enabled = false
+# What should be written to Victoria. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Victoria Output Endpoint. example: http://localhost:9428/insert/jsonline?_msg_field=rcode_id&_time_field=time
+endpoint = ""
+# Victoria Output Proxy in URI format
+proxy = ""
+# Number of Victoria output workers
+workers = 8
+# Victoria Batch Size
+batch_size = 100
+# Interval between sending results if Batch size is not filled (any value > 0 takes precedence over Batch Size)
+batch_delay = "0s"
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[outputs.zinc]
+# Enable or disable Zinc output
+enabled = false
+# What should be written to zinc. options: 0=Disabled, 1=All, 2=SkipDomains, 3=AllowDomains, 4=Both
+output_type = 1
+# Index used to save data in Zinc
+index = "dnsmonster"
+# Zinc endpoint address, example: http://127.0.0.1:9200/api/default/_bulk
+endpoint = ""
+# Zinc username, example: admin@admin.com
+username = ""
+# Zinc password
+password = ""
+# Send data to Zinc in batch sizes
+batch_size = 1000
+# Interval between sending results if Batch size is not filled
+batch_delay = "1s"
+# Zinc request timeout
+timeout = "10s"
+# Filter mode: none, skipdomains, allowdomains, both
+filter_mode = "none"
+
+[metrics]
+# Metric Endpoint Service: stderr, statsd, prometheus
+endpointtype = "stderr"
+# Statsd endpoint. Example: 127.0.0.1:8125
+statsdagent = ""
+# Prometheus Registry endpoint. Example: http://0.0.0.0:2112/metric
+metricprometheusendpoint = ""
+# Format for stderr output: json, etc.
+metricstderrformat = "json"
+# Interval between sending results to Metric Endpoint
+metricflushinterval = "10s"
+
+[general]
+# Name of the server used to index the metrics
+servername = "default"
+# Set debug Log format: text, json
+logformat = "text"
+# Set debug Log level: 0=PANIC, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
+loglevel = 3
+# Write CPU profile to file
+cpuprofile = ""
+# Write memory profile to file
+memprofile = ""
+# GOMAXPROCS variable (-1 means use default)
+gomaxprocs = -1

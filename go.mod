@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/syntaqx/go-metrics-datadog v0.1.3
-	golang.org/x/sync v0.11.0
+	golang.org/x/sync v0.12.0
 )
 
 require (
@@ -69,7 +69,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -88,8 +88,8 @@ require (
 	github.com/rogpeppe/fastuuid v1.2.0
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/sirupsen/logrus v1.9.3
-	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/net v0.36.0
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/net v0.38.0
+	golang.org/x/sys v0.31.0 // indirect
 	google.golang.org/protobuf v1.36.1
 )

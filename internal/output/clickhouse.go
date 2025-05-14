@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
@@ -34,6 +35,7 @@ type clickhouseConfig struct {
 	ClickhouseUsername          string        `long:"clickhouseusername"          ini-name:"clickhouseusername"          env:"DNSMONSTER_CLICKHOUSEUSERNAME"          default:""                                                        description:"Username to connect to the clickhouse database"`
 	ClickhousePassword          string        `long:"clickhousepassword"          ini-name:"clickhousepassword"          env:"DNSMONSTER_CLICKHOUSEPASSWORD"          default:""                                                        description:"Password to connect to the clickhouse database"`
 	ClickhouseDatabase          string        `long:"clickhousedatabase"          ini-name:"clickhousedatabase"          env:"DNSMONSTER_CLICKHOUSEDATABASE"          default:"default"                                                 description:"Database to connect to the clickhouse database"`
+	ClickhouseTable             string        `long:"clickhousetable"             ini-name:"clickhousetable"             env:"DNSMONSTER_CLICKHOUSETABLE"             default:"DNS_LOG"                                                 description:"Table which data will be stored on clickhouse database"`
 	ClickhouseDelay             time.Duration `long:"clickhousedelay"             ini-name:"clickhousedelay"             env:"DNSMONSTER_CLICKHOUSEDELAY"             default:"0s"                                                      description:"Interval between sending results to ClickHouse. If non-0, Batch size is ignored and batch delay is used"`
 	ClickhouseCompress          uint8         `long:"clickhousecompress"          ini-name:"clickhousecompress"          env:"DNSMONSTER_CLICKHOUSECOMPRESS"          description:"Clickhouse connection LZ4 compression level, 0 means no compression"`
 	ClickhouseDebug             bool          `long:"clickhousedebug"             ini-name:"clickhousedebug"             env:"DNSMONSTER_CLICKHOUSEDEBUG"             description:"Debug Clickhouse connection"`
@@ -145,7 +147,7 @@ func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (driver.
 		return connection, nil, err
 	}
 
-	batch, err := connection.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+	batch, err := connection.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %v", chConfig.ClickhouseTable))
 	return connection, batch, err
 }
 
@@ -240,7 +242,7 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 						clickhouseFailed.Inc(int64(c))
 					}
 					c = 0
-					batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+					batch, _ = conn.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %v", chConfig.ClickhouseTable))
 				}
 			}
 		case <-ticker.C:
@@ -250,7 +252,7 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 				clickhouseFailed.Inc(int64(c))
 			}
 			c = 0
-			batch, _ = conn.PrepareBatch(ctx, "INSERT INTO DNS_LOG")
+			batch, _ = conn.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %v", chConfig.ClickhouseTable))
 		case <-ctx.Done():
 			err := batch.Flush()
 			if err != nil {

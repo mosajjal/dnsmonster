@@ -18,6 +18,7 @@ package output
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -31,6 +32,7 @@ import (
 type psqlConfig struct {
 	PsqlOutputType    uint          `long:"psqloutputtype"          ini-name:"psqloutputtype"          env:"DNSMONSTER_PSQLOUTPUTTYPE"          default:"0"                                                       description:"What should be written to Microsoft Psql. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic" choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	PsqlEndpoint      string        `long:"psqlendpoint"            ini-name:"psqlendpoint"            env:"DNSMONSTER_PSQLOUTPUTENDPOINT"      default:""                                                        description:"Psql endpoint used. must be in uri format. example: postgres://username:password@hostname:port/database?sslmode=disable"`
+	PsqlTable         string        `long:"psqltable"               ini-name:"psqltable"               env:"DNSMONSTER_PSQLTABLE"               default:"DNS_LOG"                                                 description:"Psql table which data will be stored on database"`
 	PsqlWorkers       uint          `long:"psqlworkers"             ini-name:"psqlworkers"             env:"DNSMONSTER_PSQLWORKERS"             default:"1"                                                       description:"Number of PSQL workers"`
 	PsqlBatchSize     uint          `long:"psqlbatchsize"           ini-name:"psqlbatchsize"           env:"DNSMONSTER_PSQLBATCHSIZE"           default:"1"                                                       description:"Psql Batch Size"`
 	PsqlBatchDelay    time.Duration `long:"psqlbatchdelay"          ini-name:"psqlbatchdelay"          env:"DNSMONSTER_PSQLBATCHDELAY"          default:"0s"                                                      description:"Interval between sending results to Psql if Batch size is not filled. Any value larger than zero takes precedence over Batch Size"`
@@ -92,10 +94,10 @@ func (psqConf psqlConfig) connectPsql() *pgxpool.Pool {
 	}
 
 	_, err = c.Exec(context.Background(),
-		`CREATE TABLE IF NOT EXISTS DNS_LOG (PacketTime timestamp, IndexTime timestamp,
+		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %v (PacketTime timestamp, IndexTime timestamp,
 				Server text, IPVersion integer, SrcIP inet, DstIP inet, Protocol char(3),
 				QR smallint, OpCode smallint, Class smallint, Type integer, Edns0Present smallint,
-				DoBit smallint, FullQuery text, ResponseCode smallint, Question text, Size smallint);`,
+				DoBit smallint, FullQuery text, ResponseCode smallint, Question text, Size smallint);`, psqConf.PsqlTable),
 	)
 	if err != nil {
 		log.Error(err.Error())
@@ -130,10 +132,10 @@ func (psqConf psqlConfig) OutputWorker() {
 	}
 
 	batch := new(pgx.Batch)
-	insertQuery := `INSERT INTO DNS_LOG(
+	insertQuery := fmt.Sprintf(`INSERT INTO %v(
 		PacketTime, IndexTime, Server, IPVersion, SrcIP ,DstIP, Protocol, QR, OpCode,
 		Class, Type, Edns0Present, DoBit, FullQuery, ResponseCode, Question, Size)
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);`
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);`, psqConf.PsqlTable)
 
 	timeoutContext, cancel := context.WithTimeout(context.Background(), psqConf.PsqlBatchTimeout)
 	defer cancel()

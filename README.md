@@ -315,6 +315,9 @@ Note that command line arguments are case-insensitive as of v0.9.5
 # Database to connect to the clickhouse database
 --clickhousedatabase=default
 
+# Table which data will be stored on clickhouse database
+--clickhousetable=DNS_LOG
+
 # Interval between sending results to ClickHouse. If non-0, Batch size is ignored and batch delay is used
 --clickhousedelay=0s
 
@@ -496,6 +499,9 @@ Note that command line arguments are case-insensitive as of v0.9.5
 
 # Psql endpoint used. must be in uri format. example: postgres://username:password@hostname:port/database?sslmode=disable
 --psqlendpoint=
+
+# Psql table which data will be stored on database
+--psqltable=DNS_LOG
 
 # Number of PSQL workers
 --psqlworkers=1

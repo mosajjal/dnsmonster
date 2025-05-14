@@ -497,6 +497,9 @@ Note that command line arguments are case-insensitive as of v0.9.5
 # Psql endpoint used. must be in uri format. example: postgres://username:password@hostname:port/database?sslmode=disable
 --psqlendpoint=
 
+# Psql table which data will be stored on database
+--psqltable=DNS_LOG
+
 # Number of PSQL workers
 --psqlworkers=1
 

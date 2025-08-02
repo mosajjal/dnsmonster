@@ -19,7 +19,7 @@ jobs:
             goos: darwin
     steps:
       - uses: actions/checkout@v4
-      - uses: wangyoucao577/go-release-action@master
+      - uses: wangyoucao577/go-release-action@v1
         env:
           CGO_ENABLED: 0 # support alpine
         with:

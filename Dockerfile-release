@@ -1,22 +1,22 @@
 FROM alpine:edge
-LABEL maintainer "Ali Mosajjal <hi@n0p.me>"
+LABEL maintainer="Ali Mosajjal <hi@n0p.me>"
 
 SHELL ["/bin/ash", "-c"]
 
-RUN apk add --no-cache libcap-static libpcap-dev linux-headers git go file dpkg rpm --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/
+RUN apk add --no-cache libcap-static libpcap-dev linux-headers git go file dpkg rpm findutils coreutils grep rpm-dev --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/
 
 ENV REPO="github.com/mosajjal/dnsmonster"
-RUN git clone https://${REPO}.git /opt/dnsmonster --depth 1 \
+RUN git clone https://${REPO}.git /opt/dnsmonster \
     && cd /opt/dnsmonster \
-    && git fetch --tags \ 
-    && export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` \
-    && go build --ldflags "-L /usr/lib/libcap.a -linkmode external -X ${REPO}/util.releaseVersion=${LATEST_TAG} -extldflags \"-static\"" -o /tmp/dnsmonster-linux-amd64.bin ./cmd/dnsmonster
+    && go build --ldflags "-L /usr/lib/libcap.a -linkmode external -extldflags \"-static\"" -o /opt/dnsmonster-linux-amd64.bin ./cmd/dnsmonster
+
+RUN ls -lha /opt/dnsmonster-linux-amd64.bin
 
 ENV CGO_ENABLED=1
 ENV GOOS=windows
 ENV GOARCH=amd64
 RUN cd /opt/dnsmonster \
-    && go build -o /tmp/dnsmonster-windows-amd64.exe ./cmd/dnsmonster
+    && go build -o /opt/dnsmonster-windows-amd64.exe ./cmd/dnsmonster
 
 WORKDIR /opt/dnsmonster
 
@@ -26,7 +26,7 @@ RUN cd /opt/dnsmonster \
     && echo ${LATEST_TAG} \
     && export DIR="/tmp/dnsmonster_${LATEST_TAG:1}-1_amd64" \
     && mkdir -p $DIR/sbin $DIR/etc/dnsmonster $DIR/usr/share/man/man7 $DIR/DEBIAN $DIR/etc/bash_completion.d $DIR/usr/share/fish/vendor_completions.d \
-    && cp /tmp/dnsmonster-linux-amd64.bin $DIR/sbin/dnsmonster \
+    && cp /opt/dnsmonster-linux-amd64.bin $DIR/sbin/dnsmonster \
     && $DIR/sbin/dnsmonster --manPage > $DIR/usr/share/man/man7/dnsmonster.7 \
     && $DIR/sbin/dnsmonster --bashCompletion > $DIR/etc/bash_completion.d/dnsmonster.bash \
     && $DIR/sbin/dnsmonster --fishCompletion > $DIR/usr/share/fish/vendor_completions.d/dnsmonster.fish \
@@ -36,79 +36,46 @@ RUN cd /opt/dnsmonster \
     && mv /tmp/dnsmonster_*_amd64.deb /tmp/dnsmonster-latest.deb
 
 # build rpm file and move it to /tmp/dnsmonster-latest.rpm
-RUN export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1) | awk -F- '{print $1}'` && echo -e '\
-Name:       dnsmonster \n\
-Version:    '${LATEST_TAG:1}' \n\
-Release:    1 \n\
-Summary:    Passive DNS monitoring framework. \n\
-License:    GPLv2 \n\
-\n\
-%description \n\
-This is my first RPM package, which does nothing. \n\
-\n\
-%prep \n\
-# we have no source, so nothing here \n\
-\n\
-%define _rpmdir /tmp \n\
-\n\
-%build \n\
-export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` \n\
-mkdir -p %{buildroot}/sbin %{buildroot}/etc/dnsmonster %{buildroot}/usr/share/man/man7 %{buildroot}/DEBIAN %{buildroot}/etc/bash_completion.d %{buildroot}/usr/share/fish/vendor_completions.d \n\
-cp /tmp/dnsmonster-linux-amd64.bin %{buildroot}/sbin/dnsmonster \n\
-%{buildroot}/sbin/dnsmonster --manPage > %{buildroot}/usr/share/man/man7/dnsmonster.7 \n\
-%{buildroot}/sbin/dnsmonster --bashCompletion > %{buildroot}/etc/bash_completion.d/dnsmonster.bash \n\
-%{buildroot}/sbin/dnsmonster --fishCompletion > %{buildroot}/usr/share/fish/vendor_completions.d/dnsmonster.fish \n\
-%{buildroot}/sbin/dnsmonster --writeConfig %{buildroot}/etc/dnsmonster/dnsmonster.ini \n\
-\n\
-%install \n\
-cp /tmp/dnsmonster-linux-amd64.bin %{buildroot}/sbin/dnsmonster  \n\
-\n\
-%files \n\
-/sbin/dnsmonster \n\
-/usr/share/man/man7/dnsmonster.7 \n\
-/etc/bash_completion.d/dnsmonster.bash \n\
-/usr/share/fish/vendor_completions.d/dnsmonster.fish \n\
-/etc/dnsmonster/dnsmonster.ini \n\
-\n\
-%changelog \n\
-# let's skip this for now
-    '> /tmp/dnsmonster-specfile
-RUN  cat /tmp/dnsmonster-specfile && rpmbuild -ba --build-in-place  /tmp/dnsmonster-specfile && mv /tmp/*/dnsmonster-*.x86_64.rpm /tmp/dnsmonster-latest.rpm
+RUN cat > /tmp/dnsmonster.spec << 'EOF'
+Name:       dnsmonster
+Version:    envLATEST_TAG
+Release:    1
+Summary:    Passive DNS monitoring framework
+License:    GPLv2
+BuildArch:  x86_64
 
-# build Arch Package
-# RUN export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1)` && echo -e '\
-# # Maintainer "Ali Mosajjal <hi@n0p.me>" \n\
-# pkgname=NAME \n\
-# pkgver=VERSION \n\
-# pkgrel=1 \n\
-# pkgdesc="" \n\
-# arch=(\'x86_64\') \n\
-# url="" \n\
-# license=(\'GPL\') \n\
-# groups=() \n\
-# depends=() \n\
-# makedepends=() \n\
-# optdepends=() \n\
-# provides=() \n\
-# conflicts=() \n\
-# replaces=() \n\
-# backup=() \n\
-# options=() \n\
-# install= \n\
-# changelog= \n\
-# source=($pkgname-$pkgver.tar.gz) \n\
-# noextract=() \n\
-# md5sums=() #generate with \'makepkg -g\' \n\
-#  \n\
-# build() { \n\
-#   cd "$srcdir/$pkgname-$pkgver" \n\
-#  \n\
-#   ./configure --prefix=/usr \n\
-#   make \n\
-# } \n\
-#  \n\
-# package() { \n\
-#   cd "$srcdir/$pkgname-$pkgver" \n\
-#  \n\
-#   make DESTDIR="$pkgdir/" install \n\
-# } ' > 
+%description
+Passive DNS monitoring framework, Github: github.com/mosajjal/dnsmonster
+
+%prep
+# we have no source, so nothing here
+
+%build
+# binary is already built
+
+%install
+mkdir -p %{buildroot}/sbin
+mkdir -p %{buildroot}/etc/dnsmonster
+mkdir -p %{buildroot}/usr/share/man/man7
+mkdir -p %{buildroot}/etc/bash_completion.d
+mkdir -p %{buildroot}/usr/share/fish/vendor_completions.d
+
+cp /opt/dnsmonster-linux-amd64.bin %{buildroot}/sbin/dnsmonster
+%{buildroot}/sbin/dnsmonster --manPage | gzip > %{buildroot}/usr/share/man/man7/dnsmonster.7.gz
+%{buildroot}/sbin/dnsmonster --bashCompletion > %{buildroot}/etc/bash_completion.d/dnsmonster.bash
+%{buildroot}/sbin/dnsmonster --fishCompletion > %{buildroot}/usr/share/fish/vendor_completions.d/dnsmonster.fish
+%{buildroot}/sbin/dnsmonster --writeConfig %{buildroot}/etc/dnsmonster/dnsmonster.ini
+
+%files
+/sbin/dnsmonster
+/usr/share/man/man7/dnsmonster.7.gz
+/etc/bash_completion.d/dnsmonster.bash
+/usr/share/fish/vendor_completions.d/dnsmonster.fish
+/etc/dnsmonster/dnsmonster.ini
+
+EOF
+
+RUN export LATEST_TAG=`git describe --tags $(git rev-list --tags --max-count=1) | awk -F- '{print $1}'` && \
+    sed -i "s/envLATEST_TAG/${LATEST_TAG}/" /tmp/dnsmonster.spec && \
+    rpmbuild -ba --define "_rpmdir /tmp" --define "_builddir /tmp" /tmp/dnsmonster.spec && \
+    mv /tmp/x86_64/dnsmonster-*.x86_64.rpm /tmp/dnsmonster-latest.rpm

@@ -1,25 +1,24 @@
 FROM alpine:edge
-LABEL maintainer "Ali Mosajjal <hi@n0p.me>"
+LABEL maintainer="Ali Mosajjal <hi@n0p.me>"
 
 RUN apk add --no-cache git go zig file --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/
 
 ARG PROJECT=dnsmonster
 ARG GOTAG=nolibpcap
 ARG GOLDFLAGS='-s -w'
-# OUTDIR is also used in the second layer for copying the folder. 
-ARG OUTDIR="/tmp/bins" 
+# OUTDIR is also used in the second layer for copying the folder.
+ARG OUTDIR="/tmp/bins"
 RUN mkdir /${PROJECT} && mkdir ${OUTDIR}
 COPY . /${PROJECT}
 WORKDIR /${PROJECT}
 
-env GOBUILD="go build -ldflags=-s -tags ${GOTAG} -o ${OUTDIR}/${PROJECT}_${GOTAG}" 
-env BASEDIR="./cmd/dnsmonster"
+ENV GOBUILD="go build -ldflags=-s -tags ${GOTAG} -o ${OUTDIR}/${PROJECT}_${GOTAG}"
+ENV BASEDIR="./cmd/dnsmonster"
 
 # Linux
 RUN echo "Building Linux binaries"
 RUN export GOOS=linux && export CGO_ENABLED=1 && \
     export GOARCH=amd64 && CC="zig cc -target x86_64-${GOOS}-musl" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
-    export GOARCH=386 && CC="zig cc -target i386-${GOOS}-musl" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=arm && CC="zig cc -target arm-${GOOS}-musleabihf" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=arm64 && CC="zig cc -target aarch64-${GOOS}-musl" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=riscv64 && CC="zig cc -target riscv64-${GOOS}-musl" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR}
@@ -29,7 +28,6 @@ RUN export GOOS=linux && export CGO_ENABLED=1 && \
 RUN echo "Building Windows binaries"
 RUN export GOOS=windows && export CGO_ENABLED=1 && \
     export GOARCH=amd64 && CC="zig cc -target x86_64-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
-    export GOARCH=386 && CC="zig cc -target i386-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=arm && CC="zig cc -target arm-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=arm64 && CC="zig cc -target aarch64-${GOOS}-gnu" ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR}
 
@@ -45,26 +43,23 @@ RUN export GOOS=freebsd && export CGO_ENABLED=0 && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=arm && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
-    export GOARCH=386 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR}
 
-# NetBSD
-RUN echo "Building NetBSD binaries"
+    # NetBSD
+    RUN echo "Building NetBSD binaries"
 RUN export GOOS=netbsd && export CGO_ENABLED=0 && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=arm && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
-    export GOARCH=386 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR}
 
-# OpenBSD
-RUN echo "Building OpenBSD binaries"
+    # OpenBSD
+    RUN echo "Building OpenBSD binaries"
 RUN export GOOS=openbsd && export CGO_ENABLED=0 && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=amd64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
     export GOARCH=arm && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR} && \
-    export GOARCH=386 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR}
 
-# Android
-RUN echo "Building Android binaries"
+    # Android
+    RUN echo "Building Android binaries"
 RUN export GOOS=android && export CGO_ENABLED=0 && \
     export GOARCH=arm64 && ${GOBUILD}_${GOOS}_${GOARCH}.bin ${BASEDIR}
 
@@ -75,4 +70,4 @@ RUN export GOOS=dragonfly && export  CGO_ENABLED=0 && \
 
 FROM scratch
 COPY --from=0 /tmp/bins/*.bin  /
-ENTRYPOINT ["/dnsmonster"] 
+ENTRYPOINT ["/dnsmonster"]

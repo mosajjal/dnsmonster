@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/golang-collections/collections/tst"
@@ -30,7 +31,6 @@ import (
 
 var (
 	globalMetricConfig metricConfig
-	releaseVersion     string = "DEVELOPMENT"
 	// GlobalParser is the top-level argument parser. each output, capture, metric etc flag is registered
 	// under Globalparser. This makes it easier for output modules to incorporate their own flags
 	GlobalParser = flags.NewNamedParser("dnsmonster", flags.PassDoubleDash|flags.PrintErrors)
@@ -87,6 +87,30 @@ var helpOptions struct {
 	FishCompletion bool           `long:"fishcompletion" ini-name:"fishcompletion" no-ini:"true" description:"Print fish completion script to stdout"`
 	SystemdService bool           `long:"systemdservice" ini-name:"systemdservice" no-ini:"true" description:"Print a sample systemd service to stdout"`
 	WriteConfig    flags.Filename `long:"writeconfig"    ini-name:"writeconfig"    no-ini:"true" description:"generate a config file based on current inputs and write to provided path" default:""`
+}
+
+// GetCommitHash retrieves the current commit hash from the build information.
+func GetCommitHash() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" {
+				return setting.Value
+			}
+		}
+	}
+	return "unknown" // Or handle the case where info isn't available
+}
+
+// GetCommitDate retrieves the current commit date from the build information.
+func GetCommitDate() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.time" {
+				return setting.Value
+			}
+		}
+	}
+	return "unknown" // Or handle the case where info isn't available
 }
 
 // ProcessFlags kickstarts `dnsmonster`. it adds the basic module's flags
@@ -171,7 +195,8 @@ func ProcessFlags(ctx context.Context) {
 	log.SetLevel(lvl)
 
 	if GeneralFlags.Version {
-		log.Fatalln("dnsmonster version:", releaseVersion)
+		fmt.Println("dnsmonster build %s, built at %s", GetCommitHash(), GetCommitDate())
+		os.Exit(0)
 	}
 
 	switch GeneralFlags.LogFormat {

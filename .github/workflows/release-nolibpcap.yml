@@ -1,28 +1,31 @@
-name: Publish cross-compile binaries on Release
-on: 
+name: Publish binaries on Release
+on:
   release:
     types: [created]
 
 jobs:
-  build:
-    name: Build
-    runs-on: ubuntu-22.04
+  releases-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # build and publish in parallel: linux/386, linux/amd64, windows/386, windows/amd64, darwin/386, darwin/amd64
+        goos: [linux, windows, darwin, freebsd, openbsd]
+        goarch: [amd64, arm64, arm]
+        exclude:
+          - goarch: "arm"
+            goos: windows
+          - goarch: "arm"
+            goos: darwin
     steps:
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
-
-    - name: Get dependencies
-      run: |
-        docker build -t myrepo:latest -f Dockerfile-crossplatform .
-        id=$(docker create myrepo:latest)
-        docker cp $id:/ /tmp/bin
-
-    - name: Upload Linux binary to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/bin/*.bin
-        file_glob: true
-        tag: ${{ github.ref }}
-        overwrite: true
+      - uses: actions/checkout@v4
+      - uses: wangyoucao577/go-release-action@master
+        env:
+          CGO_ENABLED: 0 # support alpine
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          project_path: "./cmd/dnsmonster"
+          ldflags: "-s -w"
+          build_flags: "-v -tags nolibpcap"

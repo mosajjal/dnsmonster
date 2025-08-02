@@ -1,5 +1,5 @@
 name: Publish binaries on Release
-on: 
+on:
   release:
     types: [created]
 
@@ -8,60 +8,59 @@ jobs:
     name: Build
     runs-on: ubuntu-22.04
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
+      - name: Get dependencies
+        run: |
+          docker build -t myrepo:latest -f Dockerfile-release .
+          id=$(docker create myrepo:latest)
+          docker cp $id:/tmp/dnsmonster-linux-amd64.bin /tmp/dnsmonster-linux-amd64.bin
+          docker cp $id:/tmp/dnsmonster-windows-amd64.exe /tmp/dnsmonster-windows-amd64.exe
+          docker cp $id:/tmp/dnsmonster-latest.rpm /tmp/dnsmonster-latest.rpm
+          docker cp $id:/tmp/dnsmonster-latest.deb /tmp/dnsmonster-latest.deb
+          strip --strip-all /tmp/dnsmonster-linux-amd64.bin
+          tar czf /tmp/dnsmonster-linux-amd64.bin.tar.gz -C /tmp/ dnsmonster-linux-amd64.bin
 
-    - name: Get dependencies
-      run: |
-        docker build -t myrepo:latest -f Dockerfile-release .
-        id=$(docker create myrepo:latest)
-        docker cp $id:/tmp/dnsmonster-linux-amd64.bin /tmp/dnsmonster-linux-amd64.bin
-        docker cp $id:/tmp/dnsmonster-windows-amd64.exe /tmp/dnsmonster-windows-amd64.exe
-        docker cp $id:/tmp/dnsmonster-latest.rpm /tmp/dnsmonster-latest.rpm
-        docker cp $id:/tmp/dnsmonster-latest.deb /tmp/dnsmonster-latest.deb
-        strip --strip-all /tmp/dnsmonster-linux-amd64.bin
-        tar czf /tmp/dnsmonster-linux-amd64.bin.tar.gz -C /tmp/ dnsmonster-linux-amd64.bin
+      - name: Upload Linux binary to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /tmp/dnsmonster-linux-amd64.bin.tar.gz
+          asset_name: dnsmonster-musl-static-stripped-amd64.tar.gz
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
 
-    - name: Upload Linux binary to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/dnsmonster-linux-amd64.bin.tar.gz
-        asset_name: dnsmonster-musl-static-stripped-amd64.tar.gz
-        tag: ${{ github.ref }}
-        overwrite: true
-        body: ""
+      - name: Upload windows binary to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /tmp/dnsmonster-windows-amd64.exe
+          asset_name: dnsmonster-windows-amd64.exe
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
 
-    - name: Upload windows binary to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/dnsmonster-windows-amd64.exe
-        asset_name: dnsmonster-windows-amd64.exe
-        tag: ${{ github.ref }}
-        overwrite: true
-        body: ""
+      - name: Upload rpm to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /tmp/dnsmonster-latest.rpm
+          asset_name: dnsmonster-centos-rhel-ami-x86_64.rpm
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
 
-    - name: Upload rpm to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/dnsmonster-latest.rpm
-        asset_name: dnsmonster-centos-rhel-ami-x86_64.rpm
-        tag: ${{ github.ref }}
-        overwrite: true
-        body: ""
-
-    - name: Upload deb to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: /tmp/dnsmonster-latest.deb
-        asset_name: dnsmonster-debian-ubuntu-x86_64.deb
-        tag: ${{ github.ref }}
-        overwrite: true
-        body: ""
+      - name: Upload deb to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /tmp/dnsmonster-latest.deb
+          asset_name: dnsmonster-debian-ubuntu-x86_64.deb
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
 
     # - uses: actions/upload-artifact@v2
     #   with:

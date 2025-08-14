@@ -333,6 +333,9 @@ Note that command line arguments are case-insensitive as of v0.9.5
 # Save full packet query and response in JSON format.
 --clickhousesavefullquery
 
+# Use DNSTap identity field instead of ServerName for the identity field in ClickHouse
+--clickhouseusednstapidentity
+
 # What should be written to clickhouse. options:
 #	0: Disable Output
 #	1: Enable Output without any filters

@@ -137,7 +137,6 @@ func (config captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawP
 				}
 			}
 		case <-ctx.Done():
-			log.Debug("exiting out of inputhandler goroutine") //todo:remove
 			return nil
 		}
 
@@ -213,7 +212,6 @@ func (config captureConfig) StartPacketDecoder(ctx context.Context) error {
 		// case packet := <-config.processingChannel:
 		// 	workerHandlerChannel <- packet
 		case <-ctx.Done():
-			log.Debug("exiting out of packet decoder goroutine") //todo:remove
 			return nil
 		}
 	}

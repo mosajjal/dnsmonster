@@ -96,7 +96,6 @@ func (stdConfig stdoutConfig) stdoutOutputWorker(ctx context.Context) {
 				fmt.Fprint(os.Stdout, "\n")
 			}
 		case <-ctx.Done():
-			log.Debug("exiting out of stdout output worker") //todo:remove
 			return
 		}
 	}

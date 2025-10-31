@@ -107,12 +107,64 @@ func (chConfig clickhouseConfig) connectClickhouseRetry(ctx context.Context) (dr
 		}
 
 		log.Errorf("Error connecting to Clickhouse: %s", err)
-		// todo: try and create table if it doesn't exist
+		
+		// Try to create table if connection succeeded but batch preparation failed
+		if c != nil {
+			if createErr := chConfig.createTableIfNotExists(ctx, c); createErr != nil {
+				log.Errorf("Failed to create table: %v", createErr)
+			} else {
+				log.Infof("Table creation attempted, retrying connection")
+				// Close the old connection and try again immediately
+				c.Close()
+				continue
+			}
+		}
 
 		// Error getting connection, wait the timer or check if we are exiting
-		<-tick.C
-		continue
+		select {
+		case <-tick.C:
+			continue
+		case <-ctx.Done():
+			log.Info("Context cancelled, stopping ClickHouse connection retry")
+			return nil, nil
+		}
 	}
+}
+
+func (chConfig clickhouseConfig) createTableIfNotExists(ctx context.Context, conn driver.Conn) error {
+	// Default table schema for DNS monitoring
+	createTableSQL := fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
+			DnsDate Date,
+			timestamp DateTime,
+			Server String,
+			IPVersion UInt8,
+			SrcIP String,
+			DstIP String,
+			Protocol String,
+			QR UInt8,
+			OpCode UInt8,
+			Class UInt8,
+			Type UInt8,
+			Edns0Present UInt8,
+			DoBit UInt8,
+			FullQuery String,
+			ResponseCode UInt8,
+			Question String,
+			Size UInt16,
+			Rcode String
+		) ENGINE = MergeTree()
+		PARTITION BY DnsDate
+		ORDER BY (timestamp, Server)
+		TTL DnsDate + INTERVAL 30 DAY
+	`, chConfig.ClickhouseTable)
+
+	err := conn.Exec(ctx, createTableSQL)
+	if err != nil {
+		return fmt.Errorf("failed to create table: %w", err)
+	}
+	log.Infof("Successfully created or verified table %s", chConfig.ClickhouseTable)
+	return nil
 }
 
 func (chConfig clickhouseConfig) connectClickhouse(ctx context.Context) (driver.Conn, driver.Batch, error) {
@@ -260,7 +312,6 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 				clickhouseFailed.Inc(int64(c))
 			}
 			conn.Close()
-			log.Debug("exiting out of clickhouse output") //todo:remove
 			return nil
 		}
 	}

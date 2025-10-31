@@ -45,7 +45,6 @@ type metricConfig struct {
 }
 
 func (c metricConfig) SetupMetrics(ctx context.Context) error {
-	//TODO: none of the below goroutines have a consumer for ctx.Done()
 	g, gCtx := errgroup.WithContext(ctx)
 	switch c.MetricEndpointType {
 	case "statsd":
@@ -60,7 +59,19 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		g.Go(func() error { reporter.Flush(); return nil })
+		g.Go(func() error {
+			ticker := time.NewTicker(c.MetricFlushInterval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					reporter.Flush()
+				case <-gCtx.Done():
+					log.Debug("exiting statsd metrics goroutine")
+					return nil
+				}
+			}
+		})
 
 	case "prometheus":
 		log.Infof("Prometheus Metrics enabled")
@@ -68,7 +79,19 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 			return fmt.Errorf("promethus Registry is required")
 		}
 		prometheusClient := prometheusmetrics.NewPrometheusProvider(metrics.DefaultRegistry, "dnsmonster", GeneralFlags.ServerName, prometheus.DefaultRegisterer, 1*time.Second)
-		g.Go(func() error { prometheusClient.UpdatePrometheusMetrics(); return nil })
+		g.Go(func() error {
+			ticker := time.NewTicker(1 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					prometheusClient.UpdatePrometheusMetrics()
+				case <-gCtx.Done():
+					log.Debug("exiting prometheus metrics update goroutine")
+					return nil
+				}
+			}
+		})
 
 		u, err := url.Parse(c.MetricPrometheusEndpoint)
 		if err != nil || u.Path == "" {
@@ -76,7 +99,23 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 		}
 		g.Go(func() error {
 			http.Handle(u.Path, promhttp.Handler())
-			return http.ListenAndServe(u.Host, nil)
+			server := &http.Server{Addr: u.Host}
+			
+			// Shutdown gracefully on context cancellation
+			go func() {
+				<-gCtx.Done()
+				log.Info("shutting down prometheus HTTP server")
+				shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				if err := server.Shutdown(shutdownCtx); err != nil {
+					log.Errorf("prometheus server shutdown error: %v", err)
+				}
+			}()
+			
+			if err := server.ListenAndServe(); err != http.ErrServerClosed {
+				return err
+			}
+			return nil
 		})
 
 	case "stderr":

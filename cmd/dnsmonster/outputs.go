@@ -78,8 +78,16 @@ func setupOutputs(ctx context.Context, resultChannel *chan util.DNSResult) error
 			select {
 			case data := <-*resultChannel:
 				for _, o := range util.GlobalDispatchList {
-					// todo: this blocks on type0 outputs. This is still blocking for some reason
-					o.OutputChannel() <- data
+					// Non-blocking send with timeout to prevent blocking on full channels
+					select {
+					case o.OutputChannel() <- data:
+						// Successfully sent
+					case <-time.After(100 * time.Millisecond):
+						// Channel is full or blocked, log and continue
+						log.Warnf("Output channel blocked, dropping packet")
+					case <-gCtx.Done():
+						return nil
+					}
 				}
 
 			case <-skipDomainsFileTickerChan:
@@ -87,7 +95,6 @@ func setupOutputs(ctx context.Context, resultChannel *chan util.DNSResult) error
 			case <-allowDomainsFileTickerChan:
 				util.GeneralFlags.LoadAllowDomain()
 			case <-gCtx.Done():
-				log.Debug("exiting out of output dispatcher") //todo:remove
 				return nil
 			}
 		}

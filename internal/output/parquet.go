@@ -220,7 +220,6 @@ func (config *parquetConfig) OutputWorker(ctx context.Context) {
 			}
 
 		case <-ctx.Done():
-			log.Debug("exiting out of parquet output") //todo:remove
 			config.parquetWriterLock.Lock()
 			if n, err := config.parquetWriter.Write(dataArr); err != nil {
 				config.parquetSkipped.Inc(int64(n))

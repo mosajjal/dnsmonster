@@ -80,20 +80,20 @@ func (psqConf psqlConfig) OutputChannel() chan util.DNSResult {
 	return psqConf.outputChannel
 }
 
-func (psqConf psqlConfig) connectPsql() *pgxpool.Pool {
-	c, err := pgxpool.Connect(context.Background(), psqConf.PsqlEndpoint)
+func (psqConf psqlConfig) connectPsql(ctx context.Context) *pgxpool.Pool {
+	c, err := pgxpool.Connect(ctx, psqConf.PsqlEndpoint)
 	if err != nil {
 		// This will not be a connection error, but a DSN parse error or
 		// another initialization error.
 		log.Fatal(err)
 	}
 	// defer c.Close() // todo: move to a close channel
-	err = c.Ping(context.Background())
+	err = c.Ping(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = c.Exec(context.Background(),
+	_, err = c.Exec(ctx,
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %v (PacketTime timestamp, IndexTime timestamp,
 				Server text, IPVersion integer, SrcIP inet, DstIP inet, Protocol char(3),
 				QR smallint, OpCode smallint, Class smallint, Type integer, Edns0Present smallint,
@@ -108,18 +108,18 @@ func (psqConf psqlConfig) connectPsql() *pgxpool.Pool {
 
 func (psqConf psqlConfig) Output(ctx context.Context) {
 	for i := 0; i < int(psqConf.PsqlWorkers); i++ {
-		go psqConf.OutputWorker()
+		go psqConf.OutputWorker(ctx)
 	}
 }
 
-func (psqConf psqlConfig) OutputWorker() {
+func (psqConf psqlConfig) OutputWorker(ctx context.Context) {
 	psqlSkipped := metrics.GetOrRegisterCounter("psqlSkipped", metrics.DefaultRegistry)
 	psqlSentToOutput := metrics.GetOrRegisterCounter("psqlSentToOutput", metrics.DefaultRegistry)
 	psqlFailed := metrics.GetOrRegisterCounter("psqlFailed", metrics.DefaultRegistry)
 
 	c := uint(0)
 
-	conn := psqConf.connectPsql()
+	conn := psqConf.connectPsql(ctx)
 
 	ticker := time.NewTicker(time.Second * 5)
 	div := 0
@@ -137,7 +137,7 @@ func (psqConf psqlConfig) OutputWorker() {
 		Class, Type, Edns0Present, DoBit, FullQuery, ResponseCode, Question, Size)
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);`, psqConf.PsqlTable)
 
-	timeoutContext, cancel := context.WithTimeout(context.Background(), psqConf.PsqlBatchTimeout)
+	timeoutContext, cancel := context.WithTimeout(ctx, psqConf.PsqlBatchTimeout)
 	defer cancel()
 
 	for {
@@ -189,7 +189,6 @@ func (psqConf psqlConfig) OutputWorker() {
 				)
 
 				if int(c%psqConf.PsqlBatchSize) == div { // this block will never reach if batch delay is enabled
-					log.Warnf("here %d", c) //todo:remove
 					br := conn.SendBatch(timeoutContext, batch)
 					_, err := br.Exec()
 					if err != nil {

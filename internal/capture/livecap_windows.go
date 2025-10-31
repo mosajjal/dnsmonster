@@ -19,23 +19,28 @@
 package capture
 
 import (
+	"fmt"
+
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/pcap"
+	log "github.com/sirupsen/logrus"
 )
 
 type livePcapHandle struct {
 	handle *pcap.Handle
 }
 
-func initializeLivePcap(devName, filter string) *livePcapHandle {
+func initializeLivePcap(devName, filter string) (*livePcapHandle, error) {
 	handle, err := pcap.OpenLive(devName, 1600, true, pcap.BlockForever)
 	if err != nil {
-		panic(err)
-	} else if err := handle.SetBPFFilter(filter); err != nil { // optional
-		panic(err)
+		return nil, fmt.Errorf("failed to open live capture on %s: %w", devName, err)
+	}
+	if err := handle.SetBPFFilter(filter); err != nil {
+		handle.Close()
+		return nil, fmt.Errorf("failed to set BPF filter: %w", err)
 	}
 	h := livePcapHandle{handle}
-	return &h
+	return &h, nil
 }
 
 func (h *livePcapHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {

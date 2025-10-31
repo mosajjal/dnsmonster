@@ -90,7 +90,9 @@ func (viConfig victoriaConfig) sendBatch(batch string, count int) {
 	req, err := http.NewRequest("POST", viConfig.VictoriaOutputEndpoint, bytes.NewBuffer([]byte(batch)))
 	var res *http.Response
 	if err != nil {
-		panic(err)
+		log.Errorf("Failed to create HTTP request: %v", err)
+		victoriaFailed.Inc(int64(count))
+		return
 	}
 	for k, v := range headers {
 		req.Header[k] = []string{v}
@@ -98,17 +100,23 @@ func (viConfig victoriaConfig) sendBatch(batch string, count int) {
 	if viConfig.VictoriaOutputProxy != "" {
 		proxyURL, err := url.Parse(viConfig.VictoriaOutputProxy)
 		if err != nil {
-			panic(err)
+			log.Errorf("Failed to parse proxy URL: %v", err)
+			victoriaFailed.Inc(int64(count))
+			return
 		}
 		client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
 		res, err = client.Do(req)
 		if err != nil {
-			panic(err)
+			log.Errorf("Failed to send batch via proxy: %v", err)
+			victoriaFailed.Inc(int64(count))
+			return
 		}
 	} else {
 		res, err = http.DefaultClient.Do(req)
 		if err != nil {
-			panic(err)
+			log.Errorf("Failed to send batch: %v", err)
+			victoriaFailed.Inc(int64(count))
+			return
 		}
 	}
 	if res.StatusCode >= 200 && res.StatusCode < 300 {

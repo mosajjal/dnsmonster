@@ -8,9 +8,57 @@ on:
 
 jobs:
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04
+    steps:
+    
+    - name: Check out code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
+    
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v4
+      with:
+        version: latest
+        args: --timeout=5m
+
+  test:
+    name: Test
+    runs-on: ubuntu-22.04
+    steps:
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
+    
+    - name: Check out code
+      uses: actions/checkout@v4
+    
+    - name: Get dependencies
+      run: |
+        sudo apt install -y libpcap0.8-dev
+        go get -v ./cmd/dnsmonster
+    
+    - name: Run tests
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+
   build:
     name: Build
     runs-on: ubuntu-22.04
+    needs: [lint, test]
     steps:
 
     - name: Set up Go 1.x
@@ -28,9 +76,6 @@ jobs:
 
     - name: Build
       run: go build -v ./cmd/dnsmonster
-
-    - name: Test
-      run: go test -v ./cmd/dnsmonster
 
     - name: generate sample config file
       run: ./dnsmonster --writeConfig=config-sample.ini
@@ -62,3 +107,31 @@ jobs:
       with:
         name: dnsmonster-linux-amd64.bin
         path: ./dnsmonster
+  
+  security:
+    name: Security Scan
+    runs-on: ubuntu-22.04
+    steps:
+    
+    - name: Check out code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
+    
+    - name: Run Gosec Security Scanner
+      uses: securego/gosec@master
+      with:
+        args: '-no-fail -fmt sarif -out results.sarif ./...'
+    
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: results.sarif
+    
+    - name: Run govulncheck
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...

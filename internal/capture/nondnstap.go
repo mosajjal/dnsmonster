@@ -35,7 +35,11 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 	var myHandler genericPacketHandler
 
 	if config.DevName != "" && !config.UseAfpacket {
-		myHandler = initializeLivePcap(config.DevName, config.Filter)
+		var err error
+		myHandler, err = initializeLivePcap(config.DevName, config.Filter)
+		if err != nil {
+			log.Fatalf("Failed to initialize live pcap: %v", err)
+		}
 		log.Info("Waiting for packets")
 
 	} else if config.DevName != "" && config.UseAfpacket {
@@ -78,7 +82,6 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 					packetLossPercent.Update(float64(packetsDropped.Value()) * 100.0 / float64(packetsCaptured.Value()))
 				}
 			case <-gCtx.Done():
-				log.Debug("exiting out of metric update goroutine") //todo:remove
 				return nil
 			}
 		}

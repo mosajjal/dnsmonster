@@ -195,7 +195,7 @@ func ProcessFlags(ctx context.Context) {
 	log.SetLevel(lvl)
 
 	if GeneralFlags.Version {
-		fmt.Println("dnsmonster build %s, built at %s", GetCommitHash(), GetCommitDate())
+		fmt.Printf("dnsmonster build %s, built at %s\n", GetCommitHash(), GetCommitDate())
 		os.Exit(0)
 	}
 

@@ -19,6 +19,8 @@
 package capture
 
 import (
+	"fmt"
+
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/pcapgo"
 	log "github.com/sirupsen/logrus"
@@ -28,16 +30,17 @@ type livePcapHandle struct {
 	handle *pcapgo.EthernetHandle
 }
 
-func initializeLivePcap(devName, filter string) *livePcapHandle {
+func initializeLivePcap(devName, filter string) (*livePcapHandle, error) {
 	// Open device
 	handle, err := pcapgo.NewEthernetHandle(devName)
 	// handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to open ethernet handle on %s: %w", devName, err)
 	}
 	err = handle.SetPromiscuous(!GlobalCaptureConfig.NoPromiscuous)
 	if err != nil {
-		log.Fatal("Error setting interface to promiscuous.. Exiting")
+		handle.Close()
+		return nil, fmt.Errorf("failed to set promiscuous mode: %w", err)
 	}
 	// Set Filter
 	log.Infof("Using Device: %s", devName)
@@ -46,11 +49,12 @@ func initializeLivePcap(devName, filter string) *livePcapHandle {
 		log.Infof("Filter: %s", filter)
 		err = handle.SetBPF(bpf)
 		if err != nil {
-			log.Fatal(err)
+			handle.Close()
+			return nil, fmt.Errorf("failed to set BPF filter: %w", err)
 		}
 	}
 	h := livePcapHandle{handle}
-	return &h
+	return &h, nil
 }
 
 func (h *livePcapHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {

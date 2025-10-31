@@ -19,6 +19,8 @@
 package capture
 
 import (
+	"fmt"
+
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/bsdbpf"
 	log "github.com/sirupsen/logrus"
@@ -30,7 +32,7 @@ type BsdHandle struct {
 	droppedCnt uint
 }
 
-func initializeLivePcap(devName, filter string) *BsdHandle {
+func initializeLivePcap(devName, filter string) (*BsdHandle, error) {
 	// Open device
 
 	var options = bsdbpf.Options{
@@ -45,7 +47,7 @@ func initializeLivePcap(devName, filter string) *BsdHandle {
 	handle, err := bsdbpf.NewBPFSniffer(devName, &options)
 	// handle, err := pcap.OpenLive(devName, 65536, true, pcap.BlockForever)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to create BPF sniffer on %s: %w", devName, err)
 	}
 
 	// Set Filter
@@ -60,7 +62,7 @@ func initializeLivePcap(devName, filter string) *BsdHandle {
 	// 	}
 	// }
 	// h := livePcapHandle{handle}
-	return &BsdHandle{*handle, 0, 0}
+	return &BsdHandle{*handle, 0, 0}, nil
 }
 
 func (h *BsdHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {

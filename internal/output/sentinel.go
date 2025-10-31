@@ -93,7 +93,7 @@ type signatureElements struct {
 	Resource      string
 }
 
-func (seConfig sentinelConfig) BuildSignature(sigelements signatureElements) string {
+func (seConfig sentinelConfig) BuildSignature(sigelements signatureElements) (string, error) {
 	// build HMAC signature
 	tmpl, err := template.New("sign").Parse(`{{.Method}}
 {{.ContentLength}}
@@ -101,20 +101,20 @@ func (seConfig sentinelConfig) BuildSignature(sigelements signatureElements) str
 x-ms-date:{{.Date}}
 {{.Resource}}`)
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("failed to parse signature template: %w", err)
 	}
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, sigelements); err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("failed to execute signature template: %w", err)
 	}
 	sharedKeyBytes, err := base64.StdEncoding.DecodeString(seConfig.SentinelOutputSharedKey)
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("failed to decode shared key: %w", err)
 	}
 	h := hmac.New(sha256.New, []byte(sharedKeyBytes))
 	h.Write(buf.Bytes())
 	signature := fmt.Sprintf("SharedKey %s:%s", seConfig.SentinelOutputCustomerID, base64.StdEncoding.EncodeToString(h.Sum(nil)))
-	return signature
+	return signature, nil
 }
 
 func (seConfig sentinelConfig) sendBatch(batch string, count int) {
@@ -130,7 +130,12 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 		ContentType:   "application/json",
 		Resource:      "/api/logs",
 	}
-	signature := seConfig.BuildSignature(s)
+	signature, err := seConfig.BuildSignature(s)
+	if err != nil {
+		log.Errorf("Failed to build signature: %v", err)
+		sentinelFailed.Inc(int64(count))
+		return
+	}
 	// build request
 	uri := "https://" + seConfig.SentinelOutputCustomerID + ".ods.opinsights.azure.com" + s.Resource + "?api-version=2016-04-01"
 	headers := map[string]string{
@@ -143,7 +148,9 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer([]byte(batch)))
 	var res *http.Response
 	if err != nil {
-		panic(err)
+		log.Errorf("Failed to create HTTP request: %v", err)
+		sentinelFailed.Inc(int64(count))
+		return
 	}
 	for k, v := range headers {
 		req.Header[k] = []string{v}
@@ -151,17 +158,23 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 	if seConfig.SentinelOutputProxy != "" {
 		proxyURL, err := url.Parse(seConfig.SentinelOutputProxy)
 		if err != nil {
-			panic(err)
+			log.Errorf("Failed to parse proxy URL: %v", err)
+			sentinelFailed.Inc(int64(count))
+			return
 		}
 		client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
 		res, err = client.Do(req)
 		if err != nil {
-			panic(err)
+			log.Errorf("Failed to send batch via proxy: %v", err)
+			sentinelFailed.Inc(int64(count))
+			return
 		}
 	} else {
 		res, err = http.DefaultClient.Do(req)
 		if err != nil {
-			panic(err)
+			log.Errorf("Failed to send batch: %v", err)
+			sentinelFailed.Inc(int64(count))
+			return
 		}
 	}
 	if res.StatusCode >= 200 && res.StatusCode < 300 {

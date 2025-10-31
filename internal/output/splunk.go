@@ -127,7 +127,9 @@ func (spConfig splunkConfig) connectSplunk(splunkEndpoint string) splunkConnecti
 	if spConfig.SplunkOutputProxy != "" {
 		proxyURL, err := url.Parse(spConfig.SplunkOutputProxy)
 		if err != nil {
-			panic(err)
+			log.Errorf("Failed to parse Splunk proxy URL: %v", err)
+			// Return a connection with nil client, which will be handled by the caller
+			return splunkConnection{Client: nil}
 		}
 		httpClient.Transport = &http.Transport{Proxy: http.ProxyURL(proxyURL)}
 	}
@@ -186,6 +188,13 @@ func (spConfig splunkConfig) Output(ctx context.Context) {
 		case <-ticker.C:
 			healthyID := selectHealthyConnection()
 			if conn, ok := splunkConnectionList[healthyID]; ok {
+				if conn.Client == nil {
+					log.Warnf("Splunk client is nil for endpoint %s, marking as unhealthy", healthyID)
+					conn.Unhealthy++
+					splunkConnectionList[healthyID] = conn
+					splunkFailed.Inc(int64(len(batch)))
+					continue
+				}
 				if err := spConfig.splunkSendData(conn.Client, batch); err != nil {
 					log.Warn(err)
 					log.Warnf("marking connection as unhealthy")

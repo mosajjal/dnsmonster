@@ -176,9 +176,13 @@ func (kafConfig kafkaConfig) Output(ctx context.Context) {
 	for {
 		select {
 		case data := <-kafConfig.outputChannel:
-			if err := kafConfig.kafkaSendData(kWriter, data); err != nil {
+			if err := kafConfig.kafkaSendData(ctx, kWriter, data); err != nil {
 				log.Errorf("Could not send kafka message: %v", err)
 			}
+		case <-ctx.Done():
+			log.Info("Context cancelled, closing kafka connection")
+			kWriter.Close()
+			return
 		case <-kafConfig.closeChannel:
 			log.Info("Closing kafka connection")
 			kWriter.Close()
@@ -187,7 +191,7 @@ func (kafConfig kafkaConfig) Output(ctx context.Context) {
 	}
 }
 
-func (kafConfig kafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util.DNSResult) error {
+func (kafConfig kafkaConfig) kafkaSendData(ctx context.Context, kWriter *kafka.Writer, dnsresult util.DNSResult) error {
 	kafkaSentToOutput := metrics.GetOrRegisterCounter("kafkaSentToOutput", metrics.DefaultRegistry)
 	kafkaSkipped := metrics.GetOrRegisterCounter("kafkaSkipped", metrics.DefaultRegistry)
 
@@ -201,7 +205,7 @@ func (kafConfig kafkaConfig) kafkaSendData(kWriter *kafka.Writer, dnsresult util
 
 	myUUID := kafkaUUIDGen.Hex128()
 
-	return kWriter.WriteMessages(context.Background(), kafka.Message{
+	return kWriter.WriteMessages(ctx, kafka.Message{
 		Key:   []byte(myUUID),
 		Value: []byte(kafConfig.outputMarshaller.Marshal(dnsresult)),
 	})

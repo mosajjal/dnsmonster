@@ -307,7 +307,6 @@ func ipv4Defragger(ctx context.Context, ipInput <-chan ipv4ToDefrag, ipOut chan 
 				log.Infof("ipv4Defragger: discarded %d packets", discarded)
 			}
 		case <-ctx.Done():
-			log.Debug("exiting out of ipv4 goroutine") //todo:remove
 			return nil
 		}
 	}
@@ -330,7 +329,6 @@ func ipv6Defragger(ctx context.Context, ipInput <-chan ipv6FragmentInfo, ipOut c
 			ipv6Defragger.DiscardOlderThan(time.Now().Add(gcTime * -1))
 
 		case <-ctx.Done():
-			log.Debug("exiting out of ipv6 goroutine") //todo:remove
 			return nil
 		}
 	}

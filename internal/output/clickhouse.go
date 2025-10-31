@@ -41,6 +41,7 @@ type clickhouseConfig struct {
 	ClickhouseDebug             bool          `long:"clickhousedebug"             ini-name:"clickhousedebug"             env:"DNSMONSTER_CLICKHOUSEDEBUG"             description:"Debug Clickhouse connection"`
 	ClickhouseSecure            bool          `long:"clickhousesecure"            ini-name:"clickhousesecure"            env:"DNSMONSTER_CLICKHOUSESECURE"            description:"Use TLS for Clickhouse connection"`
 	ClickhouseSaveFullQuery     bool          `long:"clickhousesavefullquery"     ini-name:"clickhousesavefullquery"     env:"DNSMONSTER_CLICKHOUSESAVEFULLQUERY"     description:"Save full packet query and response in JSON format."`
+	ClickhouseUseDNSTapIdentity bool          `long:"clickhouseusednstapidentity" ini-name:"clickhouseusednstapidentity" env:"DNSMONSTER_CLICKHOUSEUSEDNSTAPIDENTITY" description:"Use DNSTap identity field instead of ServerName for the identity field in ClickHouse"`
 	ClickhouseOutputType        uint          `long:"clickhouseoutputtype"        ini-name:"clickhouseoutputtype"        env:"DNSMONSTER_CLICKHOUSEOUTPUTTYPE"        default:"0"                                                       description:"What should be written to clickhouse. options:\n;\t0: Disable Output\n;\t1: Enable Output without any filters\n;\t2: Enable Output and apply skipdomains logic\n;\t3: Enable Output and apply allowdomains logic\n;\t4: Enable Output and apply both skip and allow domains logic"    choice:"0" choice:"1" choice:"2" choice:"3" choice:"4"`
 	ClickhouseBatchSize         uint          `long:"clickhousebatchsize"         ini-name:"clickhousebatchsize"         env:"DNSMONSTER_CLICKHOUSEBATCHSIZE"         default:"100000"                                                  description:"Minimum capacity of the cache array used to send data to clickhouse. Set close to the queries per second received to prevent allocations"`
 	ClickhouseWorkers           uint          `long:"clickhouseworkers"           ini-name:"clickhouseworkers"           env:"DNSMONSTER_CLICKHOUSEWORKERS"           default:"1"                                                       description:"Number of Clickhouse output Workers"`
@@ -264,10 +265,16 @@ func (chConfig clickhouseConfig) clickhouseOutputWorker(ctx context.Context) err
 						doBit = 1
 					}
 				}
+				// Choose identity field based on configuration
+				identityField := util.GeneralFlags.ServerName
+				if chConfig.ClickhouseUseDNSTapIdentity {
+					identityField = data.Identity
+				}
+
 				err := batch.Append(
 					data.Timestamp,
 					time.Now(),
-					util.GeneralFlags.ServerName,
+					identityField,
 					data.IPVersion,
 					data.SrcIP.To16(),
 					data.DstIP.To16(),

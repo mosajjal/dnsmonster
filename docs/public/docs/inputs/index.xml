@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Inputs and Filters on DNSMonster</title>
+    <link>//localhost:1313/docs/inputs/</link>
+    <description>Recent content in Inputs and Filters on DNSMonster</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <atom:link href="//localhost:1313/docs/inputs/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Filters and masks</title>
+      <link>//localhost:1313/docs/inputs/filters_masks/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>//localhost:1313/docs/inputs/filters_masks/</guid>
+      <description>&lt;p&gt;There are a few ways to manipulate incoming packets in various steps of &lt;code&gt;dnsmonster&lt;/code&gt; pipeline. They operate in different levels of stack and have different performance implications.&lt;/p&gt;&#xA;&lt;h2 id=&#34;bpf&#34;&gt;BPF&lt;/h2&gt;&#xA;&lt;div class=&#34;alert alert-primary&#34; role=&#34;alert&#34;&gt;&#xA;&#xA;Applied at kernel level&lt;/div&gt;&#xA;&#xA;&lt;p&gt;BPF is by far the most performant way to filter incoming packets. It&amp;rsquo;s only supported on live capture (&lt;code&gt;--devName&lt;/code&gt;). It uses the &lt;code&gt;tcpdump&lt;/code&gt;&amp;rsquo;s &lt;a href=&#34;https://www.tcpdump.org/manpages/pcap-filter.7.html&#34;&gt;pcap-filter&lt;/a&gt; language to filter out the packets.&lt;/p&gt;&#xA;&lt;h2 id=&#34;sample-ratio&#34;&gt;Sample Ratio&lt;/h2&gt;&#xA;&lt;div class=&#34;alert alert-primary&#34; role=&#34;alert&#34;&gt;&#xA;&#xA;Applied at capture level&lt;/div&gt;&#xA;&#xA;&lt;p&gt;Sample ratio (&lt;code&gt;--sampleRatio&lt;/code&gt;) is an easy way to reduce the number of packets being pushed to the pipeline purely by numbers. the default value is 1:1 meaning for each 1 incoming packet, 1 gets pushed to the pipeline. you can change that if you have a huge number of packets or your output is not catching up with the input. Checkout &lt;a href=&#34;../../configuration/performance#sampling-and-bpf-based-split-of-traffic&#34;&gt;performance guide&lt;/a&gt; for more detail.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Input options</title>
+      <link>//localhost:1313/docs/inputs/inputs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>//localhost:1313/docs/inputs/inputs/</guid>
+      <description>&lt;p&gt;Let&amp;rsquo;s go through some examples of how to set up &lt;code&gt;dnsmonster&lt;/code&gt; inputs&lt;/p&gt;&#xA;&lt;h3 id=&#34;live-interface&#34;&gt;Live interface&lt;/h3&gt;&#xA;&lt;p&gt;To start listening on an interface, simply put the name of the interface in the &lt;code&gt;--devName=&lt;/code&gt; parameter. In unix-like systems, the &lt;code&gt;ip a&lt;/code&gt; command or &lt;code&gt;ifconfig&lt;/code&gt; gives you a list of interfaces that you can use. In this mode, &lt;code&gt;dnsmonster&lt;/code&gt; needs to run with higher privileges.&lt;/p&gt;&#xA;&lt;p&gt;In Windows environments, to get a list of interfaces, open cmd.exe as Administrator and run the following: &lt;code&gt;getmac.exe&lt;/code&gt;. You&amp;rsquo;ll see a table with your interfaces&amp;rsquo; MAC address and a Transport Name column with something like this: &lt;code&gt;\Device\Tcpip_{16000000-0000-0000-0000-145C4638064C}&lt;/code&gt;.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

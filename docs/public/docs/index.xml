@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Documentation on DNSMonster</title>
+    <link>//localhost:1313/docs/</link>
+    <description>Recent content in Documentation on DNSMonster</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <atom:link href="//localhost:1313/docs/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>FAQ</title>
+      <link>//localhost:1313/docs/faq/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>//localhost:1313/docs/faq/</guid>
+      <description>&lt;h1 id=&#34;why-should-i-use-dnsmonster&#34;&gt;Why should I use dnsmonster&lt;/h1&gt;&#xA;&lt;p&gt;I&amp;rsquo;ve broken this question into two. Why do you need to monitor your DNS, and why is dnsmonster a good choice to do so.&lt;/p&gt;&#xA;&lt;h2 id=&#34;do-i-need-passive-dns-capture-capability&#34;&gt;Do I need passive DNS capture capability&lt;/h2&gt;&#xA;&lt;p&gt;DNS is one of, if not the most prevalent indicators of compromise in all attacks. The vast majority of external communication of a malware or a backdoor (~92% according to Cisco) have some sort of DNS connectivity in their chain. Here are some great articles around the importance of DNS Security monitoring&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

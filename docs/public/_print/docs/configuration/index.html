@@ -1,0 +1,258 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<link rel="canonical" type="text/html" href="//localhost:1313/docs/configuration/">
+<link rel="alternate" type="application/rss&#43;xml" href="//localhost:1313/docs/configuration/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Configuration | DNSMonster</title>
+<meta name="description" content="Learn about the command line arguments and what they mean">
+<meta property="og:url" content="//localhost:1313/docs/configuration/">
+  <meta property="og:site_name" content="DNSMonster">
+  <meta property="og:title" content="Configuration">
+  <meta property="og:description" content="Learn about the command line arguments and what they mean">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="website">
+
+  <meta itemprop="name" content="Configuration">
+  <meta itemprop="description" content="Learn about the command line arguments and what they mean">
+  <meta itemprop="dateModified" content="2022-08-16T22:20:07+12:00">
+  <meta itemprop="wordCount" content="333">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Configuration">
+  <meta name="twitter:description" content="Learn about the command line arguments and what they mean">
+<link href="/scss/main.css" rel="stylesheet">
+<script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar js-navbar-scroll" data-bs-theme="dark">
+<div class="td-navbar-container container-fluid flex-column flex-md-row">
+  <a class="navbar-brand" href="/"><span class="navbar-brand__logo navbar-logo"><svg viewBox="0 0 1190.6249 1190.625" id="svg1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><defs id="defs1"><linearGradient id="linearGradient3"><stop style="stop-color:#000000;stop-opacity:1" offset="0" id="stop3"/><stop style="stop-color:#000000;stop-opacity:0" offset="1" id="stop4"/></linearGradient><radialGradient xlink:href="#linearGradient3" id="radialGradient4" cx="81.629761" cy="87.943924" fx="81.629761" fy="87.943924" r="74.998024" gradientTransform="matrix(5.8888248,0,0,6.3680746,102.14692,-72.894014)" gradientUnits="userSpaceOnUse"/></defs><g id="layer1"><path style="fill:#203e76;fill-opacity:1;stroke:url(#radialGradient4);stroke-width:5.88883;paint-order:stroke fill markers" d="m764.85669 960.54574c-3.82302-4.12526-6.92689-12.48874-6.94307-18.70833-.0182-6.24645-4.99481-27.79504-8.22793-35.61315C743.7348 891.83428 734.06944 877.16487 722.28693 864.6399 711.434 853.10318 702.26294 845.97417 667.536 822.08003c-7.28406-5.01182-19.36248-14.24708-26.84091-20.52275-7.4784-6.27572-13.87361-11.41037-14.21158-11.41037-.33812.0-1.09484 3.68102-1.68208 8.17998-.58711 4.499-1.3643 10.28334-1.7269 12.85418-2.64244 18.73718-3.83917 33.21665-3.83917 46.4515v15.37159l18.30749 22.53391c24.38374 30.01285 28.43508 36.02307 28.43508 42.18394.0 7.67589-7.26888 15.08897-14.79559 15.08897-6.80971.0-5.73296 1.07393-36.61398-36.52155-20.22092-24.61745-76.78655-90.33652-109.9145-127.70062-47.06391-53.08208-83.92694-78.28-129.17829-88.30045-15.51057-3.43466-48.41052-4.02573-64.41144-1.15717-32.86928 5.89262-62.01563 22.34323-86.04132 48.56304-9.42244 10.28294-20.96125 25.31378-19.43277 25.31378.43999.0 4.55566-2.11953 9.14585-4.71009 35.18023-19.85451 92.21299-24.46157 136.3416-11.01362 13.43474 4.09413 33.82491 13.70127 38.56223 18.16915 4.32637 4.08027 5.23143 6.06842 5.23143 11.49163.0 5.17055-.9634 7.52115-4.5544 11.11214-2.50493 2.5049-6.04637 4.55435-7.86988 4.55435-1.8235.0-9.76524-2.73322-17.64829-6.07391-30.23078-12.81116-48.21855-16.45549-75.9769-15.39322-23.34871.89359-40.15767 4.9332-58.14326 13.97331-27.24389 13.69357-47.05801 33.93493-58.76861 60.03561-2.60448 5.80492-5.81116 11.74309-7.12593 13.1959-6.19499 6.84537-18.61835 3.97015-22.41127-5.18672-1.8236-4.40254-1.64486-7.20298 1.42178-22.27619 14.55604-71.54628 54.62467-126.02407 114.67249-155.91018l15.6527-7.79039-13.24372-6.71571c-24.79261-12.57202-35.31798-22.66615-33.53532-32.16153 1.12479-5.99127 6.25256-11.33823 12.10644-12.624l4.66723-1.02507-6.03147-2.70403c-7.15396-3.20722-9.5622-5.84285-11.49422-12.57937-1.01793-3.54929-.81976-6.48574.67991-10.07495 3.32799-7.96497 7.76925-10.14709 20.65194-10.14709 22.93288.0 36.98893-9.11993 47.64718-30.91439l6.59756-13.49103.91888-85.69471c.59835-55.80182 1.58367-89.77099 2.82471-97.38027 4.33022-26.55081 24.11116-74.16301 42.54062-102.39407 39.03679-59.79849 89.70729-100.28741 143.02305-114.28465 21.96933-5.76766 36.15256-6.35117 139.44863-5.73633 113.79699.67729 112.00931.50148 138.93148 13.66943 20.45579 10.0053 31.31523 19.76618 38.68654 34.77288 9.31944 18.97304 8.91275 38.46166-1.20217 57.60339-4.97824 9.42114-16.23101 20.7409-26.37319 26.53015-3.2427 1.85107-5.90124 3.92883-5.9078 4.61734-.0137 1.10918 9.77618 27.41577 29.49406 79.27867 3.48138 9.15692 6.32987 17.98946 6.32987 19.62773.0 1.63837-4.53226 8.29055-10.07163 14.78269l-10.07158 11.8039 15.37304 41.79828c8.45516 22.98909 18.59651 50.42026 22.53629 60.95818 8.50261 22.74237 8.83232 26.93237 2.60879 33.15583-4.46345 4.46349-4.88551 4.5544-21.14402 4.5544h-16.58974l.52295 62.71294.52291 62.71289 4.14167 11.68559c2.27791 6.42716 9.03464 21.85214 15.01493 34.27791 13.58022 28.2166 19.49538 44.96498 23.79256 67.36711 3.02999 15.7959 3.27748 20.89408 2.47835 51.04734-.99365 37.49392-3.11031 50.03204-12.58935 74.57648-15.78577 40.87447-48.45998 68.95496-62.54772 53.75403zm31.4068-60.18111c7.77999-18.41886 6.18322-38.28292-4.93554-61.39975-7.32328-15.2258-24.6704-33.27733-52.24541-54.3671-38.57241-29.50077-57.83259-53.695-68.76208-86.37788-4.5192-13.51389-4.94716-16.49638-4.91901-34.27783.0365-23.54069 3.74202-40.56449 12.83456-58.97753 13.34269-27.0197 33.41787-47.33028 58.63478-59.32223 4.28468-2.03762 8.00448-3.87072 8.26615-4.07341.26146-.20259-1.39357-2.37498-3.67837-4.82688-7.87051-8.44615-8.62936-13.87906-2.89123-20.69853l4.03374-4.7938h27.90699c15.34887.0 27.90702-.25365 27.90702-.56469.0-.31029-2.15876-5.74449-4.79732-12.07518-2.63851-6.33067-9.32237-23.78028-14.85307-38.77686-5.5307-14.99659-12.63407-33.40143-15.78534-40.89977L757.24977 405.3h-37.86731c-36.6276.0-38.04459-.11481-43.27961-3.50566-6.11767-3.96275-6.70778-5.86627-2.61154-8.42438 1.56145-.97516 7.46936-5.70131 13.12863-10.50242l10.28961-8.7293h40.79195c32.0011.0 40.62772-.41983 40.03014-1.94755-1.32013-3.37487-16.5734-43.25287-23.68965-61.93388-3.75406-9.85488-7.27246-19.49548-7.81871-21.42366-.5459-1.92818-1.82222-3.48128-2.83563-3.45162-1.0135.0297-16.8431 3.08804-35.17702 6.79611l-33.33441 6.74189-4.40317 12.0775c-11.58709 31.78195-30.44157 55.65362-54.74341 69.31064-10.66896 5.99564-9.53806-2.53105-9.65376 72.79024l-.0844 54.80942-4.46793 4.67424c-7.30331 7.64079-18.43819 11.59213-34.87372 12.37564l-14.41232.68703v53.46622c0 59.10805.63888 64.90249 9.86319 89.46038 2.86462 7.6265 8.64745 19.51368 12.85067 26.41593 8.0536 13.225 18.8337 26.62991 17.00957 21.15114-6.48684-19.48306-7.5152-26.92052-7.64793-55.31202-.14548-31.18463.0836-33.35672 6.05223-57.29015 4.46555-17.90646 9.2557-31.39748 15.63718-44.04059 6.5213-12.92003 25.44067-40.05991 30.37574-43.574 8.8132-6.27563 21.99162-1.84569 24.61387 8.27388 1.90873 7.36599.75461 10.69546-6.91849 19.95923-15.63796 18.87992-29.21686 46.70386-33.94313 69.55126-4.45975 21.55934-6.04151 44.19287-4.12088 58.96731 2.72507 20.96279 8.73919 41.68252 17.30231 59.6097 13.92942 29.16161 28.44346 46.13239 56.17986 65.68927 41.69997 29.40257 59.07372 44.63597 71.04131 62.28896 8.72031 12.86312 18.59131 33.35966 22.30198 46.30855l3.67076 12.80966 2.82576-4.64652c1.55409-2.5556 4.67348-9.02108 6.93181-14.36782zM588.85693 835.3382c-1.23689-2.00134 3.25946-34.54771 6.98227-50.54058l2.87729-12.36057-14.88908-15.68492c-33.21698-34.99222-52.32851-68.38458-59.80656-104.49574-2.52948-12.21461-2.91479-21.75755-2.98822-74.00895l-.0842-59.98625-7.58292-3.55358c-14.81871-6.94421-33.8061-31.38751-39.84673-51.29643-4.99631-16.46674-1.65871-43.66381 7.10522-57.89737 1.7743-2.88174 2.84153-5.62401 2.37166-6.09389-.46993-.46997-5.72322.0177-11.674 1.07915-14.36862 2.56784-41.73999 16.10206-53.07911 26.2458-14.88482 13.31578-19.91072 14.3294-28.92022 5.83236-5.29321-4.99222-5.69922-5.97656-4.90557-11.89353.65262-4.86571 2.52213-8.14013 7.60749-13.32439 9.9424-10.13578 30.13395-23.11253 46.69864-30.01226 24.50705-10.20798 33.19754-11.43448 88.58559-12.50159 45.20356-.8708 49.72952-1.20759 57.30828-4.2646 12.64672-5.10121 22.58142-12.13152 33.50159-23.70743 9.6108-10.18797 21.03932-27.4689 19.30987-29.19836-.46108-.46109-4.42732-.0686-8.81339.87145-4.38606.94068-11.03288 1.71029-14.77084 1.71029-5.67622.0-7.46087-.79-10.82988-4.79381-7.71257-9.16589-3.97017-22.61261 7.28675-26.18222 2.77169-.87887 19.06219-4.12726 36.20114-7.21864 17.13892-3.09129 38.87419-7.28369 48.30064-9.31632 9.4264-2.03271 24.83353-5.21401 34.23803-7.0697 36.71661-7.24468 53.17772-18.38455 54.98684-37.212 1.02864-10.70539-1.65025-17.18491-10.91549-26.4016-13.32644-13.25682-33.67976-18.23552-58.83335-14.3914-37.97348 5.80335-73.65259 26.63173-123.1658 71.90045-29.74667 27.1966-52.14469 44.41719-79.7697 61.33037-33.17929 20.31374-65.87092 34.56074-102.31903 44.59058-22.65695 6.23468-33.66686 7.52125-39.16852 4.57686-4.7137-2.52272-8.05858-10.34302-6.85966-16.03794 1.24781-5.92724 7.95814-13.51947 11.94909-13.51947 5.40589.0 51.00086-12.46238 62.9249-17.19909 45.53134-18.08704 94.89594-51.22035 142.52393-95.66173 13.42119-12.52328 44.20042-36.79466 53.11081-41.88133 3.27908-1.87191 5.96732-3.92938 5.97389-4.5721.005-.64263-25.85265-1.1685-57.46498-1.1685-62.28757.0-72.11803.92392-94.20193 8.85349-28.65226 10.28815-50.66411 24.74544-75.14376 49.35409-32.77505 32.94784-58.73196 76.9883-72.67689 123.3092-3.10714 10.32106-3.34333 15.67472-4.39902 99.71754-1.03955 82.75707-1.33673 89.67737-4.35976 101.5241-1.78429 6.99232-5.44336 16.80826-8.13125 21.81318-5.95265 11.08398-16.31937 24.84961-19.68714 26.14196-1.36053.52236-2.07178 1.35114-1.58057 1.84235 1.51505 1.51502 30.44766-12.97011 41.38985-20.72192 5.69739-4.03624 16.73871-13.73839 24.53626-21.56036 22.52299-22.59354 37.14552-45.44713 50.69927-79.23817 8.3731-20.875 11.29067-24.36009 20.35409-24.31328 7.08379.0352 12.08711 2.96302 15.0834 8.82196 2.49975 4.88797 2.15772 9.52634-1.23506 16.74943-30.38649 64.69172-38.66405 77.69646-66.78517 104.9255-19.36882 18.7544-37.25749 30.80292-59.56036 40.1157-11.46518 4.78737-35.65035 10.06352-46.50367 10.14514l-7.25026.0529 7.79042 3.62833c19.99835 9.31405 59.62024 9.28467 87.84918-.0654 10.40238-3.44535 30.13058-13.58091 42.88844-22.0342 21.11206-13.98877 51.17945-48.04665 62.8822-71.22776 4.33347-8.58388 8.26984-11.72634 15.00583-11.97952 10.69518-.40205 18.67382 10.18777 15.92556 21.13755-.57062 2.27285-7.47475 13.76247-15.34298 25.53274-23.05055 34.48162-46.53595 55.95141-84.25132 77.02036-9.25583 5.17056-16.59262 9.63725-16.30398 9.92585.28869.28838 6.8099 2.73264 14.49168 5.43104 31.61232 11.10468 61.32449 30.10221 90.15588 57.64428 15.79542 15.08906 50.3626 53.09751 78.06139 85.83253 8.56942 10.12757 16.14805 18.42865 16.84133 18.44685.69329.0182.82908-.66498.30211-1.5182zm219.45375-34.67419c-2.99604-27.76784-4.91983-34.04639-21.7506-70.98681-7.14909-15.69089-15.28937-34.9722-18.08957-42.84732l-5.09127-14.31835-.5129-50.97806-.51291-50.97807-7.72621 2.93578c-24.3354 9.24673-43.96886 31.33013-53.57303 60.25822-3.32178 10.00528-4.05763 15.07957-3.98029 27.44612.11503 18.36489 2.67579 29.01647 11.08143 46.09123 7.35556 14.94168 24.32214 33.28604 42.73818 46.2089 26.17309 18.36604 43.08062 33.53029 52.25907 46.87082 2.61843 3.80563 5.01091 6.91936 5.31662 6.91936s.23453-2.97981-.15833-6.62182zM574.0509 445.81015v-48.30062l-19.08651.0177c-17.03514.0121-19.92389.42279-26.87701 3.81002-9.26789 4.51436-11.30284 6.1392-16.67415 13.31373-15.97255 21.33449-8.90697 55.06789 14.73219 70.3363 10.45803 6.75478 18.61528 8.90206 34.27226 9.0218l13.63322.10445zm364.22188 503.93864c-9.6862-5.25568-8.9786 27.82746-8.9786-419.7747.0-338.85911-.35719-409.19877-2.09889-413.35938-1.15449-2.75756-5.0127-7.64301-8.57396-10.85655-6.13894-5.53948-7.0229-5.842822-17.03043-5.842822-11.79407.0-16.03606-2.03448-19.92606-9.55682-3.05431-5.906491-1.78953-12.220677 3.43031-17.124483 3.58676-3.369512 5.29028-3.701302 19.00568-3.701302 12.83096.0 16.22152.566359 22.85619 3.818077 16.57925 8.125588 29.72199 26.226718 33.35359 45.93721 1.20436 6.53662 1.70344 127.6703 1.70344 413.45938v404.21428l-3.40714 6.06206c-2.47887 4.41049-4.91957 6.48214-8.95896 7.60433-6.78879 1.88588-6.19406 1.93187-11.37517-.87928zm63.39632-678.64782c-7.71693-3.74903-7.65919-3.16043-8.54909-87.04902-.80389-75.77691-.96145-79.06209-4.26655-88.938842-8.2963-24.792237-29.35127-44.556853-55.51089-52.108946-20.1421-5.814742-47.28532-.286192-63.42917 12.919382-17.80892 14.567671-24.56885 28.534043-26.19463 54.119336-.59902 9.42643-1.92798 18.68056-2.95329 20.56481-2.71805 4.99463-8.08425 8.25978-13.5747 8.25978-5.29093.0-8.30481-1.91585-12.18783-7.74755-3.34241-5.01975-3.46971-31.0675-.21901-44.853802 4.50674-19.11448 17.65195-40.100323 32.89742-52.519149 12.4078-10.107331 19.54297-13.972211 35.87951-19.434774 12.08323-4.040319 16.61039-4.7657155 29.74387-4.7657155 53.03591.0 97.79356 36.4945705 108.79836 88.7124185 2.713 12.872772 3.355 161.808692.7187 166.734482-3.7646 7.03418-13.4743 9.8378-21.1525 6.10759z" id="path1"/><text style="font-style:normal;font-weight:400;font-size:227.439px;line-height:1.15;font-family:sans-serif;letter-spacing:-13.2292px;word-spacing:0;fill:#000;fill-opacity:1;stroke:none;stroke-width:.341157" x="89.668404" y="1099.756" id="text1"><tspan id="tspan1" x="89.668404" y="1099.756" style="font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:227.439px;line-height:1.15;font-family:'libre barcode 39 text';-inkscape-font-specification:'Libre Barcode 39 Text';letter-spacing:-13.2292px;word-spacing:0;stroke-width:.341157" rotate="0 0 0 0 0 0 0 0 0 0 0" dy="0" dx="-2.6175132"><tspan style="font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;line-height:1.15;font-family:'libre barcode 39 text';-inkscape-font-specification:'Libre Barcode 39 Text';letter-spacing:-13.2292px;fill:#c83737;fill-opacity:1;stroke-width:.341157" id="tspan2">dns</tspan><tspan style="font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;line-height:1.15;font-family:'libre barcode 39 text';-inkscape-font-specification:'Libre Barcode 39 Text';letter-spacing:-13.2292px;fill:#203e76;fill-opacity:1;stroke-width:.341157" id="tspan3">monster</tspan></tspan></text></g></svg></span><span class="navbar-brand__name">DNSMonster</span></a>
+  <div class="td-navbar-nav-scroll td-navbar-nav-scroll--indicator" id="main_navbar">
+    <div class="scroll-indicator scroll-left"></div>
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link active" href="/docs/"><span>Documentation</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/docs/faq/"><span>FAQ</span></a>
+      </li>
+      </ul>
+    <div class="scroll-indicator scroll-right"></div>
+  </div>
+  <div class="d-none d-lg-block td-navbar__search">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/offline-search-index.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+  </div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/configuration/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Configuration</h1>
+<div class="lead">Learn about the command line arguments and what they mean</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-fbccd32d62fe0ba1acc6ac575e774d3a">Performance</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>to run <code>dnsmonster</code>, one input and at least one output must be defined. The input could be any of <code>devName</code> for live packet capture, <code>pcapFile</code> to read off a pcap file, or <code>dnstapSocket</code> address to listen to. Currently, running <code>dnsmonster</code> with more than one input stream at a time isn&rsquo;t supported. For output however, it&rsquo;s supported to have more than one channel. Sometimes, it&rsquo;s also possible to have multiple instances of the same output (for example Splunk) to provide load balancing and high availability.</p>
+<p>Note that in case of specifying multiple output streams, the output data is copied to all. For example, if you put <code>stdoutOutputType=1</code> and <code>--fileOutputType=1 --fileOutputPath=/dev/stdout</code>, you&rsquo;ll see each processed output twice in your stdout. One coming from the stdout output type, and the other from the file output type which happens to have the same address (<code>/dev/stdout</code>).</p>
+<p>dnsmonster can be configured in 3 different ways. Command line options, Environment variables and a configuration file. You can also use any combination of them at the same time. The precedence order is as follows:</p>
+<ul>
+<li>Command line options (Case-insensitive)</li>
+<li>Environment variables (Always upper-case)</li>
+<li>Configuration file (Case-sensitive, lowercase)</li>
+<li>Default values (No configuration)</li>
+</ul>
+<p>For example, if you have a configuration file that has specified a <code>devName</code>, but you also provide it as a command-line argument, dnsmonster will prioritizes CLI over config file and will ignore that parameter from the <code>ini</code> file.</p>
+<h2 id="command-line-options">Command line options</h2>
+<p>To see the current list of command-line options, run <code>dnsmonster --help</code> or checkout the repository&rsquo;s README.md.</p>
+<h2 id="environment-variables">Environment variables</h2>
+<p>all the flags can also be set via env variables. Keep in mind that the name of each parameter is always all upper case and the prefix for all the variables is &ldquo;DNSMONSTER.&rdquo; Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ <span style="color:#204a87">export</span> <span style="color:#000">DNSMONSTER_PORT</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">53</span>
+</span></span><span style="display:flex;"><span>$ <span style="color:#204a87">export</span> <span style="color:#000">DNSMONSTER_DEVNAME</span><span style="color:#ce5c00;font-weight:bold">=</span>lo
+</span></span><span style="display:flex;"><span>$ sudo -E dnsmonster
+</span></span></code></pre></div><h2 id="configuration-file">Configuration file</h2>
+<p>you can run <code>dnsmonster</code> using the following command to use configuration file:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ sudo dnsmonster --config<span style="color:#ce5c00;font-weight:bold">=</span>dnsmonster.ini
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Or you can use environment variables to set the configuration file path</span>
+</span></span><span style="display:flex;"><span>$ <span style="color:#204a87">export</span> <span style="color:#000">DNSMONSTER_CONFIG</span><span style="color:#ce5c00;font-weight:bold">=</span>dnsmonster.ini
+</span></span><span style="display:flex;"><span>$ sudo -E dnsmonster
+</span></span></code></pre></div>
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-fbccd32d62fe0ba1acc6ac575e774d3a">1 - Performance</h1>
+    <div class="lead">Performance considerations when configuring dnsmonster</div>
+	<h2 id="use-afpacket">Use afpacket</h2>
+<p>If you&rsquo;re using dnsmonster as a sniffer, and you&rsquo;re not keeping up with the number of packets that are coming in, consider switching on afpacket by using the flag <code>--useAfpacket</code>. Afpacket tends to drastically improve packet ingestion rate of dnsmonster. If you still having packet drop issues, increase <code>--afpacketBuffersizeMb</code> to a higher value. the buffer size will take up more memory on startup, and will increase the startup time depending how much have you assigned to it.</p>
+<p>In some tests, values above 4096MB tend to have negative impact on the overall performance of the daemon. If you&rsquo;re using 4096MB of buffer size and still seeing performance issues, There&rsquo;s a good chance the issue isn&rsquo;t on the capture size, and more on the process and output side.</p>
+<h2 id="proper-output-and-packet-handlers">Proper Output and packet handlers</h2>
+<p>Simply put, if you have an output that can accept 1000 inserts per second, but you have an incoming packet rate of 10,000 packets per second, you&rsquo;re going to see a lot of packet drops. The packet drop will get worse and worse as time goes by as well. When selecting an output, consider the capacity of your technology and what you expect to be ingested.</p>
+<p>If you are seeing a considerable amount of packet loss which gets worse as time goes on, consider testing <code>--stdoutOutputType=1</code> and remove your current output, and redirect the output to <code>/dev/null</code>. You can also tweak the number of workers converting the data to JSON to further experiment with it. Take the following example</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>dnsmonster --devName<span style="color:#ce5c00;font-weight:bold">=</span>lo --packetHandlerCount<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">16</span> --stdoutOutputType<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">1</span> --useAfpacket <span style="color:#000;font-weight:bold">|</span> pv --rate --line-mode &gt; /dev/null
+</span></span></code></pre></div><p>In above command, you can see the exact output line per second while maintaining a view on metrics and packet loss to see if your packet loss is still present. by default, <code>--stdoutOutputWorkerCount</code> is set to 8. If you have a strong enough CPU, you can increase that amount to see what&rsquo;s the max rate you can achieve. On a small server, you shouldn&rsquo;t have a problem ingesting 500k packet per second.</p>
+<p>Note that the <code>--packetHandlerCount</code> is also set to 16 to make sure enough workers are ingesting packets coming in. That&rsquo;s also an important parameter to tweak to achieve the optimum performance. The default, <code>2</code>, might be too low for you if you have hundreds of thousands of packets per second on an interface.</p>
+<h2 id="sampling-and-bpf-based-split-of-traffic">Sampling and BPF-based split of traffic</h2>
+<p>Sometimes, the packets are simply too much to process. <code>dnsmonster</code> offers a few options to deal with this problem. <code>--sampleRatio</code> simply ignores packets by the defined ratio. default is <code>1:1</code>, meaning for each incoming packet, one gets processed, aka 100%. you can tweak this number if your hardware isn&rsquo;t capable of processing all the packets, or <code>dnsmonster</code> has simply reached its limit.</p>
+<p>For example, putting <code>2:7</code> as your sample ratio means for each 7 packets that come in, only the first two get processed.</p>
+<p>If after testing all options you&rsquo;ve reached the conclusion that <code>dnsmonster</code> can not handle more than what you need it to do, please raise an issue about it, but also you can run multiple instances of <code>dnsmonster</code> looking at the same traffic like so:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>dnsmonster --devName<span style="color:#ce5c00;font-weight:bold">=</span>lo --stdoutOutputType<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">1</span> --filter<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;src portrange 1024-32000&#34;</span>
+</span></span><span style="display:flex;"><span>dnsmonster --devName<span style="color:#ce5c00;font-weight:bold">=</span>lo --stdoutOutputType<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">1</span> --filter<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;src portrange 32001-65535&#34;</span>
+</span></span></code></pre></div><p>The above processes will split the traffic between them based on the port range. Note that only high ports are included since majority of the clients use ports above 1024 to conduct a DNS query. you can change the filter based on any BPF that makes sense for your environment.</p>
+<h2 id="profile-cpu-and-memory">Profile CPU and Memory</h2>
+<p>To take a look at what exactly is using your CPU and RAM, take a look at the Golang profiler tools available through <code>--memprofile</code> and <code>--cpuprofile</code> flags. to use them, issue the following</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># profile CPU</span>
+</span></span><span style="display:flex;"><span>dnsmonster --devName<span style="color:#ce5c00;font-weight:bold">=</span>lo --stdoutOutputType<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">1</span> --cpuprofile<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># you&#39;ll see something like this in the beginning of your logs</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># 2022/04/11 19:13:51 profile: cpu profiling enabled, /tmp/profile452510705/cpu.pprof</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># profile RAM</span>
+</span></span><span style="display:flex;"><span>dnsmonster --devName<span style="color:#ce5c00;font-weight:bold">=</span>lo --stdoutOutputType<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">1</span> --memprofile<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#0000cf;font-weight:bold">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># you&#39;ll see something like this in the beginning of your logs</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># 2022/04/11 19:15:00 profile: memory profiling enabled (rate 4096), /tmp/profile1290716652/mem.pprof</span>
+</span></span></code></pre></div><p>After <code>dnsmonster</code> exits gracefully, you can use Go&rsquo;s perf tools to open the generated <code>pprof</code> file in a browser and dig deep into functions that are being bottleneck in the code. After installing <code>pprof</code>, use it like below</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>~/go/bin/pprof -http 127.0.0.1:8882 /tmp/profile2392236212/mem.pprof
+</span></span></code></pre></div><p>A browser session will automatically open with the performance metrics for your execution.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="td-footer row d-print-none">
+  <div class="container-fluid">
+    <div class="row mx-md-2">
+      <div class="td-footer__left col-6 col-sm-4 order-sm-1">
+        
+      </div><div class="td-footer__right col-6 col-sm-4 order-sm-3">
+        <ul class="td-footer__links-list">
+  
+  <li class="td-footer__links-item" data-bs-toggle="tooltip" title="GitHub" aria-label="GitHub">
+    <a target="_blank" rel="noopener" href="https://github.com/mosajjal/dnsmonster" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+</ul>
+
+      </div><div class="td-footer__center col-12 col-sm-4 py-2 order-sm-2">
+        <span class="td-footer__copyright">&copy;
+    2025
+    <span class="td-footer__authors">DNSMonster Contributors</span></span><span class="td-footer__all_rights_reserved">All Rights Reserved</span><span class="ms-2"><a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a></span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <script src="/js/main.js"></script>
+<script defer src="/js/click-to-copy.js" crossorigin="anonymous"></script>
+<script src='/js/tabpane-persist.js'></script>
+
+  </body>
+</html>

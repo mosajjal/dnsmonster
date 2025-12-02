@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tutorials on DNSMonster</title>
+    <link>//localhost:1313/docs/tutorials/</link>
+    <description>Recent content in Tutorials on DNSMonster</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Tue, 16 Aug 2022 22:21:47 +1200</lastBuildDate>
+    <atom:link href="//localhost:1313/docs/tutorials/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ClickHouse Cloud</title>
+      <link>//localhost:1313/docs/tutorials/clickhouse-cloud/</link>
+      <pubDate>Wed, 01 Jun 2022 00:00:00 +0000</pubDate>
+      <guid>//localhost:1313/docs/tutorials/clickhouse-cloud/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;https://clickhouse.com/cloud/&#34;&gt;ClickHouse Cloud&lt;/a&gt; is a Serverless ClickHouse offering by the ClickHouse team. In this small tutorial I&amp;rsquo;ll go through the steps of building your DNS monitoring with it. At the time of writing this post, ClickHouse Cloud is in preview and some of the features might change over time.&lt;/p&gt;&#xA;&lt;h2 id=&#34;create-a-clickhouse-cluster&#34;&gt;Create a ClickHouse Cluster&lt;/h2&gt;&#xA;&lt;p&gt;First, let&amp;rsquo;s create a ClickHouse instance by signing up and logging into &lt;a href=&#34;https://clickhouse.cloud&#34;&gt;ClickHouse Cloud portal&lt;/a&gt; and clicking on &amp;ldquo;New Service&amp;rdquo; on the top right corner. You will be asked to provide a name and a region for your database. For the purpose of this tutorial, I will put the name of the database as &lt;code&gt;dnsmonster&lt;/code&gt; in &lt;code&gt;us-east-2&lt;/code&gt; region. There&amp;rsquo;s a good chance that other parameters will be present when you define your cluster such as size and number of servers, but overall everything should look pretty much the same&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Kubernetes</title>
+      <link>//localhost:1313/docs/tutorials/k8s/</link>
+      <pubDate>Thu, 28 Apr 2022 00:00:00 +0000</pubDate>
+      <guid>//localhost:1313/docs/tutorials/k8s/</guid>
+      <description>&lt;p&gt;In this guide, I&amp;rsquo;ll go through the steps to inject a custom configuration into Kubernetes&amp;rsquo; &lt;code&gt;coredns&lt;/code&gt; DNS server to provide a &lt;code&gt;dnstap&lt;/code&gt; logger, and set up a &lt;code&gt;dnsmonster&lt;/code&gt; pod to receive the logs, process them and send them to intended outputs.&lt;/p&gt;&#xA;&lt;h2 id=&#34;dnsmonster-deployment&#34;&gt;dnsmonster deployment&lt;/h2&gt;&#xA;&lt;p&gt;In order to make &lt;code&gt;dnsmonster&lt;/code&gt; see the dnstap connection coming from &lt;code&gt;coredns&lt;/code&gt; pod, we need to create the &lt;code&gt;dnsmonster&lt;/code&gt; Service inside the same namespace (&lt;code&gt;kube-system&lt;/code&gt; or equivalent)&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

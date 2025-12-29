@@ -211,6 +211,8 @@ func FromOCSF(activity *OCSFDNSActivity) *dns.Msg {
 }
 
 // Convert OCSF structure to native Go map for Avro encoding
+// TODO: enable this function when Avro encoding is needed
+/*
 func (a *OCSFDNSActivity) toNativeMap() map[string]interface{} {
 	native := map[string]interface{}{
 		"type_uid":     a.TypeUID,
@@ -369,7 +371,7 @@ func (a *OCSFDNSActivity) fromNativeMap(native map[string]interface{}) {
 		}
 	}
 }
-
+*/
 // OCSFMarshaler implements OCSF JSON marshaling
 type OCSFMarshaler struct{}
 

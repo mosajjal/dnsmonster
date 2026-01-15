@@ -4,6 +4,8 @@
 ![License](https://img.shields.io/github/license/mosajjal/dnsmonster?style=flat-square)
 ![Open Issues](https://img.shields.io/github/issues/mosajjal/dnsmonster?style=flat-square)
 
+> **We're exploring a managed SaaS solution for dnsmonster!** Help shape the future of passive DNS monitoring by sharing your feedback and requirements: [Take our quick survey](https://tally.so/r/2EAxBe)
+
 <img src="static/dnsmonster-logo.png" width=60%>
 
 Table of Contents

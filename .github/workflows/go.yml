@@ -2,153 +2,154 @@ name: Build Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-
   lint:
     name: Lint
     runs-on: ubuntu-22.04
-    if: false  # Temporarily disabled due to golangci-lint config issues
+    if: false # Temporarily disabled due to golangci-lint config issues
     steps:
+      - name: Check out code
+        uses: actions/checkout@v6
 
-    - name: Check out code
-      uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
 
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: 'stable'
+      - name: Install dependencies
+        run: |
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y libpcap-dev
+          else
+            apt-get update && apt-get install -y libpcap-dev
+          fi
 
-    - name: Install dependencies
-      run: |
-        if command -v sudo >/dev/null 2>&1; then
-          sudo apt-get update && sudo apt-get install -y libpcap-dev
-        else
-          apt-get update && apt-get install -y libpcap-dev
-        fi
-
-    - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v9
-      with:
-        version: v2.1.0
-        args: --timeout=5m
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.1.0
+          args: --timeout=5m
 
   test:
     name: Test
     runs-on: ubuntu-22.04
     steps:
-    
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: 'stable'
-    
-    - name: Check out code
-      uses: actions/checkout@v6
-    
-    - name: Get dependencies
-      run: |
-        if command -v sudo >/dev/null 2>&1; then
-          sudo apt-get update && sudo apt-get install -y libpcap-dev
-        else
-          apt-get update && apt-get install -y libpcap-dev
-        fi
-        go get -v ./cmd/dnsmonster
-    
-    - name: Run tests
-      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        files: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Get dependencies
+        run: |
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y libpcap-dev
+          else
+            apt-get update && apt-get install -y libpcap-dev
+          fi
+          go get -v ./cmd/dnsmonster
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
 
   build:
     name: Build
     runs-on: ubuntu-22.04
     needs: [lint, test]
     steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
 
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v6
-      with:
-        go-version: 'stable'
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v6
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v6
+      - name: Get dependencies
+        run: |
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y libpcap-dev
+          else
+            apt-get update && apt-get install -y libpcap-dev
+          fi
+          go get -v ./cmd/dnsmonster
 
-    - name: Get dependencies
-      run: |
-        if command -v sudo >/dev/null 2>&1; then
-          sudo apt-get update && sudo apt-get install -y libpcap-dev
-        else
-          apt-get update && apt-get install -y libpcap-dev
-        fi
-        go get -v ./cmd/dnsmonster
+      - name: Build
+        run: go build -v ./cmd/dnsmonster
 
-    - name: Build
-      run: go build -v ./cmd/dnsmonster
+      - name: generate sample config file
+        run: ./dnsmonster --writeConfig=config-sample.ini
 
-    - name: generate sample config file
-      run: ./dnsmonster --writeConfig=config-sample.ini
+      - name: update README command line options
+        run: |
+          START="$(($(grep -n "start of command line options" README.md | cut -f1 -d:)+2))"
+          END="$(($(grep -n "end of command line options" README.md | cut -f1 -d:)-2))"
+          USAGE=$(cat <<-END
+          $(./dnsmonster --writeConfig /dev/stdout | sed -E 's/^;/#/; s/^\w/--\l&/; s/^\[/# \[/; s/ =.?/=/; s/=false|stderr//')
+          END
+          )
+          awk -v var="$USAGE" 'NR=='$START'{print var} NR<'$START' || NR>'$END README.md > README.tmp
+          mv README.tmp README.md
+        working-directory: "."
 
-    - name: update README command line options
-      run: |
-        START="$(($(grep -n "start of command line options" README.md | cut -f1 -d:)+2))"
-        END="$(($(grep -n "end of command line options" README.md | cut -f1 -d:)-2))"
-        USAGE=$(cat <<-END
-        $(./dnsmonster --writeConfig /dev/stdout | sed -E 's/^;/#/; s/^\w/--\l&/; s/^\[/# \[/; s/ =.?/=/; s/=false|stderr//')
-        END
-        )
-        awk -v var="$USAGE" 'NR=='$START'{print var} NR<'$START' || NR>'$END README.md > README.tmp
-        mv README.tmp README.md
-      working-directory: "."
+      - name: Commit changes
+        if: ${{ github.event_name == 'push' }} # only commit changes if it's a push to branch not a PR
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: Ali Mosajjal
+          author_email: mosajjal@gmail.com
+          message: "auto update sample ini"
+          add: "config-sample.ini README.md"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Commit changes
-      if: ${{ github.event_name == 'push' }} # only commit changes if it's a push to branch not a PR
-      uses: EndBug/add-and-commit@v9
-      with:
-        author_name: Ali Mosajjal
-        author_email: mosajjal@gmail.com
-        message: "auto update sample ini"
-        add: "config-sample.ini README.md"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: dnsmonster-linux-amd64.bin
+          path: ./dnsmonster
 
-    - uses: actions/upload-artifact@v6
-      with:
-        name: dnsmonster-linux-amd64.bin
-        path: ./dnsmonster
-  
   security:
     name: Security Scan
     runs-on: ubuntu-22.04
     steps:
-    
-    - name: Check out code
-      uses: actions/checkout@v6
-    
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: 'stable'
-    
-    - name: Run Gosec Security Scanner
-      uses: securego/gosec@master
-      with:
-        args: '-no-fail -fmt sarif -out results.sarif ./...'
-    
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v4
-      with:
-        sarif_file: results.sarif
-    
-    - name: Run govulncheck
-      run: |
-        go install golang.org/x/vuln/cmd/govulncheck@latest
-        govulncheck ./...
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+      - name: Install dependencies
+        run: |
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y libpcap-dev
+          else
+            apt-get update && apt-get install -y libpcap-dev
+          fi
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: "-no-fail -fmt sarif -out results.sarif ./..."
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...

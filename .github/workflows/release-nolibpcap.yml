@@ -1,4 +1,4 @@
-name: Publish binaries on Release
+name: Publish Go Binaries on Release
 on:
   release:
     types: [created]
@@ -28,32 +28,31 @@ jobs:
           ldflags: "-s -w"
           build_flags: "-v -tags nolibpcap"
 
-  releases-windows:
+  # Windows builds with code signing
+  release-windows:
     name: Release Windows Binary
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goarch: [amd64, arm64]
+        include:
+          - goos: windows
+            goarch: amd64
+          - goos: windows
+            goarch: arm64
     steps:
       - uses: actions/checkout@v6
-      - uses: wangyoucao577/go-release-action@v1
-        env:
-          CGO_ENABLED: 0 # support alpine
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          goos: windows
-          goarch: ${{ matrix.goarch }}
-          project_path: "./cmd/dnsmonster"
-          ldflags: "-s -w"
-          build_flags: "-v -tags nolibpcap"
-          upload_assets: false
 
-      - name: Upload Windows artifact for signing
+      - name: Build Windows binary
+        run: |
+          mkdir -p dist
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 go build -v -tags nolibpcap -ldflags="-s -w" -o dist/dnsmonster.exe ./cmd/dnsmonster
+      - name: Upload Windows binary for signing
         id: upload-windows-artifact
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/release/*
-          name: dnsmonster-windows-${{ matrix.goarch }}-unsigned
+          path: dist/dnsmonster.exe
+          name: dnsmonster-${{ matrix.goos }}-${{ matrix.goarch }}-unsigned
+          compression-level: 0  # Must be uncompressed for signing
 
       - name: Sign Windows binary with SignPath
         id: sign-windows
@@ -65,14 +64,14 @@ jobs:
           signing-policy-slug: "${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}"
           github-artifact-id: "${{ steps.upload-windows-artifact.outputs.artifact-id }}"
           wait-for-completion: true
-          output-artifact-directory: /tmp/signed
+          output-artifact-directory: dist/signed
 
       - name: Upload signed Windows binary to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: /tmp/signed/dnsmonster-windows-${{ matrix.goarch }}.exe
-          asset_name: dnsmonster-windows-${{ matrix.goarch }}.exe
+          file: dist/signed/dnsmonster.exe
+          asset_name: dnsmonster-${{ matrix.goos }}-${{ matrix.goarch }}.exe
           tag: ${{ github.ref }}
           overwrite: true
           body: ""

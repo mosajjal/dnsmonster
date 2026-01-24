@@ -1,7 +1,7 @@
 package util
 
 import (
-	json "github.com/bytedance/sonic"
+	"encoding/json"
 	"github.com/miekg/dns"
 )
 

@@ -1,4 +1,4 @@
-//go:build !(openbsd || freebsd || dragonfly || netbsd || (linux && arm))
+//go:build linux && arm
 
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *
@@ -18,13 +18,13 @@
 package util
 
 import (
-	"github.com/bytedance/sonic"
+	"encoding/json"
 )
 
 type jsonOutput struct{}
 
 func (j jsonOutput) Marshal(d DNSResult) []byte {
-	res, _ := sonic.Marshal(d)
+	res, _ := json.Marshal(d)
 	return res
 }
 

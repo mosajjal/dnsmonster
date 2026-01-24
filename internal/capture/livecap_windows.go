@@ -23,7 +23,6 @@ import (
 
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/pcap"
-	log "github.com/sirupsen/logrus"
 )
 
 type livePcapHandle struct {

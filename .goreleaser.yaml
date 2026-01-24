@@ -12,6 +12,20 @@ builds:
       - windows
       - darwin
       - freebsd
+    goarch:
+      - amd64
+      - arm64
+    tags:
+      - nocgo
+    main: ./cmd/dnsmonster
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - "7"
     tags:
       - nocgo
     main: ./cmd/dnsmonster

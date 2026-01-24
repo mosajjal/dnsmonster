@@ -27,3 +27,48 @@ jobs:
           project_path: "./cmd/dnsmonster"
           ldflags: "-s -w"
           build_flags: "-v -tags nolibpcap"
+          upload_assets: ${{ matrix.goos != 'windows' }}
+
+      # Upload Windows binaries for signing
+      - name: Upload Windows artifact for signing
+        if: matrix.goos == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/release/*
+          name: dnsmonster-${{ matrix.goos }}-${{ matrix.goarch }}-unsigned
+
+  sign-windows:
+    name: Sign Windows Binaries
+    needs: releases-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goarch: [amd64, arm64]
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dnsmonster-windows-*-unsigned
+          merge-multiple: true
+
+      - name: Sign Windows binaries with SignPath
+        id: sign-windows
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
+          organization-id: "${{ secrets.SIGNPATH_ORGANIZATION_ID }}"
+          project-slug: "${{ secrets.SIGNPATH_PROJECT_SLUG }}"
+          signing-policy-slug: "${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}"
+          github-artifact-id: dnsmonster-windows-${{ matrix.goarch }}-unsigned
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Upload signed Windows binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: signed/dnsmonster-windows-${{ matrix.goarch }}.exe
+          asset_name: dnsmonster-windows-${{ matrix.goarch }}.exe
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""

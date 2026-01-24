@@ -32,30 +32,11 @@ jobs:
           overwrite: true
           body: ""
 
-      - name: Upload windows binary for signing
-        id: upload-windows-artifact
-        uses: actions/upload-artifact@v4
-        with:
-          path: /tmp/dnsmonster-windows-amd64.exe
-          name: dnsmonster-windows-amd64-unsigned
-
-      - name: Sign Windows binary with SignPath
-        id: sign-windows
-        uses: signpath/github-action-submit-signing-request@v1
-        with:
-          api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
-          organization-id: "${{ secrets.SIGNPATH_ORGANIZATION_ID }}"
-          project-slug: "${{ secrets.SIGNPATH_PROJECT_SLUG }}"
-          signing-policy-slug: "${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}"
-          github-artifact-id: "${{ steps.upload-windows-artifact.outputs.artifact-id }}"
-          wait-for-completion: true
-          output-artifact-directory: /tmp/signed
-
-      - name: Upload signed windows binary to release
+      - name: Upload Windows binary to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: /tmp/signed/dnsmonster-windows-amd64.exe
+          file: /tmp/dnsmonster-windows-amd64.exe
           asset_name: dnsmonster-windows-amd64.exe
           tag: ${{ github.ref }}
           overwrite: true

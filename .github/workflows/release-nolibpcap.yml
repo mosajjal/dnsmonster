@@ -48,7 +48,7 @@ jobs:
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 go build -v -tags nolibpcap -ldflags="-s -w" -o dist/dnsmonster.exe ./cmd/dnsmonster
       - name: Upload Windows binary for signing
         id: upload-windows-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           path: dist/dnsmonster.exe
           name: dnsmonster-${{ matrix.goos }}-${{ matrix.goarch }}-unsigned

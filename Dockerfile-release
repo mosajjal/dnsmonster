@@ -36,7 +36,7 @@ RUN cd /opt/dnsmonster \
     && mv /tmp/dnsmonster_*_amd64.deb /tmp/dnsmonster-latest.deb
 
 # build rpm file and move it to /tmp/dnsmonster-latest.rpm
-RUN cat > /tmp/dnsmonster.spec << 'EOF'
+RUN <<EOF cat > /tmp/dnsmonster.spec
 Name:       dnsmonster
 Version:    envLATEST_TAG
 Release:    1

@@ -4,16 +4,6 @@
 ![License](https://img.shields.io/github/license/mosajjal/dnsmonster?style=flat-square)
 ![Open Issues](https://img.shields.io/github/issues/mosajjal/dnsmonster?style=flat-square)
 
-## Sponsors
-
-<a href="https://signpath.io">
-  <img src="https://avatars.githubusercontent.com/u/34448643?s=280&v=4" alt="SignPath Logo" width="200">
-</a>
-
-Free code signing on Windows provided by [signpath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org)
-
----
-
 > **We're exploring a managed SaaS solution for dnsmonster!** Help shape the future of passive DNS monitoring by sharing your feedback and requirements: [Take our quick survey](https://tally.so/r/2EAxBe)
 
 <img src="static/dnsmonster-logo.png" width=60%>
@@ -861,3 +851,9 @@ NOTE: if your `pcap` file is captured by one of Linux's meta-interfaces (for exa
 - [passivedns](https://github.com/gamelinux/passivedns)
 - [gopassivedns](https://github.com/Phillipmartin/gopassivedns)
 - [packetbeat](https://github.com/elastic/beats/blob/master/packetbeat/)
+
+# Sponsors
+
+| | |
+|:---:|:---|
+| <a href="https://signpath.io"><img src="https://avatars.githubusercontent.com/u/34448643?s=280&v=4" alt="SignPath" width="80"></a> | Free code signing on Windows provided by [signpath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org) |

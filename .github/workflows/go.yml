@@ -140,7 +140,7 @@ jobs:
             apt-get update && apt-get install -y libpcap-dev
           fi
       - name: Run Gosec Security Scanner
-        uses: securego/gosec@v2.22.11
+        uses: securego/gosec@v2.23.0
         with:
           args: "-no-fail -fmt sarif -out results.sarif ./..."
 

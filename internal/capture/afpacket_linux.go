@@ -1,5 +1,4 @@
 //go:build linux && !android && !nocgo
-// +build linux,!android,!nocgo
 
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *

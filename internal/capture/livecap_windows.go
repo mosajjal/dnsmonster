@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *

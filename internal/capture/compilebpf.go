@@ -1,5 +1,4 @@
 //go:build !nolibpcap && !nocgo
-// +build !nolibpcap,!nocgo
 
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *

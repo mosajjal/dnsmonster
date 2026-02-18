@@ -1,5 +1,4 @@
 //go:build darwin || dragonfly || freebsd || netbsd || openbsd
-// +build darwin dragonfly freebsd netbsd openbsd
 
 /* {{{ Copyright (C) 2022 Ali Mosajjal
  *

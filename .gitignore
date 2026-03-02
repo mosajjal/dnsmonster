@@ -13,7 +13,7 @@
 *.out
 /dnsmonster
 
-#generated docker-composee
+#generated docker-compose
 docker-compose.yml
 
 # Dependency directories (remove the comment below to include it)
@@ -26,3 +26,7 @@ docker-compose.yml
 
 dist/
 cmd/dnsmonster/dnsmonster
+node_modules/
+docs/public/
+docs/resources/_gen/
+docs/.hugo_build.lock

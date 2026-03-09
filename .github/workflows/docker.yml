@@ -27,7 +27,7 @@ jobs:
         run: echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
 
       - name: Build and push ${{ env.REPO }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile

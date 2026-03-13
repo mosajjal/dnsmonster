@@ -139,9 +139,17 @@ func (config parquetConfig) OutputChannel() chan util.DNSResult {
 }
 
 func (config parquetConfig) Output(ctx context.Context) {
+	defer close(config.closeChannel)
+	var wg sync.WaitGroup
 	for i := uint(0); i < config.ParquetWorkerCount; i++ {
-		go config.OutputWorker(ctx)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			config.OutputWorker(ctx)
+		}()
 	}
+	wg.Wait()
+	// Workers done, now close writers
 	<-ctx.Done()
 	config.parquetWriterLock.Lock()
 	if err := config.parquetWriter.Close(); err != nil {
@@ -157,19 +165,12 @@ func (config *parquetConfig) OutputWorker(ctx context.Context) {
 
 	cnt := uint(0)
 	dataArr := []parquetRow{}
-	// todo: output channel will duplicate output when we have malformed DNS packets with multiple questions
 	for {
 		select {
 		case data := <-config.outputChannel:
 			cnt++
 
-			// we have only one DNS question per DNS packet. if we have more than one question, we will skip the packet
-			if len(data.DNS.Question) > 1 || len(data.DNS.Question) == 0 {
-				config.parquetSkipped.Inc(1)
-				continue
-			}
-			q0 := data.DNS.Question[0]
-			if util.CheckIfWeSkip(config.ParquetOutputType, q0.Name) {
+			if len(data.DNS.Question) == 0 {
 				config.parquetSkipped.Inc(1)
 				continue
 			}
@@ -186,24 +187,31 @@ func (config *parquetConfig) OutputWorker(ctx context.Context) {
 				}
 			}
 
-			dataArr = append(dataArr, parquetRow{
-				Timestamp:    data.Timestamp,
-				IPVersion:    uint32(data.IPVersion),
-				SrcIP:        data.SrcIP,
-				DstIP:        data.DstIP,
-				Protocol:     data.Protocol,
-				QR:           uint32(QR),
-				Opcode:       uint32(data.DNS.Opcode),
-				Qclass:       uint32(q0.Qclass),
-				Qtype:        uint32(q0.Qtype),
-				EDNS:         uint32(edns),
-				DoBit:        uint32(doBit),
-				Rcode:        uint32(data.DNS.Rcode),
-				QueryName:    q0.Name,
-				PacketLength: uint32(data.PacketLength),
-				Identity:     data.Identity,
-				Version:      data.Version,
-			})
+			for _, q := range data.DNS.Question {
+				if util.CheckIfWeSkip(config.ParquetOutputType, q.Name) {
+					config.parquetSkipped.Inc(1)
+					continue
+				}
+
+				dataArr = append(dataArr, parquetRow{
+					Timestamp:    data.Timestamp,
+					IPVersion:    uint32(data.IPVersion),
+					SrcIP:        data.SrcIP,
+					DstIP:        data.DstIP,
+					Protocol:     data.Protocol,
+					QR:           uint32(QR),
+					Opcode:       uint32(data.DNS.Opcode),
+					Qclass:       uint32(q.Qclass),
+					Qtype:        uint32(q.Qtype),
+					EDNS:         uint32(edns),
+					DoBit:        uint32(doBit),
+					Rcode:        uint32(data.DNS.Rcode),
+					QueryName:    q.Name,
+					PacketLength: uint32(data.PacketLength),
+					Identity:     data.Identity,
+					Version:      data.Version,
+				})
+			}
 			if cnt%config.ParquetFlushBatchSize == 0 {
 				config.parquetWriterLock.Lock()
 				if n, err := config.parquetWriter.Write(dataArr); err != nil {

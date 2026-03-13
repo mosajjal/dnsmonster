@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -83,14 +84,14 @@ func (psqConf psqlConfig) OutputChannel() chan util.DNSResult {
 func (psqConf psqlConfig) connectPsql(ctx context.Context) *pgxpool.Pool {
 	c, err := pgxpool.Connect(ctx, psqConf.PsqlEndpoint)
 	if err != nil {
-		// This will not be a connection error, but a DSN parse error or
-		// another initialization error.
-		log.Fatal(err)
+		log.Errorf("Failed to connect to PostgreSQL: %v", err)
+		return nil
 	}
-	// defer c.Close() // todo: move to a close channel
 	err = c.Ping(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("Failed to ping PostgreSQL: %v", err)
+		c.Close()
+		return nil
 	}
 
 	_, err = c.Exec(ctx,
@@ -107,9 +108,16 @@ func (psqConf psqlConfig) connectPsql(ctx context.Context) *pgxpool.Pool {
 }
 
 func (psqConf psqlConfig) Output(ctx context.Context) {
+	defer close(psqConf.closeChannel)
+	var wg sync.WaitGroup
 	for i := 0; i < int(psqConf.PsqlWorkers); i++ {
-		go psqConf.OutputWorker(ctx)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			psqConf.OutputWorker(ctx)
+		}()
 	}
+	wg.Wait()
 }
 
 func (psqConf psqlConfig) OutputWorker(ctx context.Context) {

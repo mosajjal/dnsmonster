@@ -94,9 +94,12 @@ func (esConfig elasticConfig) connectelasticRetry(ctx context.Context) *elastic.
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
-		<-tick.C
-		continue
-
+		select {
+		case <-tick.C:
+			continue
+		case <-ctx.Done():
+			return nil
+		}
 	}
 }
 
@@ -111,18 +114,17 @@ func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Clie
 		elastic.SetURL(esConfig.ElasticOutputEndpoint),
 		elastic.SetSniff(false),
 		elastic.SetHealthcheckInterval(10*time.Second),
-		// elastic.SetRetrier(connectelasticRetry(exiting, elasticEndpoint)),
 		elastic.SetGzip(true),
 		elastic.SetErrorLog(log.New()),
 	)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// Ping the Elasticsearch server to get e.g. the version number
 	info, code, err := client.Ping(esConfig.ElasticOutputEndpoint).Do(ctx)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	log.Infof("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
@@ -130,7 +132,11 @@ func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Clie
 }
 
 func (esConfig elasticConfig) Output(ctx context.Context) {
+	defer close(esConfig.closeChannel)
 	client := esConfig.connectelasticRetry(ctx)
+	if client == nil {
+		return
+	}
 	batch := make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
 
 	ticker := time.NewTicker(esConfig.ElasticBatchDelay)
@@ -138,18 +144,21 @@ func (esConfig elasticConfig) Output(ctx context.Context) {
 	// Use the IndexExists service to check if a specified index exists.
 	exists, err := client.IndexExists(esConfig.ElasticOutputIndex).Do(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("Failed to check if Elastic index exists: %v", err)
+		return
 	}
 
 	if !exists {
 		// Create a new index.
 		createIndex, err := client.CreateIndex(esConfig.ElasticOutputIndex).Do(ctx)
 		if err != nil {
-			log.Fatal(err)
+			log.Errorf("Failed to create Elastic index: %v", err)
+			return
 		}
 
 		if !createIndex.Acknowledged {
-			log.Fatalln("Could not create the Elastic index.. Exiting")
+			log.Errorf("Could not create the Elastic index, not acknowledged")
+			return
 		}
 	}
 
@@ -166,7 +175,8 @@ func (esConfig elasticConfig) Output(ctx context.Context) {
 			} else {
 				batch = make([]util.DNSResult, 0, esConfig.ElasticBatchSize)
 			}
-
+		case <-ctx.Done():
+			return
 		}
 	}
 }
@@ -191,7 +201,7 @@ func (esConfig elasticConfig) elasticSendData(ctx context.Context, client *elast
 				BodyString(string(esConfig.outputMarshaller.Marshal(batch[i]))).
 				Do(ctx)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
 	}

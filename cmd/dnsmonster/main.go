@@ -50,11 +50,9 @@ func handleInterrupt(ctx context.Context) {
 	go func() {
 		<-c
 		log.Infof("SIGINT Received. Stopping capture...")
-		go util.GlobalCancel()
-		go ctx.Done()
+		util.GlobalCancel()
 		<-time.After(4 * time.Second)
 		log.Fatal("emergency exit")
-		os.Exit(1)
 	}()
 }
 
@@ -92,14 +90,12 @@ func main() {
 	g.Go(func() error { capture.GlobalCaptureConfig.CheckFlagsAndStart(ctx); return nil })
 	// Set up output dispatch
 	var c chan util.DNSResult
-	for {
+	for ctx.Err() == nil {
 		c = capture.GlobalCaptureConfig.GetResultChannel()
-		if c == nil {
-			time.Sleep(10 * time.Millisecond)
-			continue
-		} else {
+		if c != nil {
 			break
 		}
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	g.Go(func() error { return setupOutputs(ctx, &c) })

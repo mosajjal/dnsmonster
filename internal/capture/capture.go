@@ -69,6 +69,7 @@ type captureConfig struct {
 	ratioA                     int
 	ratioB                     int
 	dedupHashTable             map[uint64]bool
+	dedupMu                    sync.RWMutex
 }
 
 // GlobalCaptureConfig is accessible globally
@@ -84,11 +85,11 @@ func init() {
 
 }
 
-func (config captureConfig) GetResultChannel() chan util.DNSResult {
+func (config *captureConfig) GetResultChannel() chan util.DNSResult {
 	return config.resultChannel
 }
 
-func (config captureConfig) cleanExit(ctx context.Context) {
+func (config *captureConfig) cleanExit(ctx context.Context) {
 	ctx.Done()
 	log.Infof("Stopping capture...")
 }
@@ -139,7 +140,9 @@ func (config *captureConfig) CheckFlagsAndStart(ctx context.Context) {
 				select {
 				case <-time.NewTicker(config.DedupCleanupInterval).C:
 					log.Infof("cleaning up dedup hash table")
+					config.dedupMu.Lock()
 					config.dedupHashTable = make(map[uint64]bool)
+					config.dedupMu.Unlock()
 				case <-gCtx.Done():
 					return nil
 				}

@@ -24,11 +24,12 @@ import (
 	"github.com/gopacket/gopacket/layers"
 	mkdns "github.com/miekg/dns"
 	"github.com/mosajjal/dnsmonster/internal/util"
+	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
-func (config captureConfig) processTransport(foundLayerTypes *[]gopacket.LayerType, udp *layers.UDP, tcp *layers.TCP, flow gopacket.Flow, timestamp time.Time, IPVersion uint8, SrcIP, DstIP net.IP) {
+func (config *captureConfig) processTransport(foundLayerTypes *[]gopacket.LayerType, udp *layers.UDP, tcp *layers.TCP, flow gopacket.Flow, timestamp time.Time, IPVersion uint8, SrcIP, DstIP net.IP) {
 	for _, layerType := range *foundLayerTypes {
 		switch layerType {
 		case layers.LayerTypeUDP:
@@ -67,7 +68,9 @@ func (config captureConfig) processTransport(foundLayerTypes *[]gopacket.LayerTy
 	}
 }
 
-func (config captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawPacketBytes) error {
+func (config *captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawPacketBytes) error {
+	decodingErrors := metrics.GetOrRegisterCounter("decodingErrors", metrics.DefaultRegistry)
+
 	var detectIP detectIP
 	var ethLayer layers.Ethernet
 	var vlan layers.Dot1Q
@@ -103,6 +106,8 @@ func (config captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawP
 				timestamp = time.Now()
 			}
 			if err := parser.DecodeLayers(packet.bytes, &foundLayerTypes); err != nil {
+				log.Debugf("Error decoding layers: %v", err)
+				decodingErrors.Inc(1)
 			}
 			// first parse the ip layer, so we can find fragmented packets
 			for _, layerType := range foundLayerTypes {
@@ -143,9 +148,7 @@ func (config captureConfig) inputHandlerWorker(ctx context.Context, p chan *rawP
 	}
 }
 
-func (config captureConfig) StartPacketDecoder(ctx context.Context) error {
-	var ip4 layers.IPv4
-
+func (config *captureConfig) StartPacketDecoder(ctx context.Context) error {
 	var udp layers.UDP
 	var tcp layers.TCP
 
@@ -159,12 +162,19 @@ func (config captureConfig) StartPacketDecoder(ctx context.Context) error {
 	)
 	foundLayerTypes := []gopacket.LayerType{}
 
-	// workerHandlerChannel := make(chan *rawPacketBytes, config.PacketChannelSize)
+	// Create a single errgroup for all input handler workers
+	g, gCtx := errgroup.WithContext(ctx)
 	for i := 0; i < int(config.PacketHandlerCount); i++ {
 		log.Infof("Creating handler #%d", i)
-		g, gCtx := errgroup.WithContext(ctx)
 		g.Go(func() error { return config.inputHandlerWorker(gCtx, config.processingChannel) })
 	}
+
+	// Wait for workers in a separate goroutine so errors propagate
+	go func() {
+		if err := g.Wait(); err != nil {
+			log.Errorf("input handler worker error: %v", err)
+		}
+	}()
 
 	for {
 		select {
@@ -191,13 +201,13 @@ func (config captureConfig) StartPacketDecoder(ctx context.Context) error {
 			// Packet was defragged, parse the remaining data
 			if packet.ip.Protocol == layers.IPProtocolUDP {
 				parserOnlyUDP.DecodeLayers(packet.ip.Payload, &foundLayerTypes)
-			} else if ip4.Protocol == layers.IPProtocolTCP {
+			} else if packet.ip.Protocol == layers.IPProtocolTCP {
 				parserOnlyTCP.DecodeLayers(packet.ip.Payload, &foundLayerTypes)
 			} else {
 				// Protocol not supported
 				break
 			}
-			config.processTransport(&foundLayerTypes, &udp, &tcp, ip4.NetworkFlow(), packet.timestamp, 4, packet.ip.SrcIP, packet.ip.DstIP)
+			config.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 4, packet.ip.SrcIP, packet.ip.DstIP)
 		case packet := <-config.ip6DefrggerReturn:
 			// Packet was defragged, parse the remaining data
 			if packet.ip.NextHeader == layers.IPProtocolUDP {
@@ -209,8 +219,6 @@ func (config captureConfig) StartPacketDecoder(ctx context.Context) error {
 				break
 			}
 			config.processTransport(&foundLayerTypes, &udp, &tcp, packet.ip.NetworkFlow(), packet.timestamp, 6, packet.ip.SrcIP, packet.ip.DstIP)
-		// case packet := <-config.processingChannel:
-		// 	workerHandlerChannel <- packet
 		case <-ctx.Done():
 			return nil
 		}

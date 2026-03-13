@@ -21,10 +21,16 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/golang-collections/collections/tst"
 	log "github.com/sirupsen/logrus"
 )
+
+// domainFilterMu protects the skip/allow TSTs and hashtables from concurrent
+// read/write access during hot-reload.
+var domainFilterMu sync.RWMutex
 
 const (
 	outputNone  = 0
@@ -41,48 +47,49 @@ const (
 // CheckIfWeSkip checks a fqdn against an output type and make a decision if
 // the fqdn is meant to be sent to output or not.
 func CheckIfWeSkip(outputType uint, fqdn string) bool {
-	fqdnLower := strings.ToLower(fqdn) //todo:check performance for this function
+	fqdnLower := strings.ToLower(fqdn)
 	switch outputType {
 	case outputNone:
 		return true // always skip
 	case outputAll:
 		return false // never skip
 	case outputSkip:
+		domainFilterMu.RLock()
+		defer domainFilterMu.RUnlock()
 		// check for fqdn match
 		if GeneralFlags.skipTypeHt[fqdnLower] == matchFQDN {
 			return true
 		}
 		// check for prefix match
 		if longestPrefix := GeneralFlags.skipPrefixTst.GetLongestPrefix(fqdnLower); longestPrefix != nil {
-			// check if the longest prefix is present in the type hashtable as a prefix
 			if GeneralFlags.skipTypeHt[longestPrefix.(string)] == matchPrefix {
 				return true
 			}
 		}
-		// check for suffix match. Note that suffix is just prefix reversed
-		if longestSuffix := GeneralFlags.skipSuffixTst.GetLongestPrefix(reverse(fqdnLower)); longestSuffix != nil {
-			// check if the longest suffix is present in the type hashtable as a suffix
+		// check for suffix match — suffix domains stored pre-reversed in TST
+		reversedFqdn := reverse(fqdnLower)
+		if longestSuffix := GeneralFlags.skipSuffixTst.GetLongestPrefix(reversedFqdn); longestSuffix != nil {
 			if GeneralFlags.skipTypeHt[longestSuffix.(string)] == matchSuffix {
 				return true
 			}
 		}
-
 		return false
 	case outputAllow:
+		domainFilterMu.RLock()
+		defer domainFilterMu.RUnlock()
 		// check for fqdn match
 		if GeneralFlags.allowTypeHt[fqdnLower] == matchFQDN {
 			return false
 		}
 		// check for prefix match
 		if longestPrefix := GeneralFlags.allowPrefixTst.GetLongestPrefix(fqdnLower); longestPrefix != nil {
-			// check if the longest prefix is present in the type hashtable as a prefix
 			if GeneralFlags.allowTypeHt[longestPrefix.(string)] == matchPrefix {
 				return false
 			}
 		}
-		// check for suffix match. Note that suffix is just prefix reversed
-		if longestSuffix := GeneralFlags.allowSuffixTst.GetLongestPrefix(reverse(fqdnLower)); longestSuffix != nil {
-			// check if the longest suffix is present in the type hashtable as a suffix
+		// check for suffix match — suffix domains stored pre-reversed in TST
+		reversedFqdn := reverse(fqdnLower)
+		if longestSuffix := GeneralFlags.allowSuffixTst.GetLongestPrefix(reversedFqdn); longestSuffix != nil {
 			if GeneralFlags.allowTypeHt[longestSuffix.(string)] == matchSuffix {
 				return false
 			}
@@ -110,12 +117,15 @@ func reverse(s string) string {
 // 1. a TST for all the prefixes (type 1)
 // 2. a TST for all the suffixes (type 2)
 // 3. a hashtable for all the full match fqdn (type 3)
-func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearchTree, map[string]uint8) {
+// LoadDomainsCsv loads a domains CSV file/URL. Suffix domains are stored pre-reversed
+// in the TST for efficient lookup. Returns an error if the file/URL cannot be read.
+func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearchTree, map[string]uint8, error) {
 	log.Info("Loading the domain from file/url")
 	var scanner *bufio.Scanner
 	if strings.HasPrefix(Filename, "http://") || strings.HasPrefix(Filename, "https://") {
 		log.Info("domain list is a URL, trying to fetch")
 		client := http.Client{
+			Timeout: 30 * time.Second,
 			CheckRedirect: func(r *http.Request, via []*http.Request) error {
 				r.URL.Opaque = r.URL.Path
 				return nil
@@ -123,7 +133,7 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 		}
 		resp, err := client.Get(Filename)
 		if err != nil {
-			log.Fatal(err)
+			return nil, nil, nil, fmt.Errorf("failed to fetch domain list from %s: %w", Filename, err)
 		}
 		log.Info("(re)fetching URL: ", Filename)
 		defer resp.Body.Close()
@@ -132,7 +142,7 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 	} else {
 		file, err := os.Open(Filename)
 		if err != nil {
-			log.Fatal(err)
+			return nil, nil, nil, fmt.Errorf("failed to open domain list file %s: %w", Filename, err)
 		}
 		log.Info("(re)loading File: ", Filename)
 		defer file.Close()
@@ -157,9 +167,11 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 			entryTypeHt[fqdn[0]] = matchPrefix
 			prefixTst.Insert(fqdn[0], fqdn[0])
 		case "suffix":
-			entryTypeHt[fqdn[0]] = matchSuffix
-			// suffix match is much faster if we reverse the strings and match for prefix
-			suffixTst.Insert(reverse(fqdn[0]), fqdn[0])
+			// Store reversed domain as key in both TST and hashtable
+			// so suffix lookup only needs one reverse at query time
+			reversed := reverse(fqdn[0])
+			entryTypeHt[reversed] = matchSuffix
+			suffixTst.Insert(reversed, reversed)
 		case "fqdn":
 			entryTypeHt[fqdn[0]] = matchFQDN
 		default:
@@ -168,7 +180,7 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 		}
 	}
 	log.Infof("%s loaded with %d prefix, %d suffix and %d fqdn", Filename, prefixTst.Len(), suffixTst.Len(), len(entryTypeHt)-prefixTst.Len()-suffixTst.Len())
-	return prefixTst, suffixTst, entryTypeHt
+	return prefixTst, suffixTst, entryTypeHt, nil
 }
 
 // OutputFormatToMarshaller gets the outputFormat string and a template used in gotemplate

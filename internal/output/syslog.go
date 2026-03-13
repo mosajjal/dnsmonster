@@ -72,7 +72,7 @@ func (sysConfig syslogConfig) OutputChannel() chan util.DNSResult {
 	return sysConfig.outputChannel
 }
 
-func (sysConfig syslogConfig) connectSyslogRetry() syslog.Syslogger {
+func (sysConfig syslogConfig) connectSyslogRetry(ctx context.Context) syslog.Syslogger {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if sysConfig.SyslogOutputType == 0 {
@@ -87,9 +87,12 @@ func (sysConfig syslogConfig) connectSyslogRetry() syslog.Syslogger {
 		log.Info(err)
 
 		// Error getting connection, wait the timer or check if we are exiting
-		<-tick.C
-		continue
-
+		select {
+		case <-tick.C:
+			continue
+		case <-ctx.Done():
+			return nil
+		}
 	}
 }
 
@@ -104,7 +107,11 @@ func (sysConfig syslogConfig) connectSyslog() (syslog.Syslogger, error) {
 }
 
 func (sysConfig syslogConfig) Output(ctx context.Context) {
-	writer := sysConfig.connectSyslogRetry()
+	defer close(sysConfig.closeChannel)
+	writer := sysConfig.connectSyslogRetry(ctx)
+	if writer == nil {
+		return
+	}
 	syslogSentToOutput := metrics.GetOrRegisterCounter("syslogSentToOutput", metrics.DefaultRegistry)
 	syslogSkipped := metrics.GetOrRegisterCounter("syslogSkipped", metrics.DefaultRegistry)
 

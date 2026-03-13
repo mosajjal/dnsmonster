@@ -73,11 +73,29 @@ type generalConfig struct {
 }
 
 func (g generalConfig) LoadAllowDomain() {
-	GeneralFlags.allowPrefixTst, GeneralFlags.allowSuffixTst, GeneralFlags.allowTypeHt = LoadDomainsCsv(GeneralFlags.AllowDomainsFile)
+	prefixTst, suffixTst, typeHt, err := LoadDomainsCsv(GeneralFlags.AllowDomainsFile)
+	if err != nil {
+		log.Errorf("failed to load allow domains: %v", err)
+		return
+	}
+	domainFilterMu.Lock()
+	GeneralFlags.allowPrefixTst = prefixTst
+	GeneralFlags.allowSuffixTst = suffixTst
+	GeneralFlags.allowTypeHt = typeHt
+	domainFilterMu.Unlock()
 }
 
 func (g generalConfig) LoadSkipDomain() {
-	GeneralFlags.skipPrefixTst, GeneralFlags.skipSuffixTst, GeneralFlags.skipTypeHt = LoadDomainsCsv(GeneralFlags.SkipDomainsFile)
+	prefixTst, suffixTst, typeHt, err := LoadDomainsCsv(GeneralFlags.SkipDomainsFile)
+	if err != nil {
+		log.Errorf("failed to load skip domains: %v", err)
+		return
+	}
+	domainFilterMu.Lock()
+	GeneralFlags.skipPrefixTst = prefixTst
+	GeneralFlags.skipSuffixTst = suffixTst
+	GeneralFlags.skipTypeHt = typeHt
+	domainFilterMu.Unlock()
 }
 
 var helpOptions struct {
@@ -167,9 +185,7 @@ func ProcessFlags(ctx context.Context) {
 	if GeneralFlags.Config != "" {
 		err := iniParser.ParseFile(string(GeneralFlags.Config))
 		if err != nil {
-			if err != nil {
-				log.Fatal(err)
-			}
+			log.Fatal(err)
 		}
 		//  re-parse the argument from command line to give them priority
 		_, err = GlobalParser.Parse()
@@ -229,7 +245,7 @@ func ProcessFlags(ctx context.Context) {
 	if GeneralFlags.MaskSize4 > 32 || GeneralFlags.MaskSize4 < 0 {
 		log.Fatal("--maskSize4 must be between 0 and 32")
 	}
-	if GeneralFlags.MaskSize6 > 128 || GeneralFlags.MaskSize4 < 0 {
+	if GeneralFlags.MaskSize6 > 128 || GeneralFlags.MaskSize6 < 0 {
 		log.Fatal("--maskSize6 must be between 0 and 128")
 	}
 

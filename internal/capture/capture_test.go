@@ -18,7 +18,9 @@ package capture
 import (
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 )
 
 func TestSampleRatioParsing(t *testing.T) {
@@ -233,6 +235,109 @@ func TestPortValidation(t *testing.T) {
 				t.Errorf("Port validation = %v, want %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+// TestDedupHashTableConcurrency verifies that concurrent reads and writes
+// to the dedup hash table are safe when protected by the mutex.
+// Must pass with -race.
+func TestDedupHashTableConcurrency(t *testing.T) {
+	config := &captureConfig{
+		dedupHashTable: make(map[uint64]bool),
+	}
+
+	const goroutines = 10
+	const iterations = 1000
+
+	var wg sync.WaitGroup
+
+	// Launch writer goroutines
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				hash := FNV1A([]byte{byte(id), byte(j), byte(j >> 8)})
+				config.dedupMu.RLock()
+				_, exists := config.dedupHashTable[hash]
+				config.dedupMu.RUnlock()
+				if !exists {
+					config.dedupMu.Lock()
+					config.dedupHashTable[hash] = true
+					config.dedupMu.Unlock()
+				}
+			}
+		}(i)
+	}
+
+	// Launch a goroutine that clears the table (simulating the ticker)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for j := 0; j < 10; j++ {
+			config.dedupMu.Lock()
+			config.dedupHashTable = make(map[uint64]bool)
+			config.dedupMu.Unlock()
+			time.Sleep(time.Millisecond)
+		}
+	}()
+
+	wg.Wait()
+
+	// If we got here without a race detector complaint, the test passes
+	config.dedupMu.RLock()
+	size := len(config.dedupHashTable)
+	config.dedupMu.RUnlock()
+	t.Logf("Final dedup table size: %d", size)
+}
+
+// TestDedupHashTableClearing verifies the clearing mechanism works:
+// entries are removed when the table is cleared.
+func TestDedupHashTableClearing(t *testing.T) {
+	config := &captureConfig{
+		dedupHashTable: make(map[uint64]bool),
+	}
+
+	// Add some entries
+	for i := uint64(0); i < 100; i++ {
+		config.dedupMu.Lock()
+		config.dedupHashTable[i] = true
+		config.dedupMu.Unlock()
+	}
+
+	config.dedupMu.RLock()
+	if len(config.dedupHashTable) != 100 {
+		config.dedupMu.RUnlock()
+		t.Fatalf("Expected 100 entries, got %d", len(config.dedupHashTable))
+	}
+	config.dedupMu.RUnlock()
+
+	// Clear the table (simulating what the ticker does)
+	config.dedupMu.Lock()
+	config.dedupHashTable = make(map[uint64]bool)
+	config.dedupMu.Unlock()
+
+	config.dedupMu.RLock()
+	if len(config.dedupHashTable) != 0 {
+		config.dedupMu.RUnlock()
+		t.Fatalf("Expected 0 entries after clearing, got %d", len(config.dedupHashTable))
+	}
+	config.dedupMu.RUnlock()
+
+	// Verify we can add entries again after clearing
+	config.dedupMu.Lock()
+	config.dedupHashTable[42] = true
+	config.dedupMu.Unlock()
+
+	config.dedupMu.RLock()
+	if len(config.dedupHashTable) != 1 {
+		config.dedupMu.RUnlock()
+		t.Fatalf("Expected 1 entry after re-adding, got %d", len(config.dedupHashTable))
+	}
+	_, exists := config.dedupHashTable[42]
+	config.dedupMu.RUnlock()
+	if !exists {
+		t.Fatal("Expected key 42 to exist")
 	}
 }
 

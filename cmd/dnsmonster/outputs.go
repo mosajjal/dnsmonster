@@ -17,12 +17,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	metrics "github.com/rcrowley/go-metrics"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 
 	_ "github.com/mosajjal/dnsmonster/internal/output" // this will automatically set up all the outputs
 	"github.com/mosajjal/dnsmonster/internal/util"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/sync/errgroup"
 )
 
 // a helper function to remove one of the outputs from the globaldispatch list
@@ -48,9 +51,9 @@ func setupOutputs(ctx context.Context, resultChannel *chan util.DNSResult) error
 		}
 	}
 
-	// check to see if at least one output is specified, otherwise we should panic exit
+	// check to see if at least one output is specified
 	if len(util.GlobalDispatchList) == 0 {
-		log.Fatal("No output specified. Please specify at least one output")
+		return fmt.Errorf("no output specified, please specify at least one output")
 	}
 	// todo: currently, there's no check to see if allowdomains and skipdomains are provided if the output type demands it.
 
@@ -72,21 +75,22 @@ func setupOutputs(ctx context.Context, resultChannel *chan util.DNSResult) error
 		log.Infof("allowDomains refresh interval is %s", util.GeneralFlags.AllowDomainsRefreshInterval)
 	}
 	g, gCtx := errgroup.WithContext(ctx)
+	dispatchedPackets := metrics.GetOrRegisterCounter("dispatchedPackets", metrics.DefaultRegistry)
+	droppedPackets := metrics.GetOrRegisterCounter("droppedPackets", metrics.DefaultRegistry)
+
 	g.Go(func() error {
 		// blocking loop
 		for {
 			select {
 			case data := <-*resultChannel:
 				for _, o := range util.GlobalDispatchList {
-					// Non-blocking send with timeout to prevent blocking on full channels
+					// Non-blocking send to prevent blocking on full channels
 					select {
 					case o.OutputChannel() <- data:
-						// Successfully sent
-					case <-time.After(100 * time.Millisecond):
-						// Channel is full or blocked, log and continue
-						log.Warnf("Output channel blocked, dropping packet")
-					case <-gCtx.Done():
-						return nil
+						dispatchedPackets.Inc(1)
+					default:
+						// Channel is full, drop packet
+						droppedPackets.Inc(1)
 					}
 				}
 
@@ -99,7 +103,7 @@ func setupOutputs(ctx context.Context, resultChannel *chan util.DNSResult) error
 			}
 		}
 	})
-	return nil
+	return g.Wait()
 }
 
 // vim: foldmethod=marker

@@ -92,7 +92,7 @@ func afpacketComputeSize(targetSizeMb uint, snaplen uint, pageSize uint) (
 // 	return err
 // }
 
-func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
+func (config *captureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	// Open device
 	// var tPacket *afpacket.TPacket
 	var err error

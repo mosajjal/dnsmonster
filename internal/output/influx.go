@@ -18,6 +18,7 @@ package output
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -68,7 +69,7 @@ func (c influxConfig) OutputChannel() chan util.DNSResult {
 	return c.outputChannel
 }
 
-func (c influxConfig) connectInfluxRetry() influxdb2.Client {
+func (c influxConfig) connectInfluxRetry(ctx context.Context) influxdb2.Client {
 	tick := time.NewTicker(5 * time.Second)
 	// don't retry connection if we're doing dry run
 	if c.InfluxOutputType == 0 {
@@ -82,9 +83,12 @@ func (c influxConfig) connectInfluxRetry() influxdb2.Client {
 		}
 
 		// Error getting connection, wait the timer or check if we are exiting
-		<-tick.C
-		continue
-
+		select {
+		case <-tick.C:
+			continue
+		case <-ctx.Done():
+			return nil
+		}
 	}
 }
 
@@ -94,18 +98,29 @@ func (c influxConfig) connectInflux() influxdb2.Client {
 }
 
 func (c influxConfig) Output(ctx context.Context) {
+	defer close(c.closeChannel)
+	var wg sync.WaitGroup
 	for i := 0; i < int(c.InfluxOutputWorkers); i++ {
-		go c.InfluxWorker()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.InfluxWorker(ctx)
+		}()
 	}
+	wg.Wait()
 }
 
-func (c influxConfig) InfluxWorker() {
+func (c influxConfig) InfluxWorker(ctx context.Context) {
 	influxSentToOutput := metrics.GetOrRegisterCounter("influxSentToOutput", metrics.DefaultRegistry)
-	influxSkipped := metrics.GetOrRegisterCounter("stdoutSkipped", metrics.DefaultRegistry)
-	client := c.connectInfluxRetry()
+	influxSkipped := metrics.GetOrRegisterCounter("influxSkipped", metrics.DefaultRegistry)
+	client := c.connectInfluxRetry(ctx)
+	if client == nil {
+		return
+	}
+	defer client.Close()
 	writeAPI := client.WriteAPI(c.InfluxOutputOrg, c.InfluxOutputBucket)
 
-	for data := range c.outputChannel {
+	for data := range c.outputChannel { // channel close handles exit
 		for _, dnsQuery := range data.DNS.Question {
 			if util.CheckIfWeSkip(c.InfluxOutputType, dnsQuery.Name) {
 				influxSkipped.Inc(1)

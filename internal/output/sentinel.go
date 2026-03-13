@@ -187,6 +187,7 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 }
 
 func (seConfig sentinelConfig) Output(ctx context.Context) {
+	defer close(seConfig.closeChannel)
 	log.Infof("starting SentinelOutput")
 	sentinelSkipped := metrics.GetOrRegisterCounter("sentinelSkipped", metrics.DefaultRegistry)
 
@@ -232,6 +233,8 @@ func (seConfig sentinelConfig) Output(ctx context.Context) {
 			// reset counters
 			batch = "["
 			cnt = 0
+		case <-ctx.Done():
+			return
 		}
 	}
 }

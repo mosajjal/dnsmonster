@@ -105,6 +105,7 @@ func (zConfig zincConfig) Output(ctx context.Context) {
 
 	itemPrefix := fmt.Sprintf(`{ "index" : { "_index" : "%s" } }`, zConfig.ZincOutputIndex)
 
+	defer close(zConfig.closeChannel)
 	for {
 		select {
 		case data := <-zConfig.outputChannel:
@@ -129,8 +130,9 @@ func (zConfig zincConfig) Output(ctx context.Context) {
 				// 	ticker.Reset(zConfig.ZincBatchDelay)
 			}
 
+		case <-ctx.Done():
+			return
 		case <-ticker.C:
-
 			if c > 0 {
 				if err := zConfig.zincSendData(ctx, client, batch); err != nil {
 					log.Info(err)

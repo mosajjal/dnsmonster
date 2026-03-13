@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mosajjal/dnsmonster/internal/util"
@@ -128,7 +129,7 @@ func (viConfig victoriaConfig) sendBatch(batch string, count int) {
 	}
 }
 
-func (viConfig victoriaConfig) victoriaOutputWorker(_ context.Context) {
+func (viConfig victoriaConfig) victoriaOutputWorker(ctx context.Context) {
 	log.Infof("starting VictoriaOutput")
 	victoriaSkipped := metrics.GetOrRegisterCounter("victoriaSkipped", metrics.DefaultRegistry)
 
@@ -146,6 +147,8 @@ func (viConfig victoriaConfig) victoriaOutputWorker(_ context.Context) {
 	}
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case data := <-viConfig.outputChannel:
 			for _, dnsQuery := range data.DNS.Question {
 
@@ -177,9 +180,16 @@ func (viConfig victoriaConfig) victoriaOutputWorker(_ context.Context) {
 }
 
 func (viConfig victoriaConfig) Output(ctx context.Context) {
-	for i := 0; i < int(viConfig.VictoriaOutputWorkers); i++ { // todo: make this configurable
-		go viConfig.victoriaOutputWorker(ctx)
+	defer close(viConfig.closeChannel)
+	var wg sync.WaitGroup
+	for i := 0; i < int(viConfig.VictoriaOutputWorkers); i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			viConfig.victoriaOutputWorker(ctx)
+		}()
 	}
+	wg.Wait()
 }
 
 // This will allow an instance to be spawned at import time

@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/mosajjal/dnsmonster/internal/util"
 	metrics "github.com/rcrowley/go-metrics"
@@ -103,9 +104,16 @@ func (stdConfig stdoutConfig) stdoutOutputWorker(ctx context.Context) {
 }
 
 func (stdConfig stdoutConfig) Output(ctx context.Context) {
-	for i := 0; i < int(stdConfig.StdoutOutputWorkerCount); i++ { // todo: make this configurable
-		go stdConfig.stdoutOutputWorker(ctx)
+	defer close(stdConfig.closeChannel)
+	var wg sync.WaitGroup
+	for i := 0; i < int(stdConfig.StdoutOutputWorkerCount); i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			stdConfig.stdoutOutputWorker(ctx)
+		}()
 	}
+	wg.Wait()
 }
 
 // This will allow an instance to be spawned at import time

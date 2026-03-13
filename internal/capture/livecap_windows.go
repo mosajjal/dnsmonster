@@ -29,7 +29,7 @@ type livePcapHandle struct {
 }
 
 func initializeLivePcap(devName, filter string) (*livePcapHandle, error) {
-	handle, err := pcap.OpenLive(devName, 1600, true, pcap.BlockForever)
+	handle, err := pcap.OpenLive(devName, 65535, true, pcap.BlockForever)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open live capture on %s: %w", devName, err)
 	}

@@ -59,7 +59,7 @@ func (afhandle *afpacketHandle) Stat() (uint, uint, error) {
 	return 0, 0, fmt.Errorf("Dnsmonster has been compiled without afpacket support for this platform")
 }
 
-func (config captureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
+func (config *captureConfig) initializeLiveAFpacket(devName, filter string) *afpacketHandle {
 	return nil
 }
 

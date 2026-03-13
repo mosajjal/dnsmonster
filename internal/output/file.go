@@ -78,9 +78,9 @@ func (config fileConfig) Initialize(ctx context.Context) error {
 		}
 
 		config.writer, err = rollingwriter.NewWriterFromConfig(rollerConfig)
-		// config.writer, err = os.OpenFile(string(config.FileOutputPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
-			log.Fatal(err)
+			log.Errorf("Failed to create file writer: %v", err)
+			return err
 		}
 
 		go config.Output(ctx)
@@ -106,10 +106,10 @@ func (config fileConfig) OutputChannel() chan util.DNSResult {
 }
 
 func (config fileConfig) Output(ctx context.Context) {
+	defer close(config.closeChannel)
 	fileSentToOutput := metrics.GetOrRegisterCounter("fileSentToOutput", metrics.DefaultRegistry)
 	fileSkipped := metrics.GetOrRegisterCounter("fileSkipped", metrics.DefaultRegistry)
 
-	// todo: output channel will duplicate output when we have malformed DNS packets with multiple questions
 	for {
 		select {
 		case data := <-config.outputChannel:
@@ -122,7 +122,8 @@ func (config fileConfig) Output(ctx context.Context) {
 				fileSentToOutput.Inc(1)
 				_, err := config.writer.Write(config.outputMarshaller.Marshal(data))
 				if err != nil {
-					log.Fatal(err)
+					log.Errorf("Error writing to file: %v", err)
+					continue
 				}
 				_, _ = config.writer.Write([]byte("\n"))
 

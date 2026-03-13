@@ -25,7 +25,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
+func (config *captureConfig) StartNonDNSTap(ctx context.Context) error {
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)
 	packetsDropped := metrics.GetOrRegisterGauge("packetsDropped", metrics.DefaultRegistry)
 	packetsDuplicate := metrics.GetOrRegisterCounter("packetsDuplicate", metrics.DefaultRegistry)
@@ -117,9 +117,13 @@ func (config captureConfig) StartNonDNSTap(ctx context.Context) error {
 		skipForDudup := false
 		if config.Dedup {
 			hash := FNV1A(data)
+			config.dedupMu.RLock()
 			_, ok := config.dedupHashTable[hash] // check for existence
+			config.dedupMu.RUnlock()
 			if !ok {
+				config.dedupMu.Lock()
 				config.dedupHashTable[hash] = true
+				config.dedupMu.Unlock()
 			} else {
 				skipForDudup = true
 				packetsDuplicate.Inc(1)

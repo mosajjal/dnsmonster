@@ -119,7 +119,7 @@ func dnsTapMsgToDNSResult(msg []byte) (*util.DNSResult, error) {
 	return &myDNSResult, nil
 }
 
-func (config captureConfig) StartDNSTap(ctx context.Context) error {
+func (config *captureConfig) StartDNSTap(ctx context.Context) error {
 	log.Info("Starting DNStap capture")
 
 	packetsCaptured := metrics.GetOrRegisterGauge("packetsCaptured", metrics.DefaultRegistry)

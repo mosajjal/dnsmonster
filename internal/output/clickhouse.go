@@ -213,9 +213,13 @@ needs to make sure that there is proper Database connection and table are presen
 clickhouse folder for the file tables.sql
 */
 func (chConfig clickhouseConfig) Output(ctx context.Context) {
+	defer close(chConfig.closeChannel)
 	g, gCtx := errgroup.WithContext(ctx)
 	for i := 0; i < int(chConfig.ClickhouseWorkers); i++ {
 		g.Go(func() error { return chConfig.clickhouseOutputWorker(gCtx) })
+	}
+	if err := g.Wait(); err != nil {
+		log.Errorf("ClickHouse worker error: %v", err)
 	}
 }
 

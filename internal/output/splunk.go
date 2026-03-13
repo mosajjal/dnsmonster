@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	metrics "github.com/rcrowley/go-metrics"
@@ -91,7 +92,10 @@ func (spConfig splunkConfig) OutputChannel() chan util.DNSResult {
 	return spConfig.outputChannel
 }
 
-var splunkConnectionList = make(map[string]splunkConnection)
+var (
+	splunkConnectionList = make(map[string]splunkConnection)
+	splunkConnMu         sync.RWMutex
+)
 
 func (spConfig splunkConfig) connectMultiSplunkRetry() {
 	for _, splunkEndpoint := range spConfig.SplunkOutputEndpoint {
@@ -107,6 +111,7 @@ func (spConfig splunkConfig) connectSplunkRetry(splunkEndpoint string) {
 	}
 	defer tick.Stop()
 	for range tick.C {
+		splunkConnMu.Lock()
 		// check to see if the connection exists
 		if conn, ok := splunkConnectionList[splunkEndpoint]; ok {
 			if conn.Unhealthy != 0 {
@@ -117,6 +122,7 @@ func (spConfig splunkConfig) connectSplunkRetry(splunkEndpoint string) {
 			log.Warnf("new splunk endpoint %s", splunkEndpoint)
 			splunkConnectionList[splunkEndpoint] = spConfig.connectSplunk(splunkEndpoint)
 		}
+		splunkConnMu.Unlock()
 	}
 }
 
@@ -159,7 +165,8 @@ func (spConfig splunkConfig) connectSplunk(splunkEndpoint string) splunkConnecti
 }
 
 func selectHealthyConnection() string {
-	// lastId is used where all the connections are unhealthy
+	splunkConnMu.RLock()
+	defer splunkConnMu.RUnlock()
 	for id, connection := range splunkConnectionList {
 		if connection.Unhealthy == 0 {
 			return id
@@ -170,13 +177,14 @@ func selectHealthyConnection() string {
 }
 
 func (spConfig splunkConfig) Output(ctx context.Context) {
+	defer close(spConfig.closeChannel)
 	splunkFailed := metrics.GetOrRegisterCounter("splunkFailed", metrics.DefaultRegistry)
 
 	log.Infof("Connecting to Splunk endpoints")
 	spConfig.connectMultiSplunkRetry()
 
 	batch := make([]util.DNSResult, 0, spConfig.SplunkBatchSize)
-	rand.Seed(time.Now().Unix())
+	_ = rand.Int() // seed is automatic in Go 1.20+
 	ticker := time.NewTicker(spConfig.SplunkBatchDelay)
 
 	for {
@@ -185,13 +193,20 @@ func (spConfig splunkConfig) Output(ctx context.Context) {
 			if util.GeneralFlags.PacketLimit == 0 || len(batch) < util.GeneralFlags.PacketLimit {
 				batch = append(batch, data)
 			}
+		case <-ctx.Done():
+			return
 		case <-ticker.C:
 			healthyID := selectHealthyConnection()
-			if conn, ok := splunkConnectionList[healthyID]; ok {
+			splunkConnMu.RLock()
+			conn, ok := splunkConnectionList[healthyID]
+			splunkConnMu.RUnlock()
+			if ok {
 				if conn.Client == nil {
 					log.Warnf("Splunk client is nil for endpoint %s, marking as unhealthy", healthyID)
 					conn.Unhealthy++
+					splunkConnMu.Lock()
 					splunkConnectionList[healthyID] = conn
+					splunkConnMu.Unlock()
 					splunkFailed.Inc(int64(len(batch)))
 					continue
 				}
@@ -199,7 +214,9 @@ func (spConfig splunkConfig) Output(ctx context.Context) {
 					log.Warn(err)
 					log.Warnf("marking connection as unhealthy")
 					conn.Unhealthy++
+					splunkConnMu.Lock()
 					splunkConnectionList[healthyID] = conn
+					splunkConnMu.Unlock()
 					splunkFailed.Inc(int64(len(batch)))
 				} else {
 					batch = make([]util.DNSResult, 0, spConfig.SplunkBatchSize)

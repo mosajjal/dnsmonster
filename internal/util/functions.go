@@ -17,7 +17,9 @@ package util
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -27,6 +29,8 @@ import (
 	"github.com/golang-collections/collections/tst"
 	log "github.com/sirupsen/logrus"
 )
+
+const maxDomainListSize = 100 * 1024 * 1024 // 100MB limit for remote domain lists
 
 // domainFilterMu protects the skip/allow TSTs and hashtables from concurrent
 // read/write access during hot-reload.
@@ -61,16 +65,20 @@ func CheckIfWeSkip(outputType uint, fqdn string) bool {
 			return true
 		}
 		// check for prefix match
-		if longestPrefix := GeneralFlags.skipPrefixTst.GetLongestPrefix(fqdnLower); longestPrefix != nil {
-			if GeneralFlags.skipTypeHt[longestPrefix.(string)] == matchPrefix {
-				return true
+		if GeneralFlags.skipPrefixTst != nil {
+			if longestPrefix := GeneralFlags.skipPrefixTst.GetLongestPrefix(fqdnLower); longestPrefix != nil {
+				if str, ok := longestPrefix.(string); ok && GeneralFlags.skipTypeHt[str] == matchPrefix {
+					return true
+				}
 			}
 		}
 		// check for suffix match — suffix domains stored pre-reversed in TST
-		reversedFqdn := reverse(fqdnLower)
-		if longestSuffix := GeneralFlags.skipSuffixTst.GetLongestPrefix(reversedFqdn); longestSuffix != nil {
-			if GeneralFlags.skipTypeHt[longestSuffix.(string)] == matchSuffix {
-				return true
+		if GeneralFlags.skipSuffixTst != nil {
+			reversedFqdn := reverse(fqdnLower)
+			if longestSuffix := GeneralFlags.skipSuffixTst.GetLongestPrefix(reversedFqdn); longestSuffix != nil {
+				if str, ok := longestSuffix.(string); ok && GeneralFlags.skipTypeHt[str] == matchSuffix {
+					return true
+				}
 			}
 		}
 		return false
@@ -82,16 +90,20 @@ func CheckIfWeSkip(outputType uint, fqdn string) bool {
 			return false
 		}
 		// check for prefix match
-		if longestPrefix := GeneralFlags.allowPrefixTst.GetLongestPrefix(fqdnLower); longestPrefix != nil {
-			if GeneralFlags.allowTypeHt[longestPrefix.(string)] == matchPrefix {
-				return false
+		if GeneralFlags.allowPrefixTst != nil {
+			if longestPrefix := GeneralFlags.allowPrefixTst.GetLongestPrefix(fqdnLower); longestPrefix != nil {
+				if str, ok := longestPrefix.(string); ok && GeneralFlags.allowTypeHt[str] == matchPrefix {
+					return false
+				}
 			}
 		}
 		// check for suffix match — suffix domains stored pre-reversed in TST
-		reversedFqdn := reverse(fqdnLower)
-		if longestSuffix := GeneralFlags.allowSuffixTst.GetLongestPrefix(reversedFqdn); longestSuffix != nil {
-			if GeneralFlags.allowTypeHt[longestSuffix.(string)] == matchSuffix {
-				return false
+		if GeneralFlags.allowSuffixTst != nil {
+			reversedFqdn := reverse(fqdnLower)
+			if longestSuffix := GeneralFlags.allowSuffixTst.GetLongestPrefix(reversedFqdn); longestSuffix != nil {
+				if str, ok := longestSuffix.(string); ok && GeneralFlags.allowTypeHt[str] == matchSuffix {
+					return false
+				}
 			}
 		}
 		return true
@@ -127,7 +139,9 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 		client := http.Client{
 			Timeout: 30 * time.Second,
 			CheckRedirect: func(r *http.Request, via []*http.Request) error {
-				r.URL.Opaque = r.URL.Path
+				if len(via) >= 10 {
+					return errors.New("too many redirects")
+				}
 				return nil
 			},
 		}
@@ -137,7 +151,8 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 		}
 		log.Info("(re)fetching URL: ", Filename)
 		defer resp.Body.Close()
-		scanner = bufio.NewScanner(resp.Body)
+		limitedBody := io.LimitReader(resp.Body, maxDomainListSize)
+		scanner = bufio.NewScanner(limitedBody)
 
 	} else {
 		file, err := os.Open(Filename)
@@ -178,6 +193,9 @@ func LoadDomainsCsv(Filename string) (*tst.TernarySearchTree, *tst.TernarySearch
 			log.Warnf("%s is not a valid line, assuming fqdn", lowerCaseLine)
 			entryTypeHt[fqdn[0]] = matchFQDN
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, nil, nil, fmt.Errorf("error reading domain list %s: %w", Filename, err)
 	}
 	log.Infof("%s loaded with %d prefix, %d suffix and %d fqdn", Filename, prefixTst.Len(), suffixTst.Len(), len(entryTypeHt)-prefixTst.Len()-suffixTst.Len())
 	return prefixTst, suffixTst, entryTypeHt, nil

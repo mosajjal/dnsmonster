@@ -221,6 +221,8 @@ func (psqConf psqlConfig) OutputWorker(ctx context.Context) {
 			}
 			c = 0
 			batch = new(pgx.Batch)
+		case <-ctx.Done():
+			return
 		}
 	}
 }

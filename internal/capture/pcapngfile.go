@@ -62,7 +62,9 @@ func (h *pcapngFileHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.Ca
 }
 
 func (h *pcapngFileHandle) Close() {
-	// h.file.Close()
+	if c, ok := h.file.(io.Closer); ok {
+		c.Close()
+	}
 }
 
 func (h *pcapngFileHandle) Stat() (uint, uint, error) {

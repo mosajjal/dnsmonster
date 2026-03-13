@@ -121,9 +121,11 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 	case "stderr":
 		// go metrics.Log(metrics.DefaultRegistry, metricConfig.MetricFlushInterval, log.StandardLogger())
 		g.Go(func() error {
+			ticker := time.NewTicker(c.MetricFlushInterval)
+			defer ticker.Stop()
 			for {
 				select {
-				case <-time.NewTicker(c.MetricFlushInterval).C:
+				case <-ticker.C:
 					out := ""
 					switch c.MetricStderrFormat {
 					case "json":
@@ -134,7 +136,10 @@ func (c metricConfig) SetupMetrics(ctx context.Context) error {
 						}
 					case "kv":
 						for k1, v := range metrics.DefaultRegistry.GetAll() {
-							out += fmt.Sprintf("%s=%v ", k1, v[reflect.ValueOf(v).MapKeys()[0].String()])
+							keys := reflect.ValueOf(v).MapKeys()
+							if len(keys) > 0 {
+								out += fmt.Sprintf("%s=%v ", k1, v[keys[0].String()])
+							}
 						}
 					}
 					os.Stderr.WriteString(fmt.Sprintf("%s metrics: %s\n", time.Now().Format(time.RFC3339), out))

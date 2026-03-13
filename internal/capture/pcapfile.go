@@ -86,7 +86,9 @@ func (h *pcapFileHandle) ZeroCopyReadPacketData() (data []byte, ci gopacket.Capt
 }
 
 func (h *pcapFileHandle) Close() {
-	// h.file.Close()
+	if c, ok := h.file.(io.Closer); ok {
+		c.Close()
+	}
 }
 
 func (h *pcapFileHandle) Stat() (uint, uint, error) {

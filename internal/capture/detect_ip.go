@@ -30,6 +30,9 @@ func (i *detectIP) LayerType() gopacket.LayerType {
 }
 
 func (i *detectIP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	if len(data) == 0 {
+		return fmt.Errorf("empty packet data")
+	}
 	family := int(data[0] >> 4)
 	switch family {
 	case 4:

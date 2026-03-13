@@ -107,7 +107,7 @@ func (esConfig elasticConfig) connectelastic(ctx context.Context) (*elastic.Clie
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: util.GeneralFlags.SkipTLSVerification},
 	}
-	httpClient := &http.Client{Transport: tr}
+	httpClient := &http.Client{Transport: tr, Timeout: 30 * time.Second}
 
 	client, err := elastic.NewClient(
 		elastic.SetHttpClient(httpClient),

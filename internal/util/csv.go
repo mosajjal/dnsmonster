@@ -77,6 +77,9 @@ func formatCsvRow(csvrow csvRow) []byte {
 }
 
 func (c csvOutput) Marshal(d DNSResult) []byte {
+	if len(d.DNS.Question) == 0 {
+		return nil
+	}
 	// the integer version of the IP is much more useful in Machine learning than the string
 	var SrcIP, DstIP uint64
 	if d.IPVersion == 4 {

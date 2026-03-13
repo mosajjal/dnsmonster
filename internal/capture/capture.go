@@ -136,9 +136,11 @@ func (config *captureConfig) CheckFlagsAndStart(ctx context.Context) {
 		log.Infof("Packet deduplication is enabled")
 
 		g.Go(func() error {
+			ticker := time.NewTicker(config.DedupCleanupInterval)
+			defer ticker.Stop()
 			for {
 				select {
-				case <-time.NewTicker(config.DedupCleanupInterval).C:
+				case <-ticker.C:
 					log.Infof("cleaning up dedup hash table")
 					config.dedupMu.Lock()
 					config.dedupHashTable = make(map[uint64]bool)

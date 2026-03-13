@@ -164,13 +164,12 @@ func (zConfig *zincConfig) zincSendData(ctx context.Context, client *http.Client
 	if err != nil {
 		return err
 	}
-	// we don't care about the response, just make sure we get a 200
+	defer resp.Body.Close()
+	// we don't care about the response, just make sure we drain it
 	_, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-
-	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		records := bytes.Count(batch, []byte{'\n'}) / 2
 		failedCount.Inc(int64(records))

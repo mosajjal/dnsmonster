@@ -129,7 +129,7 @@ func (kafConfig kafkaConfig) getWriter() *kafka.Writer {
 	if kafConfig.kafkaSASLCredentials != "" {
 		creds := strings.Split(kafConfig.kafkaSASLCredentials, ":")
 		if len(creds) != 2 {
-			log.Errorf("Could not parse kafka SASL credentials: %v", kafConfig.kafkaSASLCredentials)
+			log.Errorf("Could not parse kafka SASL credentials (expected username:password format)")
 		}
 		mechanism := plain.Mechanism{
 			Username: creds[0],

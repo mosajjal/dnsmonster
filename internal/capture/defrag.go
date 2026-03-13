@@ -291,6 +291,7 @@ func NewIPv6Defragmenter() *IPv6Defragmenter {
 func ipv4Defragger(ctx context.Context, ipInput <-chan ipv4ToDefrag, ipOut chan ipv4Defragged, gcTime time.Duration) error {
 	ipv4Defragger := ip4defrag.NewIPv4Defragmenter()
 	ticker := time.NewTicker(1 * gcTime)
+	defer ticker.Stop()
 	for {
 		select {
 		case packet := <-ipInput:
@@ -315,6 +316,7 @@ func ipv4Defragger(ctx context.Context, ipInput <-chan ipv4ToDefrag, ipOut chan 
 func ipv6Defragger(ctx context.Context, ipInput <-chan ipv6FragmentInfo, ipOut chan ipv6Defragged, gcTime time.Duration) error {
 	ipv6Defragger := NewIPv6Defragmenter()
 	ticker := time.NewTicker(1 * gcTime)
+	defer ticker.Stop()
 	for {
 		select {
 		case packet := <-ipInput:

@@ -120,6 +120,7 @@ func (viConfig victoriaConfig) sendBatch(batch string, count int) {
 			return
 		}
 	}
+	defer res.Body.Close()
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		log.Infof("batch sent, with code %d", res.StatusCode)
 		victoriaSentToOutput.Inc(int64(count))
@@ -133,7 +134,7 @@ func (viConfig victoriaConfig) victoriaOutputWorker(ctx context.Context) {
 	log.Infof("starting VictoriaOutput")
 	victoriaSkipped := metrics.GetOrRegisterCounter("victoriaSkipped", metrics.DefaultRegistry)
 
-	batch := ""
+	var batch bytes.Buffer
 	cnt := uint(0)
 
 	ticker := time.NewTicker(time.Second * 5)
@@ -145,6 +146,14 @@ func (viConfig victoriaConfig) victoriaOutputWorker(ctx context.Context) {
 	} else {
 		ticker.Stop()
 	}
+
+	flushBatch := func() {
+		s := strings.TrimSuffix(batch.String(), "\n")
+		viConfig.sendBatch(s, int(cnt))
+		batch.Reset()
+		cnt = 0
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -158,23 +167,14 @@ func (viConfig victoriaConfig) victoriaOutputWorker(ctx context.Context) {
 				}
 
 				cnt++
-				batch += string(viConfig.outputMarshaller.Marshal(data))
-				batch += "\n"
+				batch.Write(viConfig.outputMarshaller.Marshal(data))
+				batch.WriteString("\n")
 				if int(cnt%viConfig.VictoriaBatchSize) == div {
-					// remove the last new line
-					batch = strings.TrimSuffix(batch, "\n")
-					viConfig.sendBatch(batch, int(cnt))
-					// reset counters
-					batch = ""
-					cnt = 0
+					flushBatch()
 				}
 			}
 		case <-ticker.C:
-			batch = strings.TrimSuffix(batch, "\n")
-			viConfig.sendBatch(batch, int(cnt))
-			// reset counters
-			batch = ""
-			cnt = 0
+			flushBatch()
 		}
 	}
 }

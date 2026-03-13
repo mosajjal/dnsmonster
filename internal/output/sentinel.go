@@ -177,6 +177,7 @@ func (seConfig sentinelConfig) sendBatch(batch string, count int) {
 			return
 		}
 	}
+	defer res.Body.Close()
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		log.Infof("batch sent, with code %d", res.StatusCode)
 		sentinelSentToOutput.Inc(int64(count))
@@ -191,7 +192,8 @@ func (seConfig sentinelConfig) Output(ctx context.Context) {
 	log.Infof("starting SentinelOutput")
 	sentinelSkipped := metrics.GetOrRegisterCounter("sentinelSkipped", metrics.DefaultRegistry)
 
-	batch := "["
+	var batch bytes.Buffer
+	batch.WriteString("[")
 	cnt := uint(0)
 
 	ticker := time.NewTicker(time.Second * 5)
@@ -203,6 +205,17 @@ func (seConfig sentinelConfig) Output(ctx context.Context) {
 	} else {
 		ticker.Stop()
 	}
+
+	flushBatch := func() {
+		s := batch.String()
+		s = strings.TrimSuffix(s, ",")
+		s += "]"
+		seConfig.sendBatch(s, int(cnt))
+		batch.Reset()
+		batch.WriteString("[")
+		cnt = 0
+	}
+
 	for {
 		select {
 		case data := <-seConfig.outputChannel:
@@ -214,25 +227,14 @@ func (seConfig sentinelConfig) Output(ctx context.Context) {
 				}
 
 				cnt++
-				batch += string(seConfig.outputMarshaller.Marshal(data))
-				batch += ","
+				batch.Write(seConfig.outputMarshaller.Marshal(data))
+				batch.WriteString(",")
 				if int(cnt%seConfig.SentinelBatchSize) == div {
-					// remove the last ,
-					batch = strings.TrimSuffix(batch, ",")
-					batch += "]"
-					seConfig.sendBatch(batch, int(cnt))
-					// reset counters
-					batch = "["
-					cnt = 0
+					flushBatch()
 				}
 			}
 		case <-ticker.C:
-			batch = strings.TrimSuffix(batch, ",")
-			batch += "]"
-			seConfig.sendBatch(batch, int(cnt))
-			// reset counters
-			batch = "["
-			cnt = 0
+			flushBatch()
 		case <-ctx.Done():
 			return
 		}

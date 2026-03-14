@@ -1,0 +1,36 @@
+// DNSEvent is the wire format for DNS events between dnsmonster components.
+// It carries pre-extracted index fields for fast filtering plus the full
+// DNS message in wire format for deep inspection when needed.
+
+syntax = "proto3";
+
+package dnsmonster;
+
+option go_package = "github.com/mosajjal/dnsmonster/proto";
+
+message DNSEvent {
+    // Metadata
+    int64  timestamp_ns  = 1;  // Unix timestamp in nanoseconds
+    bytes  src_ip        = 2;  // 4 bytes (IPv4) or 16 bytes (IPv6)
+    bytes  dst_ip        = 3;
+    uint32 src_port      = 4;
+    uint32 dst_port      = 5;
+    uint32 ip_version    = 6;  // 4 or 6
+    string protocol      = 7;  // "udp" or "tcp"
+    uint32 packet_length = 8;
+    string identity      = 9;  // server identity from dnstap
+    string version       = 10; // server version from dnstap
+
+    // Pre-extracted DNS fields for hot-path filtering.
+    // Most detection rules only need these — no dns_wire unpacking required.
+    string qname         = 11; // First question name (e.g. "example.com.")
+    uint32 qtype         = 12; // DNS query type (1=A, 28=AAAA, 16=TXT, etc.)
+    uint32 rcode         = 13; // Response code (0=NOERROR, 3=NXDOMAIN, etc.)
+    bool   is_response   = 14; // true if QR=1 (response), false if query
+
+    // Full DNS message in RFC 1035 wire format (dns.Msg.Pack() output).
+    // Consumers needing answer records, authority section, EDNS options,
+    // or any field not pre-extracted above unpack this on demand via
+    // dns.Msg.Unpack(dns_wire). ~100-500 bytes per message.
+    bytes  dns_wire      = 15;
+}

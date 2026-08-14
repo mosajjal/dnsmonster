@@ -63,7 +63,7 @@ services:
       - PGID=1000
     command:
       - "--dnstapSocket=tcp://0.0.0.0:5555"
-      # See config at https://dnsmonster.dev/docs/outputs/clickhouse/
+      # See config at https://dnsmonster.dev/outputs/clickhouse/
       - "--clickhouseOutputType=1"
       - "--clickhouseAddress=clickhouse:9000"
       - "--clickhouseDelay=1s"

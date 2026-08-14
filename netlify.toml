@@ -1,0 +1,72 @@
+# Netlify configuration for the dnsmonster documentation site (dnsmonster.dev).
+#
+# This file overrides the build settings configured in the Netlify UI. The docs
+# moved from Hugo to Astro + Starlight, so the build command and publish
+# directory both changed.
+#
+# All paths are relative to `base`.
+
+[build]
+  base = "docs/"
+  command = "npm ci && npm run build"
+  publish = "dist/"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# ---------------------------------------------------------------------------
+# Redirects from the Hugo URL structure.
+#
+# Docsy nested everything under /docs/; Starlight serves the sections at the
+# root. Ordering matters — Netlify uses the first rule that matches, so the
+# renamed pages have to come before the catch-all.
+# ---------------------------------------------------------------------------
+
+# Pages whose slug changed
+[[redirects]]
+  from = "/docs/getting-started/post_installation/"
+  to = "/getting-started/post-installation/"
+  status = 301
+
+[[redirects]]
+  from = "/docs/inputs/inputs/"
+  to = "/inputs/input-options/"
+  status = 301
+
+[[redirects]]
+  from = "/docs/inputs/filters_masks/"
+  to = "/inputs/filters-and-masks/"
+  status = 301
+
+[[redirects]]
+  from = "/docs/outputs/elastic/"
+  to = "/outputs/elasticsearch/"
+  status = 301
+
+[[redirects]]
+  from = "/docs/tutorials/k8s/"
+  to = "/tutorials/kubernetes/"
+  status = 301
+
+# The docs index and the Getting Started section are both the site root now
+[[redirects]]
+  from = "/docs/getting-started/"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/docs/"
+  to = "/"
+  status = 301
+
+# Everything else keeps its path, minus the /docs prefix
+[[redirects]]
+  from = "/docs/*"
+  to = "/:splat"
+  status = 301
+
+# Hugo's standalone search page; Starlight has search built into the header
+[[redirects]]
+  from = "/search/"
+  to = "/"
+  status = 301

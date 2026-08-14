@@ -1,0 +1,82 @@
+---
+/**
+ * Starlight `Footer` override — keeps the default pagination, edit link and
+ * last-updated block, then appends the Fenko Security legal bar.
+ */
+import Default from '@astrojs/starlight/components/Footer.astro';
+
+const legal = [
+	{ label: 'Privacy policy', href: 'https://fenko.nz/privacy-policy' },
+	{ label: 'Terms & conditions', href: 'https://fenko.nz/terms-conditions' },
+	{ label: 'Data processing agreement', href: 'https://fenko.nz/dpa' },
+	{ label: 'Governance', href: 'https://fenko.nz/governance' },
+];
+
+const year = 2026;
+---
+
+<Default><slot /></Default>
+
+<div class="not-content fk-legal">
+	<div class="fk-legal__brand">
+		<span>
+			Maintained by <a href="https://fenko.nz/">Fenko Security</a> and the dnsmonster contributors.
+		</span>
+		<span class="fk-legal__copy">&copy; {year} FENKO LIMITED. Documentation under the project licence.</span>
+	</div>
+
+	<nav class="fk-legal__links" aria-label="Legal">
+		{legal.map((item) => <a href={item.href}>{item.label}</a>)}
+		<a href="/privacy/">dnsmonster privacy</a>
+	</nav>
+</div>
+
+<style>
+	.fk-legal {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: start;
+		gap: 1rem 2rem;
+		margin-top: 2rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--fk-border-subtle);
+		font-size: 0.8125rem;
+		color: var(--fk-text-muted);
+	}
+
+	.fk-legal__brand {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.fk-legal__copy {
+		color: var(--sl-color-gray-4);
+	}
+
+	.fk-legal__brand a {
+		color: var(--sl-color-gray-2);
+		font-weight: 500;
+	}
+
+	.fk-legal__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem 1.1rem;
+	}
+
+	.fk-legal a {
+		color: var(--fk-text-muted);
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+		transition:
+			color 0.15s ease,
+			border-color 0.15s ease;
+	}
+
+	.fk-legal a:hover {
+		color: var(--fk-amber);
+		border-bottom-color: color-mix(in oklab, var(--fk-amber) 55%, transparent);
+	}
+</style>

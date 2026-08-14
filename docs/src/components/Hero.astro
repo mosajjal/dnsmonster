@@ -1,0 +1,257 @@
+---
+import { buttonVariants } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
+interface Props {
+	eyebrow?: string;
+	title: string;
+	tagline: string;
+	actions?: { label: string; href: string; variant?: 'default' | 'outline' }[];
+}
+
+const { eyebrow, title, tagline, actions = [] } = Astro.props;
+
+// Terminal sample, tokenised as HTML so the braces don't collide with Astro's
+// expression syntax.
+const t = (cls: string, text: string) => `<span class="fk-t-${cls}">${text}</span>`;
+const terminal = [
+	`${t('prompt', '$')} ${t('cmd', 'dnsmonster')} ${t('flag', '--devName')}=eth0 ${t('flag', '--stdoutOutputType')}=1 ${t('flag', '--useAfpacket')}`,
+	`${t('dim', '{')}${t('key', '"Timestamp"')}${t('dim', ':')}${t('str', '"2026-08-14T09:41:02.118Z"')}${t('dim', ',')}`,
+	` ${t('key', '"SrcIP"')}${t('dim', ':')}${t('str', '"10.0.0.0"')}${t('dim', ',')} ${t('key', '"Protocol"')}${t('dim', ':')}${t('str', '"udp"')}${t('dim', ',')}`,
+	` ${t('key', '"Question"')}${t('dim', ':')}${t('str', '"imap.gmail.com."')}${t('dim', ',')} ${t('key', '"Type"')}${t('dim', ':')}${t('num', '1')}${t('dim', '}')}`,
+	`${t('ok', '&#9656;')} ${t('dim', 'packets/s')} 214,880  ${t('dim', 'drops')} 0  ${t('dim', 'outputs')} clickhouse, kafka`,
+].join('\n');
+---
+
+<section class="not-content fk-hero">
+	<div class="fk-hero__grid" aria-hidden="true"></div>
+
+	<div class="fk-hero__body">
+		{
+			eyebrow && (
+				<Badge
+					variant="secondary"
+					className="mb-5 gap-2 rounded-full border border-[var(--fk-border)] bg-[var(--fk-surface)] px-3 py-1 font-mono text-[0.7rem] tracking-[0.14em] uppercase text-[var(--fk-amber)]"
+				>
+					<span class="fk-hero__pulse" />
+					{eyebrow}
+				</Badge>
+			)
+		}
+
+		<h1 class="fk-hero__title">{title}</h1>
+		<p class="fk-hero__tagline">{tagline}</p>
+
+		{
+			actions.length > 0 && (
+				<div class="fk-hero__actions">
+					{actions.map((action) => (
+						<a
+							href={action.href}
+							data-variant={action.variant ?? 'default'}
+							class={buttonVariants({
+								variant: action.variant ?? 'default',
+								className: 'h-10 px-5 text-[0.95rem] font-semibold',
+							})}
+						>
+							{action.label}
+						</a>
+					))}
+				</div>
+			)
+		}
+	</div>
+
+	<div class="fk-terminal">
+		<div class="fk-terminal__bar">
+			<span class="fk-terminal__dot" style="--dot: #f85149"></span>
+			<span class="fk-terminal__dot" style="--dot: #d29922"></span>
+			<span class="fk-terminal__dot" style="--dot: #3fb950"></span>
+			<span class="fk-terminal__label">dnsmonster — live capture</span>
+		</div>
+		<pre class="fk-terminal__body"><code set:html={terminal} /></pre>
+	</div>
+</section>
+
+<style>
+	.fk-hero {
+		position: relative;
+		margin-block-end: 3rem;
+		padding: 2.5rem 0 0;
+	}
+
+	.fk-hero__grid {
+		position: absolute;
+		inset: -3rem 0 0;
+		z-index: -1;
+		background-image:
+			linear-gradient(to right, color-mix(in oklab, var(--fk-border) 45%, transparent) 1px, transparent 1px),
+			linear-gradient(to bottom, color-mix(in oklab, var(--fk-border) 45%, transparent) 1px, transparent 1px);
+		background-size: 3rem 3rem;
+		mask-image: radial-gradient(38rem 20rem at 30% 12%, black, transparent 75%);
+		-webkit-mask-image: radial-gradient(38rem 20rem at 30% 12%, black, transparent 75%);
+		opacity: 0.55;
+	}
+
+	.fk-hero__body {
+		max-width: 44rem;
+	}
+
+	.fk-hero__pulse {
+		display: inline-block;
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 999px;
+		background: var(--fk-amber);
+		box-shadow: 0 0 0 0 color-mix(in oklab, var(--fk-amber) 70%, transparent);
+		animation: fk-pulse 2.4s ease-out infinite;
+	}
+
+	@keyframes fk-pulse {
+		0% {
+			box-shadow: 0 0 0 0 color-mix(in oklab, var(--fk-amber) 65%, transparent);
+		}
+		70% {
+			box-shadow: 0 0 0 0.5rem transparent;
+		}
+		100% {
+			box-shadow: 0 0 0 0 transparent;
+		}
+	}
+
+	.fk-hero__title {
+		font-size: clamp(2.5rem, 6vw, 3.75rem);
+		line-height: 1.03;
+		letter-spacing: -0.035em;
+		font-weight: 700;
+		color: var(--sl-color-white);
+		margin: 0;
+		text-wrap: balance;
+	}
+
+	.fk-hero__title :global(em) {
+		font-style: normal;
+		background: linear-gradient(100deg, var(--fk-amber) 0%, var(--fk-orange) 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+
+	.fk-hero__tagline {
+		margin: 1.15rem 0 0;
+		font-size: 1.175rem;
+		line-height: 1.6;
+		color: var(--fk-text-muted);
+		max-width: 40rem;
+		text-wrap: pretty;
+	}
+
+	.fk-hero__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-top: 1.85rem;
+	}
+
+	/* Starlight styles bare links; these are buttons. */
+	.fk-hero__actions :global(a) {
+		text-decoration: none;
+	}
+
+	.fk-hero__actions :global(a[data-variant='default']) {
+		color: var(--primary-foreground);
+	}
+
+	.fk-hero__actions :global(a[data-variant='outline']) {
+		color: var(--sl-color-white);
+	}
+
+	/* Terminal card */
+	.fk-terminal {
+		margin-top: 2.75rem;
+		border: 1px solid var(--fk-border);
+		border-radius: 0.85rem;
+		background: var(--fk-surface);
+		overflow: hidden;
+		box-shadow:
+			0 1px 0 0 color-mix(in oklab, white 6%, transparent) inset,
+			0 24px 48px -24px rgb(0 0 0 / 55%);
+	}
+
+	:root[data-theme='light'] .fk-terminal {
+		box-shadow: 0 20px 40px -28px rgb(31 35 40 / 35%);
+	}
+
+	.fk-terminal__bar {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.6rem 0.9rem;
+		border-bottom: 1px solid var(--fk-border-subtle);
+		background: color-mix(in oklab, var(--fk-surface) 60%, var(--sl-color-bg));
+	}
+
+	.fk-terminal__dot {
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 999px;
+		background: var(--dot);
+		opacity: 0.85;
+	}
+
+	.fk-terminal__label {
+		margin-inline-start: 0.7rem;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		letter-spacing: 0.04em;
+		color: var(--fk-text-muted);
+	}
+
+	.fk-terminal__body {
+		margin: 0;
+		padding: 1.1rem 1.15rem 1.3rem;
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.75;
+		overflow-x: auto;
+		background: transparent;
+		color: var(--sl-color-gray-2);
+		tab-size: 2;
+	}
+
+	/* `set:html` output carries no scope attribute, so these must be global. */
+	.fk-terminal__body :global(.fk-t-prompt) {
+		color: var(--fk-amber);
+	}
+	.fk-terminal__body :global(.fk-t-cmd) {
+		color: var(--sl-color-white);
+		font-weight: 600;
+	}
+	.fk-terminal__body :global(.fk-t-flag) {
+		color: var(--fk-info);
+	}
+	.fk-terminal__body :global(.fk-t-key) {
+		color: var(--fk-amber);
+	}
+	.fk-terminal__body :global(.fk-t-str) {
+		color: var(--fk-success);
+	}
+	.fk-terminal__body :global(.fk-t-num) {
+		color: var(--fk-orange);
+	}
+	.fk-terminal__body :global(.fk-t-dim) {
+		color: var(--fk-text-muted);
+	}
+	.fk-terminal__body :global(.fk-t-ok) {
+		color: var(--fk-success);
+	}
+
+	@media (max-width: 50rem) {
+		.fk-hero {
+			padding-top: 1.5rem;
+		}
+		.fk-terminal__body {
+			font-size: 0.72rem;
+		}
+	}
+</style>

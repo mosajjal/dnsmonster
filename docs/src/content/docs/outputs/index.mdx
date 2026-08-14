@@ -1,0 +1,98 @@
+---
+title: Outputs
+description: How the dnsmonster output dispatcher works, the five output types, the supported formats, and every available backend module.
+sidebar:
+  label: Overview
+  order: 1
+---
+
+import OutputGrid from '@/components/OutputGrid.astro';
+
+`dnsmonster` follows a pipeline architecture for each individual packet. After capture and filtering,
+each processed packet arrives at the output dispatcher, which sends a copy to every output module
+that has been configured to produce output.
+
+If you specify `stdoutOutputType=1` and `--fileOutputType=1 --fileOutputPath=/dev/stdout`, you will
+see each processed record twice in your stdout — once from the stdout module, once from the file
+module pointing at the same place.
+
+Each output has its own configuration section. Running `dnsmonster --help` shows them with an
+`_output` suffix.
+
+## Output types
+
+The most important parameter for every output is its **type**. All outputs share the same five
+values:
+
+| Type | Behaviour |
+| --- | --- |
+| `0` | Disable the output. |
+| `1` | Enable the output with no domain filters — every processed packet is written. |
+| `2` | Enable the output and apply `SkipDomains` logic only. |
+| `3` | Enable the output and apply `AllowDomains` logic only. |
+| `4` | Enable the output and apply both `SkipDomains` and `AllowDomains`. |
+
+Output types do **not** nullify input filters — they are applied after capture and the early packet
+filters. See [filters and masks](/inputs/filters-and-masks/) for the full order in which filters are
+applied.
+
+Beyond `Type`, each module may need additional parameters. Those are documented per module.
+
+## Available modules
+
+<OutputGrid
+	items={[
+		{ name: 'ClickHouse', href: '/outputs/clickhouse/', note: 'Column store, TTL retention, Grafana dashboard' },
+		{ name: 'Apache Kafka', href: '/outputs/kafka/', note: 'Fault-tolerant fan-out to anything' },
+		{ name: 'Elasticsearch', href: '/outputs/elasticsearch/', note: 'Also OpenSearch and Opendistro' },
+		{ name: 'Splunk HEC', href: '/outputs/splunk/', note: 'JSON over HTTP Event Collector' },
+		{ name: 'Microsoft Sentinel', href: '/outputs/sentinel/', note: 'Any Log Analytics workspace' },
+		{ name: 'PostgreSQL', href: '/outputs/postgres/', note: 'Experimental, CockroachDB compatible' },
+		{ name: 'InfluxDB', href: '/outputs/influx/', note: 'Time series with high ingest rate' },
+		{ name: 'VictoriaLogs', href: '/outputs/victorialogs/', note: 'JSON line insert endpoint' },
+		{ name: 'Zinc Search', href: '/outputs/zinc/', note: 'Lightweight search backend' },
+		{ name: 'Apache Parquet', href: '/outputs/parquet/', note: 'Columnar files on disk' },
+		{ name: 'Stdout, file, syslog', href: '/outputs/stdout-file-syslog/', note: 'Plain output for SIEM agents' },
+		{ name: 'Metrics', href: '/outputs/metrics/', note: 'prometheus, statsd or stderr' },
+	]}
+/>
+
+## Output formats
+
+`dnsmonster` supports several output formats.
+
+### json
+
+The standard JSON output:
+
+```json
+{"Timestamp":"2020-08-08T00:19:42.567768Z","DNS":{"Id":54443,"Response":true,"Opcode":0,"Authoritative":false,"Truncated":false,"RecursionDesired":true,"RecursionAvailable":true,"Zero":false,"AuthenticatedData":false,"CheckingDisabled":false,"Rcode":0,"Question":[{"Name":"imap.gmail.com.","Qtype":1,"Qclass":1}],"Answer":[{"Hdr":{"Name":"imap.gmail.com.","Rrtype":1,"Class":1,"Ttl":242,"Rdlength":4},"A":"172.217.194.108"},{"Hdr":{"Name":"imap.gmail.com.","Rrtype":1,"Class":1,"Ttl":242,"Rdlength":4},"A":"172.217.194.109"}],"Ns":null,"Extra":null},"IPVersion":4,"SrcIP":"1.1.1.1","DstIP":"2.2.2.2","Protocol":"udp","PacketLength":64}
+```
+
+### csv
+
+Fields and headers are not customisable. For a custom layout, use `gotemplate`.
+
+```csv
+Year,Month,Day,Hour,Minute,Second,Ns,Server,IpVersion,SrcIP,DstIP,Protocol,Qr,OpCode,Class,Type,ResponseCode,Question,Size,Edns0Present,DoBit,Id
+2020,8,8,0,19,42,567768000,default,4,2050551041,2050598324,17,1,0,1,1,0,imap.gmail.com.,64,0,0,54443
+```
+
+### csv_no_headers
+
+Identical to `csv`, without the header line.
+
+### gotemplate
+
+A customisable template for your own formatting. Using the same packet as above:
+
+```sh
+dnsmonster --pcapFile input.pcap --stdoutOutputType=1 --stdoutOutputFormat=gotemplate --stdoutOutputGoTemplate="timestamp=\"{{.Timestamp}}\" id={{.DNS.Id}} question={{(index .DNS.Question 0).Name}}"
+```
+
+```
+timestamp="2020-08-08 00:19:42.567735 +0000 UTC" id=54443 question=imap.gmail.com.
+```
+
+See the [text/template documentation](https://pkg.go.dev/text/template) for everything the template
+language supports.

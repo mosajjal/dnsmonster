@@ -1,0 +1,14 @@
+---
+/**
+ * Starlight `PageTitle` override.
+ *
+ * Pages that open with the custom `<Hero />` block set `hideTitle: true` in
+ * frontmatter so the hero headline is the page's only `h1`.
+ */
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+
+const { entry } = Astro.locals.starlightRoute;
+const hideTitle = (entry.data as { hideTitle?: boolean }).hideTitle === true;
+---
+
+{!hideTitle && <Default><slot /></Default>}

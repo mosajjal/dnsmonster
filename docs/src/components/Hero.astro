@@ -97,25 +97,42 @@ const terminal = [
 		max-width: 44rem;
 	}
 
+	/* The ring animates `transform` and `opacity` only, so it runs on the
+	   compositor. Animating `box-shadow` here instead costs a full repaint every
+	   frame, forever, even once the badge has scrolled out of view. */
 	.fk-hero__pulse {
+		position: relative;
 		display: inline-block;
 		width: 0.4rem;
 		height: 0.4rem;
 		border-radius: 999px;
 		background: var(--fk-amber);
-		box-shadow: 0 0 0 0 color-mix(in oklab, var(--fk-amber) 70%, transparent);
+	}
+
+	.fk-hero__pulse::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 999px;
+		background: var(--fk-amber);
 		animation: fk-pulse 2.4s ease-out infinite;
 	}
 
 	@keyframes fk-pulse {
 		0% {
-			box-shadow: 0 0 0 0 color-mix(in oklab, var(--fk-amber) 65%, transparent);
+			transform: scale(1);
+			opacity: 0.65;
 		}
-		70% {
-			box-shadow: 0 0 0 0.5rem transparent;
-		}
+		70%,
 		100% {
-			box-shadow: 0 0 0 0 transparent;
+			transform: scale(3.5);
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.fk-hero__pulse::after {
+			animation: none;
 		}
 	}
 

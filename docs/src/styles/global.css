@@ -77,7 +77,9 @@
 		--sl-color-text-accent: #f5a623;
 
 		--sl-color-bg: #0d1117;
-		--sl-color-bg-nav: color-mix(in oklab, #0d1117 82%, transparent);
+		/* Opaque: the header no longer uses backdrop-filter, so content must not
+		   show through it while scrolling. */
+		--sl-color-bg-nav: #0d1117;
 		--sl-color-bg-sidebar: #0d1117;
 		--sl-color-bg-inline-code: #21262d;
 		--sl-color-hairline: #21262d;
@@ -127,7 +129,7 @@
 			--sl-color-text-accent: #b87d08;
 
 			--sl-color-bg: #ffffff;
-			--sl-color-bg-nav: color-mix(in oklab, #ffffff 82%, transparent);
+			--sl-color-bg-nav: #ffffff;
 			--sl-color-bg-sidebar: #ffffff;
 			--sl-color-bg-inline-code: #f0f2f4;
 			--sl-color-hairline: #e8ecef;
@@ -267,28 +269,39 @@
    Starlight chrome — modernised
    ------------------------------------------------------------------------- */
 
-/* Ambient amber wash behind the page, very subtle */
-body::before {
+/* Ambient amber wash behind the top of the page.
+   Deliberately `absolute`, not `fixed`: a fixed full-viewport gradient repaints
+   on every scroll frame and drags the whole page off the fast scroll path. This
+   scrolls away with the content and is painted once. */
+.page {
+	position: relative;
+	z-index: 1;
+}
+
+.page::before {
 	content: '';
-	position: fixed;
-	inset: 0;
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline: 0;
+	height: 40rem;
 	pointer-events: none;
-	z-index: 0;
+	z-index: -1;
 	background:
 		radial-gradient(60rem 32rem at 78% -10%, var(--fk-glow), transparent 70%),
 		radial-gradient(45rem 28rem at 5% 0%, color-mix(in oklab, var(--fk-orange) 6%, transparent), transparent 70%);
 }
 
-.page,
 header.header {
 	position: relative;
 	z-index: 1;
 }
 
-/* Header: translucent, hairline, no heavy shadow */
+/* Header: hairline and a flat translucent fill.
+   No `backdrop-filter` — it forces the compositor to re-sample and blur the
+   backdrop on every scroll frame, which is the single most expensive thing a
+   sticky header can do. */
 header.header {
 	background: var(--sl-color-bg-nav);
-	backdrop-filter: blur(12px) saturate(140%);
 	border-bottom: 1px solid var(--fk-border-subtle);
 	box-shadow: none;
 }

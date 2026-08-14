@@ -27,5 +27,6 @@ docker-compose.yml
 dist/
 cmd/dnsmonster/dnsmonster
 node_modules/
-docs/dist/
-docs/.astro/
+docs/public/
+docs/resources/_gen/
+docs/.hugo_build.lock

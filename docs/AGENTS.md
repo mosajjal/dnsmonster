@@ -1,35 +1,40 @@
 # dnsmonster docs site
 
-Astro + Starlight documentation site, Tailwind CSS v4, shadcn/ui, Fenko Security design system.
-
-## Commands
+Plain Hugo. No theme, no Hugo modules, no npm, no JS framework. Layouts are local and small.
 
 ```sh
-npm run dev                  # dev server on :4321
-npx astro dev --background   # detached; astro dev stop | status | logs
-npm run build                # static build into dist/
+hugo server                # dev
+hugo --minify              # build into public/
 ```
-
-## Structure
-
-- `src/content/docs/` — all pages. `index.mdx` is the site root **and** the "Getting started"
-  overview; there is no separate landing page.
-- `src/components/` — `Hero`, `Features`, `StatBand`, `OutputGrid`, `StageBadge`, and the
-  `PageTitle` Starlight override (honours `hideTitle: true` in frontmatter).
-- `src/components/ui/` — shadcn/ui primitives. Add more with `npx shadcn@latest add <component>`.
-- `src/styles/global.css` — the single source of truth for design tokens and Starlight overrides.
-- `astro.config.mjs` — sidebar definition. "Getting started" and "Reference" are explicit; the rest
-  autogenerate from their directories using `sidebar.order` in each page's frontmatter.
 
 ## Rules
 
-- Never hardcode a colour in a component. Use the tokens in `global.css` (`--fk-*` for the custom
-  layer, `--sl-color-*` for Starlight, shadcn's `--primary`/`--muted`/etc. for UI primitives).
-- Both themes are first-class. Anything added to `:root` needs its `[data-theme='light']` value too.
-- Astro scoped styles do not reach markup injected with `set:html` — use `:global()` for those.
-- Headings are `display: inline` inside `.sl-heading-wrapper`; style the wrapper, not the heading.
-- Fonts are Saira (UI/headings) and JetBrains Mono (code), self-hosted through Fontsource.
+- **Keep it minimal.** This site was previously Docsy, then Astro + Starlight + React + shadcn. Both
+  were replaced for being heavy. Do not reintroduce a build toolchain, a component library, or a
+  theme module without being asked.
+- **No expensive CSS.** No gradients, `filter`, `backdrop-filter`, `mask-image`, or animation. An
+  earlier revision used a `box-shadow` keyframe animation, a `position: fixed` full-viewport gradient
+  and a blurred sticky header, and scrolling was janky. Everything must paint once.
+- **Colours are tokens.** All of them live at the top of `assets/css/main.css`. Never hardcode a
+  colour in a layout. Anything added to `:root` needs a `:root[data-theme='light']` value.
+- **Both themes are first class.** Dark is default, light is toggled via `data-theme` on `<html>`.
+- Fonts are Saira (text) and JetBrains Mono (code), self-hosted in `static/fonts/`. Saira is the
+  canonical Fenko typeface — do not swap it for Inter.
 
-## Reference
+## Content
 
-Astro docs: https://docs.astro.build — Starlight docs: https://starlight.astro.build
+- Front matter is TOML: `title`, `description`, `weight`. `weight` orders within the sidebar group;
+  `linkTitle` overrides the sidebar label.
+- Section order comes from `weight` in each section's `_index.md`.
+- `content/_index.md` is the site root **and** the Getting Started page. There is no separate
+  landing page, by request. `content/getting-started/_index.md` uses `build.render = "never"` and
+  exists only to group the nav.
+- Shortcodes: `callout` (note/tip/caution/danger) and `stats`. Single quotes inside shortcode
+  parameters — double quotes break parsing.
+- URLs must not change. `netlify.toml` in the repo root holds 301s from the old Docsy `/docs/*`
+  paths; renaming a page means adding a redirect there.
+
+## Deployment
+
+Netlify. `netlify.toml` at the repo root is the source of truth for build settings and redirects —
+the Netlify UI is overridden by it.

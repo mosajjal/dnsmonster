@@ -1,0 +1,30 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+{{ $title := cond .IsHome .Site.Title (printf "%s | %s" .Title .Site.Title) }}
+<title>{{ $title }}</title>
+
+{{ $desc := or .Description .Site.Params.description }}
+<meta name="description" content="{{ $desc }}" />
+<meta name="theme-color" content="#0d1117" />
+<link rel="canonical" href="{{ .Permalink }}" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="{{ $title }}" />
+<meta property="og:description" content="{{ $desc }}" />
+<meta property="og:url" content="{{ .Permalink }}" />
+<meta name="twitter:card" content="summary" />
+
+<link rel="icon" href="{{ "/favicon.ico" | relURL }}" sizes="any" />
+<link rel="icon" href="{{ "/favicons/favicon-32x32.png" | relURL }}" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="{{ "/favicons/apple-touch-icon-180x180.png" | relURL }}" />
+
+{{/* Preload the two self-hosted variable fonts so text paints once, not twice. */}}
+<link rel="preload" href="{{ "/fonts/saira.woff2" | relURL }}" as="font" type="font/woff2" crossorigin />
+
+{{ $css := resources.Get "css/main.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" />
+
+{{ with .OutputFormats.Get "rss" }}
+  <link rel="alternate" type="application/rss+xml" href="{{ .Permalink }}" title="{{ $.Site.Title }}" />
+{{ end }}

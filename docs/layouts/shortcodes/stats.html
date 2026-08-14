@@ -1,0 +1,12 @@
+{{- /* One "value | label" pair per line. */ -}}
+<dl class="stats">
+  {{- range (split (trim .Inner "\n") "\n") -}}
+    {{- $parts := split . "|" -}}
+    {{- if eq (len $parts) 2 }}
+      <div>
+        <dt>{{ trim (index $parts 0) " " }}</dt>
+        <dd>{{ trim (index $parts 1) " " }}</dd>
+      </div>
+    {{- end -}}
+  {{- end }}
+</dl>

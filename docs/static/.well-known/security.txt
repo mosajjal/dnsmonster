@@ -1,0 +1,6 @@
+# dnsmonster — maintained by Fenko Security (FENKO LIMITED)
+# Vulnerability reports for dnsmonster.dev and the dnsmonster project.
+Contact: mailto:security@fenko.nz
+Expires: 2027-06-12T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://dnsmonster.dev/.well-known/security.txt

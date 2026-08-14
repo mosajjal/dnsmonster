@@ -1,18 +1,19 @@
 # Netlify configuration for the dnsmonster documentation site (dnsmonster.dev).
 #
-# This file overrides the build settings configured in the Netlify UI. The docs
-# moved from Hugo to Astro + Starlight, so the build command and publish
-# directory both changed.
+# This file overrides the build settings configured in the Netlify UI.
+#
+# The site is plain Hugo with local layouts — no theme module, no npm, so the
+# build needs nothing but the Hugo binary.
 #
 # All paths are relative to `base`.
 
 [build]
   base = "docs/"
-  command = "npm ci && npm run build"
-  publish = "dist/"
+  command = "hugo --minify"
+  publish = "public/"
 
 [build.environment]
-  NODE_VERSION = "22"
+  HUGO_VERSION = "0.164.0"
 
 # ---------------------------------------------------------------------------
 # Redirects from the Hugo URL structure.

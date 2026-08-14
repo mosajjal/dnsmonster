@@ -1,0 +1,21 @@
+<footer class="page-footer">
+  {{/* Generated pages such as 404 have no backing file. */}}
+  {{ if not .IsHome }}
+    {{ with .File }}
+      <a class="edit" href="{{ $.Site.Params.editBase }}{{ .Path }}" rel="noopener">Edit this page</a>
+    {{ end }}
+  {{ end }}
+
+  <div class="legal">
+    <p>
+      Maintained by <a href="https://fenko.nz/">Fenko Security</a> and the dnsmonster contributors.
+      <span class="muted">&copy; 2026 FENKO LIMITED.</span>
+    </p>
+    <ul>
+      {{ range .Site.Params.legal }}
+        <li><a href="{{ .url }}" rel="noopener">{{ .name }}</a></li>
+      {{ end }}
+      <li><a href="{{ "/privacy/" | relURL }}">dnsmonster privacy</a></li>
+    </ul>
+  </div>
+</footer>

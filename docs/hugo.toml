@@ -1,0 +1,43 @@
+baseURL = "https://dnsmonster.dev/"
+title = "dnsmonster"
+locale = "en-us"
+enableRobotsTXT = true
+enableGitInfo = false
+
+# No theme. Layouts live in layouts/ and are intentionally small.
+
+[params]
+  description = "Passive DNS monitoring framework. Capture, filter and ship hundreds of thousands of DNS queries per second to the backend of your choice."
+  github = "https://github.com/mosajjal/dnsmonster"
+  editBase = "https://github.com/mosajjal/dnsmonster/edit/main/docs/content/"
+
+[[params.legal]]
+  name = "Privacy policy"
+  url = "https://fenko.nz/privacy-policy"
+[[params.legal]]
+  name = "Terms & conditions"
+  url = "https://fenko.nz/terms-conditions"
+[[params.legal]]
+  name = "Data processing agreement"
+  url = "https://fenko.nz/dpa"
+[[params.legal]]
+  name = "Governance"
+  url = "https://fenko.nz/governance"
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe = true
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
+  [markup.highlight]
+    noClasses = false
+    style = "github-dark"
+    tabWidth = 2
+
+[outputs]
+  home = ["HTML", "RSS"]
+  section = ["HTML"]
+  page = ["HTML"]
+
+[taxonomies]

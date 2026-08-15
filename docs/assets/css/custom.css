@@ -18,7 +18,8 @@
 }
 
 :root {
-  /* Fennec Amber #F5A623 → hsl(37 91% 55%). Hextra derives its accent from these. */
+  /* Fennec Amber #F5A623 → hsl(37 91% 55%). Hextra derives its accent from
+     these. Dark-only site, so there is no light-mode counterpart. */
   --primary-hue: 37deg;
   --primary-saturation: 91%;
   --primary-lightness: 55%;
@@ -27,12 +28,6 @@
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
 }
 
-/* Light theme uses the deeper amber — #F5A623 is too luminous on white. */
-:root:not(.dark) {
-  --primary-hue: 41deg;
-  --primary-saturation: 91%;
-  --primary-lightness: 43%;
-}
 
 html,
 body {

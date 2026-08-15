@@ -20,6 +20,13 @@ hugo mod get -u            # update the theme
 - **Brand lives in one file.** `assets/css/custom.css` — Hextra loads it automatically. It sets
   `--primary-hue/saturation/lightness` (Fennec Amber), the Saira and JetBrains Mono faces, and the
   Fenko graphite surfaces. Don't hardcode colours elsewhere.
+- **Dark-only.** There is no light palette and no theme switcher, by request.
+  `params.theme.displayToggle = false` removes the switcher (and with it the sidebar's sticky
+  footer, which painted Hextra's `bg-dark` #111 instead of Fenko graphite).
+  `assets/js/head/theme.js` overrides the theme's copy to force the `dark` class and clear any
+  stored `color-theme` — Hextra prefers localStorage over the configured default, which would
+  otherwise strand anyone who had toggled to light. That override **must keep `setTheme` defined
+  and global**; `js/core/theme.js` calls it.
 - Saira is the canonical Fenko typeface. Do not swap it for Inter.
 
 ## Content

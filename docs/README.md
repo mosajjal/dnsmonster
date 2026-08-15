@@ -89,9 +89,13 @@ Deliberately minimal, since each one drifts when Hextra updates:
 
 ## Design
 
-Fenko Security palette: Fennec Amber (`#F5A623` dark, `#D4920A` light) driving Hextra's
+Fenko Security palette: Fennec Amber (`#F5A623`) driving Hextra's
 `--primary-hue/saturation/lightness`, on graphite neutrals. Saira for text, JetBrains Mono for code,
-both self-hosted from `static/fonts/`. Dark is the default.
+both self-hosted from `static/fonts/`.
+
+**Dark-only.** There is no light theme and no switcher. `assets/js/head/theme.js` pins the `dark`
+class and clears any stored `color-theme`, so a preference left over from when the switcher existed
+cannot strand a reader on an unmaintained light palette.
 
 All of it is in `assets/css/custom.css`. Edit it there.
 

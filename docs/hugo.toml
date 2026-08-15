@@ -40,9 +40,11 @@ hasCJKLanguage = false
       height = 26
       width = 145
 
+  # Dark-only. The light palette is not maintained; the switcher is removed and
+  # assets/js/head/theme.js pins the class regardless of any stored preference.
   [params.theme]
     default = "dark"
-    displayToggle = true
+    displayToggle = false
 
   [params.page]
     width = "normal"

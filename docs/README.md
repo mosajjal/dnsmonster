@@ -94,8 +94,9 @@ Fenko Security palette: Fennec Amber (`#F5A623`) driving Hextra's
 both self-hosted from `static/fonts/`.
 
 **Dark-only.** There is no light theme and no switcher. `assets/js/head/theme.js` pins the `dark`
-class and clears any stored `color-theme`, so a preference left over from when the switcher existed
-cannot strand a reader on an unmaintained light palette.
+class and drops any stored `color-theme`, so a preference left over from when the switcher existed
+cannot strand a reader on an unmaintained light palette. (Hextra's body script then re-persists the
+resolved theme, so the key ends up `dark` rather than absent — same outcome.)
 
 All of it is in `assets/css/custom.css`. Edit it there.
 

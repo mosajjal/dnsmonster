@@ -1,6 +1,5 @@
 +++
 title = "Configuration"
-linkTitle = "Overview"
 description = "How dnsmonster is configured — command line flags, environment variables and INI files, and the order they take precedence in."
 weight = 2
 +++

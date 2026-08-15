@@ -2,27 +2,18 @@ baseURL = "https://dnsmonster.dev/"
 title = "dnsmonster"
 locale = "en-us"
 enableRobotsTXT = true
-enableGitInfo = false
+enableInlineShortcodes = true
+hasCJKLanguage = false
 
-# No theme. Layouts live in layouts/ and are intentionally small.
+[module]
+  [[module.imports]]
+    path = "github.com/imfing/hextra"
 
-[params]
-  description = "Passive DNS monitoring framework. Capture, filter and ship hundreds of thousands of DNS queries per second to the backend of your choice."
-  github = "https://github.com/mosajjal/dnsmonster"
-  editBase = "https://github.com/mosajjal/dnsmonster/edit/main/docs/content/"
-
-[[params.legal]]
-  name = "Privacy policy"
-  url = "https://fenko.nz/privacy-policy"
-[[params.legal]]
-  name = "Terms & conditions"
-  url = "https://fenko.nz/terms-conditions"
-[[params.legal]]
-  name = "Data processing agreement"
-  url = "https://fenko.nz/dpa"
-[[params.legal]]
-  name = "Governance"
-  url = "https://fenko.nz/governance"
+# FlexSearch builds its index through the asset pipeline, not an output format.
+[outputs]
+  home = ["HTML", "RSS"]
+  section = ["HTML", "RSS"]
+  page = ["HTML"]
 
 [markup]
   [markup.goldmark.renderer]
@@ -35,9 +26,63 @@ enableGitInfo = false
     style = "github-dark"
     tabWidth = 2
 
-[outputs]
-  home = ["HTML", "RSS"]
-  section = ["HTML"]
-  page = ["HTML"]
+[params]
+  description = "Passive DNS monitoring framework. Capture, filter and ship hundreds of thousands of DNS queries per second to the backend of your choice."
 
-[taxonomies]
+  [params.navbar]
+    displayTitle = false
+    displayLogo = true
+    # The wordmark is 1176x211 (5.59:1). Hextra defaults width to 20, which
+    # squashes it — both dimensions have to be set.
+    [params.navbar.logo]
+      path = "img/logo-light.svg"
+      dark = "img/logo-dark.svg"
+      height = 26
+      width = 145
+
+  [params.theme]
+    default = "dark"
+    displayToggle = true
+
+  [params.page]
+    width = "normal"
+
+  [params.search]
+    enable = true
+    type = "flexsearch"
+    [params.search.flexsearch]
+      index = "content"
+      tokenize = "forward"
+
+  [params.editURL]
+    enable = false
+    base = "https://github.com/mosajjal/dnsmonster/edit/main/docs/content"
+
+  [params.footer]
+    enable = true
+    displayCopyright = false
+    displayPoweredBy = false
+
+  [params.blog.list]
+    displayTags = false
+
+[menu]
+  [[menu.main]]
+    name = "Documentation"
+    pageRef = "/"
+    weight = 1
+  [[menu.main]]
+    name = "FAQ"
+    pageRef = "/faq"
+    weight = 2
+  [[menu.main]]
+    name = "Search"
+    weight = 8
+    [menu.main.params]
+      type = "search"
+  [[menu.main]]
+    name = "GitHub"
+    url = "https://github.com/mosajjal/dnsmonster"
+    weight = 9
+    [menu.main.params]
+      icon = "github"

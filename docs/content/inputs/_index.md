@@ -1,6 +1,5 @@
 +++
 title = "Inputs and filters"
-linkTitle = "Overview"
 description = "Every capture-side flag in dnsmonster — live interface, pcap file and dnstap socket, plus the packet handling parameters around them."
 weight = 3
 +++

@@ -1,47 +1,52 @@
 +++
 title = "Getting started"
-description = "dnsmonster is a passive DNS monitoring framework that captures DNS traffic from a live interface, a pcap file or a dnstap socket and ships it to 15+ backends at 200k+ queries per second."
 weight = 1
+
+[cascade]
+  type = "docs"
 +++
 
-# Passive DNS monitoring
+DNSMonster is a Passive DNS monitoring framework written in Golang. It can accept traffic from a
+`pcap` file, a network interface (802.1q, Ethernet, IP Packet, VXLAN) or a dnstap socket, and can be
+used to index and store hundreds of thousands of DNS queries per second. It aims to be scalable,
+simple and easy to use, and to help security and operation teams to gain visibility over DNS.
 
-`dnsmonster` sniffs DNS traffic off a live interface, a pcap file or a dnstap socket, filters it,
-masks it, and ships it to the backend you already run — 200,000+ queries per second on commodity
-hardware, with no agents on your resolvers.
+`dnsmonster` does not look to follow DNS conversations, rather it aims to index DNS packets as soon
+as they come in. It also does not aim to breach the privacy of the end-users, with the ability to
+mask Layer 3 IPs (IPv4 and IPv6), enabling teams to perform trend analysis on aggregated data
+without being able to trace back the queries to an individual.
+[Blogpost](https://blog.n0p.me/dnsmonster/)
 
-{{< stats >}}
-200k+ | queries per second, single instance
-15+ | output backends
-3 | input types: interface, pcap, dnstap
-1 | statically linked binary
-{{< /stats >}}
-
-[Install dnsmonster](/getting-started/installation/) · [Browse outputs](/outputs/) ·
-[GitHub](https://github.com/mosajjal/dnsmonster)
-
-## What dnsmonster is
-
-`dnsmonster` is a passive DNS monitoring framework written in Go. It accepts traffic from a `pcap`
-file, a network interface (802.1q, Ethernet, IP packet, VXLAN) or a `dnstap` socket, and indexes
-hundreds of thousands of DNS queries per second. It aims to be scalable, simple and easy to use, and
-to help security and operations teams gain visibility over DNS.
-
-`dnsmonster` does not follow DNS conversations. It indexes DNS packets as soon as they arrive. It
-also does not aim to breach the privacy of end users: Layer 3 IPs (IPv4 and IPv6) can be masked, so
-teams can run trend analysis on aggregated data without being able to trace a query back to an
-individual. There is a longer write-up on the design in the
-[introduction blog post](https://blog.n0p.me/dnsmonster/).
-
-{{< callout type="caution" title="Pre-1.0" >}}
-Code before version 1.x is considered beta quality and is subject to breaking changes. Check the
-release notes between tags for the list of breaking scenarios and how to mitigate potential data
-loss.
+{{< callout type="warning" >}}
+The code before version 1.x is considered beta quality and is subject to breaking changes. Please
+check the release notes for each tag to see the list of breaking scenarios between each release, and
+how to mitigate potential data loss.
 {{< /callout >}}
+
+## Main features
+
+- Ability to use Linux's `afpacket` and zero-copy packet capture.
+- Supports BPF
+- Ability to mask IP address to enhance privacy
+- Ability to have a pre-processing sampling ratio
+- Ability to have a list of "skip" `fqdn`s to avoid writing some domains/suffix/prefix to storage
+- Ability to have a list of "allow" domains, used to log access to certain domains
+- Hot-reload of skip and allow domain files/urls
+- Modular output with configurable logic per output stream.
+- Automatic data retention policy using ClickHouse's TTL attribute
+- Built-in Grafana dashboard for ClickHouse output.
+- Ability to be shipped as a single, statically linked binary
+- Ability to be configured using environment variables, command line options or configuration file
+- Ability to sample outputs using ClickHouse's SAMPLE capability
+- Ability to send metrics using `prometheus` and `statstd`
+- High compression ratio thanks to ClickHouse's built-in LZ4 storage
+- Supports DNS Over TCP, Fragmented DNS (udp/tcp) and IPv6
+- Supports [dnstrap](https://github.com/dnstap/golang-dnstap) over Unix socket or TCP
+- built-in SIEM integration with Splunk and Microsoft Sentinel
 
 ## Install and run
 
-The fastest way to see output is the container image. Raw packet capture needs elevated
+The container image is the quickest way to see output. Raw packet capture needs elevated
 capabilities, so the daemon must be granted `NET_RAW` and `NET_ADMIN`.
 
 ```sh
@@ -51,64 +56,27 @@ sudo docker run --rm -it --net=host \
   --devName lo --stdoutOutputType=1
 ```
 
-Or read from a capture file:
+To read from a capture file instead:
 
 ```sh
 dnsmonster --pcapFile=capture.pcap --stdoutOutputType=1
 ```
 
-Or build it:
-
-```sh
-git clone https://github.com/mosajjal/dnsmonster --depth 1 /tmp/dnsmonster
-cd /tmp/dnsmonster
-go get
-go build -o dnsmonster ./cmd/dnsmonster
-```
-
-Every run needs **one input** and **at least one output**. The example above uses the `lo` interface
-as input and stdout as output. See [installation](/getting-started/installation/) for prebuilt
-binaries, `deb`/`rpm` packages and static builds.
-
-## Main features
-
-- **Zero-copy capture** — Linux `afpacket` with zero-copy packet capture, plus BPF filter support
-  for kernel-level filtering.
-- **IP masking** — mask IPv4 and IPv6 source and destination addresses at process time to keep
-  aggregate analysis privacy-preserving.
-- **Skip and allow lists** — drop noisy FQDNs or log only the domains you care about, by prefix,
-  suffix or exact match, with hot reload from a file or URL.
-- **Pre-process sampling** — set a sampling ratio at capture time so an over-subscribed pipeline
-  degrades predictably instead of dropping at random.
-- **Modular outputs** — fan out to as many backends as you like, each with its own filtering logic
-  and its own worker pool.
-- **Full protocol coverage** — DNS over TCP, fragmented DNS over UDP and TCP, IPv6, and `dnstap`
-  over a Unix socket or TCP.
-- **Built-in metrics** — ship instance metrics to Prometheus or statsd, or print them to stderr.
-- **Single binary** — ships as one statically linked binary. Configure it with CLI flags,
-  environment variables or an INI file.
-- **ClickHouse-native** — automatic retention through ClickHouse TTL, LZ4 compression, sampleable
-  tables and a bundled Grafana dashboard.
-- **SIEM integration** — first-class output modules for Splunk HEC and Microsoft Sentinel, plus
-  OCSF-compatible JSON.
+One input and at least one output must be defined. See [installation](/getting-started/installation/)
+for prebuilt binaries, `deb`/`rpm` packages and source builds.
 
 ## Where to go next
 
-- [Installation](/getting-started/installation/) — binaries, packages, containers and source builds.
-- [Post-installation](/getting-started/post-installation/) — systemd units and shell completion.
-- [Configuration](/configuration/) — flags, environment variables and the INI file, in precedence order.
-- [Inputs and filters](/inputs/) — interface, pcap, pcap-over-IP and dnstap, plus every filter stage.
-- [Outputs](/outputs/) — the full backend list and each module's parameters.
-- [FAQ](/faq/) — why dnsmonster exists, how fast it is, and what to do when it drops packets.
+- [Installation](/getting-started/installation/)
+- [Post-installation](/getting-started/post-installation/)
+- [Configuration](/configuration/)
+- [Inputs and filters](/inputs/)
+- [Outputs](/outputs/)
+- [FAQ](/faq/)
 
-## Get involved
+## Contributions welcome
 
-`dnsmonster` is open source and contributions are welcome. Open an issue or a pull request on
-[GitHub](https://github.com/mosajjal/dnsmonster), or start a thread in
-[Discussions](https://github.com/mosajjal/dnsmonster/discussions) for roadmap conversations and
-setup showcases.
-
-{{< callout type="tip" title="Shaping a managed offering" >}}
-We're exploring a managed SaaS version of dnsmonster. If you have opinions about what that should
-look like, [take the survey](https://tally.so/r/2EAxBe).
-{{< /callout >}}
+Open an Issue or a [Pull Request](https://github.com/mosajjal/dnsmonster/pulls) on
+[GitHub](https://github.com/mosajjal/dnsmonster). New users are always welcome. For announcements,
+roadmap discussion and setup showcases,
+[Discussions](https://github.com/mosajjal/dnsmonster/discussions) is the best place to start.

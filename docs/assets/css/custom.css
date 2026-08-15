@@ -1,0 +1,103 @@
+/* Fenko Security brand layer over Hextra.
+   Only tokens and type — no gradients, filters, masks or animation. */
+
+@font-face {
+  font-family: 'Saira';
+  src: url('/fonts/saira.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono.woff2') format('woff2-variations');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Fennec Amber #F5A623 → hsl(37 91% 55%). Hextra derives its accent from these. */
+  --primary-hue: 37deg;
+  --primary-saturation: 91%;
+  --primary-lightness: 55%;
+
+  --font-sans: 'Saira', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+}
+
+/* Light theme uses the deeper amber — #F5A623 is too luminous on white. */
+:root:not(.dark) {
+  --primary-hue: 41deg;
+  --primary-saturation: 91%;
+  --primary-lightness: 43%;
+}
+
+html,
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: normal;
+}
+
+code,
+kbd,
+samp,
+pre,
+.hextra-code-block code {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+/* Fenko graphite surfaces, replacing Hextra's default neutral greys. */
+.dark body,
+.dark {
+  --fk-bg: #0d1117;
+  --fk-surface: #161b22;
+  --fk-border: #30363d;
+}
+
+.dark body {
+  background-color: #0d1117;
+  color: #e6edf3;
+}
+
+.dark .bg-white {
+  background-color: #0d1117 !important;
+}
+
+.dark nav.sticky,
+.dark .nav-container-blur {
+  background-color: #0d1117;
+}
+
+.dark aside,
+.dark .sidebar-container {
+  background-color: #0d1117;
+}
+
+/* Headings a touch tighter — Saira runs wide at display sizes. */
+.content h1,
+.content h2,
+.content h3,
+.content h4 {
+  letter-spacing: -0.02em;
+}
+
+/* Diagrams ship as light-background SVGs. */
+.dark .content img[src$='.svg'] {
+  background: #fff;
+  padding: 0.9rem;
+  border-radius: 0.5rem;
+}
+
+
+/* Hextra pins "Scroll to top" and the edit link under the "On this page"
+   column. Both are rendered at the end of the content instead — see
+   layouts/docs/single.html. This hides the theme's copy of the button;
+   the edit link is suppressed via params.editURL.enable = false. */
+/* Hiding the button alone leaves its container behind — a sticky, bordered
+   box at the foot of the TOC column with nothing in it. Drop the container. */
+div:has(> #backToTop) {
+  display: none !important;
+}

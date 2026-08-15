@@ -12,7 +12,7 @@ This guide injects a custom configuration into Kubernetes' `coredns` DNS server 
 For `dnsmonster` to see the dnstap connection coming from the `coredns` pod, create the `dnsmonster`
 Service inside the same namespace (`kube-system` or equivalent).
 
-{{< callout type="caution" title="Do not name it 'dnsmonster'" >}}
+{{< callout type="warning" title="Do not name it 'dnsmonster'" >}}
 Avoid naming your service and pod `dnsmonster`. Kubernetes injects environment variables with a
 `DNSMONSTER_` prefix into the pod, and the `dnsmonster` binary interprets those as command line
 input.

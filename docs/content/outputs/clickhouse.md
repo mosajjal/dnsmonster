@@ -65,7 +65,7 @@ ALTER TABLE `.inner.DNS_RESPONSECODE` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ALTER TABLE `.inner.DNS_SRCIP_MASK` MODIFY TTL DnsDate + INTERVAL 90 DAY;
 ```
 
-{{< callout type="caution" title="Newer ClickHouse versions" >}}
+{{< callout type="warning" title="Newer ClickHouse versions" >}}
 In recent ClickHouse releases the `.inner` tables no longer share a name with their aggregation
 views. To modify the TTL you have to find the table names in UUID format with `SHOW TABLES` and
 repeat the `ALTER` command against those UUIDs.

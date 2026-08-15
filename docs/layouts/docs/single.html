@@ -1,0 +1,60 @@
+{{/*
+  Override of Hextra's layouts/docs/single.html.
+
+  The only change from the theme's version is the "Edit this page on GitHub"
+  link: Hextra renders it inside _partials/toc.html, which pins it under the
+  "On this page" column. Here it sits at the end of the content instead.
+
+  site.Params.editURL.enable is false so the theme's copy in the TOC is
+  suppressed; the base URL comes from site.Params.editURL.base.
+*/}}
+{{ define "main" }}
+  <div class='hx:mx-auto hx:flex hextra-max-page-width'>
+    {{ partial "sidebar.html" (dict "context" .) }}
+    {{ partial "toc.html" . }}
+    <article class="hx:w-full hx:break-words hx:flex hx:min-h-[calc(100vh-var(--navbar-height))] hx:min-w-0 hx:justify-center hx:pb-8 hx:pr-[calc(env(safe-area-inset-right)-1.5rem)]">
+      <main id="content" class="hx:w-full hx:min-w-0 hextra-max-content-width hx:px-6 hx:pt-4 hx:md:px-12">
+        {{ partial "breadcrumb.html" (dict "page" . "enable" true) }}
+        <div class="content">
+          {{ if .Title }}
+            <div class="hx:flex hx:flex-col hx:sm:flex-row hx:items-start hx:sm:items-center hx:sm:justify-between hx:gap-4 hx:mb-4">
+              <h1 class="hx:mb-0">{{ .Title }}</h1>
+              {{ partial "components/page-context-menu" . }}
+            </div>
+          {{ end }}
+          {{ .Content }}
+        </div>
+
+        {{/* Page actions. Hextra puts these under the "On this page" column;
+             here they sit at the end of the content. The theme's own copies are
+             suppressed — editURL.enable is false, and #backToTop is hidden in
+             custom.css. */}}
+        {{- $editBase := site.Params.editURL.base -}}
+        <div
+          class="hx:mt-12 hx:pt-6 hx:border-t hx:border-gray-200 hx:dark:border-neutral-800 hx:flex hx:items-center hx:justify-between hx:gap-4 hx:text-sm hx:font-medium hx:text-gray-500 hx:dark:text-gray-400"
+        >
+          <span>
+            {{- with .File -}}
+              {{- with $editBase -}}
+                <a
+                  class="hx:hover:text-gray-900 hx:dark:hover:text-gray-100"
+                  href="{{ urls.JoinPath . $.File.Path }}"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Edit this page on GitHub →</a
+                >
+              {{- end -}}
+            {{- end -}}
+          </span>
+          <a class="hx:hover:text-gray-900 hx:dark:hover:text-gray-100" href="#content">Scroll to top ↑</a>
+        </div>
+
+        {{ partial "components/last-updated.html" . }}
+        {{- if (site.Params.page.displayPagination | default true) -}}
+          {{- partial "components/pager.html" . -}}
+        {{- end -}}
+        {{ partial "components/comments.html" . }}
+      </main>
+    </article>
+  </div>
+{{ end }}

@@ -1,6 +1,5 @@
 +++
 title = "Tutorials"
-linkTitle = "Overview"
 description = "End-to-end walkthroughs — the all-in-one test environment, ClickHouse Cloud and Kubernetes."
 weight = 5
 +++

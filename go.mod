@@ -80,7 +80,7 @@ require (
 	github.com/bytedance/sonic v1.15.0
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/jessevdk/go-flags v1.6.1
-	github.com/klauspost/compress v1.18.5 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/mailru/easyjson v0.9.2 // indirect
 	github.com/miekg/dns v1.1.72
 	github.com/mosajjal/Go-Splunk-HTTP/splunk/v2 v2.0.7
